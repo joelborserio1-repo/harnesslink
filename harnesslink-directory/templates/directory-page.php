@@ -51,7 +51,9 @@ $col_count = $layout === 'stallion' ? ( $supports_gait ? 6 : 5 ) : 4;
 
     <!-- ── Branded "coming soon" empty state ── -->
     <div class="hld-coming-soon">
-      <div class="hld-coming-soon__badge"><?= esc_html( $type['icon'] ) ?></div>
+      <div class="hld-coming-soon__badge">
+        <?php $cs_icon = HLD_Types::icon_svg( $active_slug ); echo $cs_icon ? $cs_icon : esc_html( $type['icon'] ); ?>
+      </div>
       <h2>This HarnessLink Directory category is coming soon.</h2>
       <p><?= wp_kses( $type['description'], array() ) ?></p>
       <p class="hld-coming-soon__cta-text">Interested in listing your business? Be one of the first featured in the <strong><?= wp_kses( $type['plural'], array() ) ?></strong> directory.</p>
