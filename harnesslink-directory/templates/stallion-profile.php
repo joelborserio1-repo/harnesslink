@@ -18,11 +18,17 @@ if ( $standalone ) get_header();
 $type          = HLD_Types::get( $stallion->directory_type ?? 'stallion' );
 if ( ! $type ) $type = HLD_Types::get( HLD_Types::default_slug() );
 $supports_gait = ! empty( $type['supports_gait'] );
+$layout        = HLD_Types::layout( $type['slug'] );
 
 $paying      = (bool) $stallion->is_paying;
 $featured    = ! empty( $stallion->is_featured );
 $dir_url     = hld_directory_url( $type['slug'] );
 $standing_at = trim( implode( ' / ', array_filter( array( $stallion->country, $stallion->region ) ) ) );
+$location    = implode( ' · ', array_filter( array( $stallion->suburb ?? '', $stallion->region ?? '', $stallion->country ?? '' ) ) );
+$cov_label   = 'Coverage';
+foreach ( HLD_Types::fields( $type['slug'] ) as $f ) {
+    if ( $f['key'] === 'coverage' ) { $cov_label = $f['label']; break; }
+}
 $country_label = strtoupper( (string) $stallion->country );
 $contact_blocks = array();
 
@@ -78,8 +84,13 @@ $has_regional_contacts = ! empty( $contact_blocks );
         <?php if ( $supports_gait && $stallion->type ): ?>
           <span class="hld-dir-pill hld-dir-pill--<?= strtolower($stallion->type) ?>"><?= esc_html( $stallion->type ) ?></span>
         <?php endif; ?>
-        <?php if ( $standing_at ): ?>
-          <span class="hld-profile-tag"><?= $supports_gait ? 'Standing at ' : '' ?><?= esc_html( $standing_at ) ?></span>
+        <?php if ( $layout === 'stallion' && $standing_at ): ?>
+          <span class="hld-profile-tag">Standing at <?= esc_html( $standing_at ) ?></span>
+        <?php elseif ( $layout !== 'stallion' && $location ): ?>
+          <span class="hld-profile-tag"><?= esc_html( $location ) ?></span>
+        <?php endif; ?>
+        <?php if ( ! empty( $stallion->industry ) ): ?>
+          <span class="hld-profile-tag"><?= esc_html( $stallion->industry ) ?></span>
         <?php endif; ?>
         <?php if ( $stallion->status_note ): ?>
           <span class="hld-profile-tag"><?= esc_html( $stallion->status_note ) ?></span>
@@ -87,23 +98,38 @@ $has_regional_contacts = ! empty( $contact_blocks );
       </div>
 
       <div class="hld-profile-meta-grid">
-        <?php if ( $stallion->stud_name ): ?>
-          <div class="hld-profile-meta-item">
-            <span class="hld-profile-meta-label"><?= wp_kses( $type['org_label'], array() ) ?></span>
-            <span class="hld-profile-meta-val"><?= esc_html( $stallion->stud_name ) ?></span>
-          </div>
-        <?php endif; ?>
-        <?php if ( $stallion->stud_master ): ?>
-          <div class="hld-profile-meta-item">
-            <span class="hld-profile-meta-label"><?= $supports_gait ? 'Stud Master' : 'Contact' ?></span>
-            <span class="hld-profile-meta-val"><?= esc_html( $stallion->stud_master ) ?></span>
-          </div>
-        <?php endif; ?>
-        <?php if ( $supports_gait && $stallion->race_record ): ?>
-          <div class="hld-profile-meta-item">
-            <span class="hld-profile-meta-label">Race Record</span>
-            <span class="hld-profile-meta-val"><?= esc_html( $stallion->race_record ) ?></span>
-          </div>
+        <?php if ( $layout === 'stallion' ): ?>
+          <?php if ( $stallion->stud_name ): ?>
+            <div class="hld-profile-meta-item">
+              <span class="hld-profile-meta-label"><?= wp_kses( $type['org_label'], array() ) ?></span>
+              <span class="hld-profile-meta-val"><?= esc_html( $stallion->stud_name ) ?></span>
+            </div>
+          <?php endif; ?>
+          <?php if ( $stallion->stud_master ): ?>
+            <div class="hld-profile-meta-item">
+              <span class="hld-profile-meta-label">Stud Master</span>
+              <span class="hld-profile-meta-val"><?= esc_html( $stallion->stud_master ) ?></span>
+            </div>
+          <?php endif; ?>
+          <?php if ( $supports_gait && $stallion->race_record ): ?>
+            <div class="hld-profile-meta-item">
+              <span class="hld-profile-meta-label">Race Record</span>
+              <span class="hld-profile-meta-val"><?= esc_html( $stallion->race_record ) ?></span>
+            </div>
+          <?php endif; ?>
+        <?php else: ?>
+          <?php if ( $location ): ?>
+            <div class="hld-profile-meta-item">
+              <span class="hld-profile-meta-label">Location</span>
+              <span class="hld-profile-meta-val"><?= esc_html( $location ) ?></span>
+            </div>
+          <?php endif; ?>
+          <?php if ( ! empty( $stallion->industry ) ): ?>
+            <div class="hld-profile-meta-item">
+              <span class="hld-profile-meta-label">Industry Involvement</span>
+              <span class="hld-profile-meta-val"><?= esc_html( $stallion->industry ) ?></span>
+            </div>
+          <?php endif; ?>
         <?php endif; ?>
       </div>
     </div>
@@ -133,15 +159,47 @@ $has_regional_contacts = ! empty( $contact_blocks );
       <div class="hld-profile-section hld-profile-contact-card" id="hld-profile-contact">
         <h2>Contact Details</h2>
         <div class="hld-profile-contact-grid">
+        <?php if ( $layout !== 'stallion' ): /* ── Service / business contact card ── */ ?>
+          <?php if ( $stallion->contact_phone ): ?>
+            <div class="hld-contact-item">
+              <span class="hld-contact-label">Phone</span>
+              <a href="tel:<?= esc_attr($stallion->contact_phone) ?>"><?= esc_html($stallion->contact_phone) ?></a>
+            </div>
+          <?php endif; ?>
+          <?php if ( $stallion->contact_email ): ?>
+            <div class="hld-contact-item">
+              <span class="hld-contact-label">Email</span>
+              <a href="mailto:<?= esc_attr($stallion->contact_email) ?>"><?= esc_html($stallion->contact_email) ?></a>
+            </div>
+          <?php endif; ?>
           <?php if ( $stallion->contact_website ): ?>
             <div class="hld-contact-item">
-              <span class="hld-contact-label"><?= $supports_gait ? 'Stallion Page' : 'Listing Page' ?></span>
+              <span class="hld-contact-label">Website</span>
+              <a href="<?= esc_url($stallion->contact_website) ?>" target="_blank" rel="noopener"><?= esc_html($stallion->contact_website) ?></a>
+            </div>
+          <?php endif; ?>
+          <?php if ( $location ): ?>
+            <div class="hld-contact-item">
+              <span class="hld-contact-label">Location</span>
+              <span><?= esc_html( $location ) ?></span>
+            </div>
+          <?php endif; ?>
+          <?php if ( ! empty( $stallion->coverage ) ): ?>
+            <div class="hld-contact-item hld-contact-item--block">
+              <span class="hld-contact-label"><?= esc_html( $cov_label ) ?></span>
+              <span><?= nl2br( esc_html( $stallion->coverage ) ) ?></span>
+            </div>
+          <?php endif; ?>
+        <?php else: /* ── Stallion contact card (unchanged) ── */ ?>
+          <?php if ( $stallion->contact_website ): ?>
+            <div class="hld-contact-item">
+              <span class="hld-contact-label">Stallion Page</span>
               <a href="<?= esc_url($stallion->contact_website) ?>" target="_blank" rel="noopener"><?= esc_html($stallion->contact_website) ?></a>
             </div>
           <?php endif; ?>
           <?php if ( ! empty( $stallion->stud_website ) ): ?>
             <div class="hld-contact-item">
-              <span class="hld-contact-label"><?= $supports_gait ? 'Stud Website' : 'Website' ?></span>
+              <span class="hld-contact-label">Stud Website</span>
               <a href="<?= esc_url($stallion->stud_website) ?>" target="_blank" rel="noopener"><?= esc_html($stallion->stud_website) ?></a>
             </div>
           <?php endif; ?>
@@ -175,6 +233,7 @@ $has_regional_contacts = ! empty( $contact_blocks );
               <span><?= nl2br( esc_html($stallion->contact_address) ) ?></span>
             </div>
           <?php endif; ?>
+        <?php endif; /* end layout branch */ ?>
         </div>
       </div>
     <?php else: ?>

@@ -371,6 +371,114 @@ class HLD_Types {
         return true;
     }
 
+    /* ──────────────────────────────────────────────
+       FIELD SCHEMAS
+       Each directory type captures its own set of fields. Stallions keep
+       their full bespoke schema; every other type uses the streamlined
+       "service" schema (Name + contact + location, plus optional coverage /
+       industry fields). Drives the admin form, listing table and profile.
+    ────────────────────────────────────────────── */
+
+    /** Master map of toggleable fields: key => array( label, input type ). */
+    public static function field_meta() {
+        return array(
+            'contact_phone'   => array( 'label' => 'Phone',    'type' => 'tel' ),
+            'contact_email'   => array( 'label' => 'Email',    'type' => 'email' ),
+            'contact_website' => array( 'label' => 'Website',  'type' => 'url' ),
+            'suburb'          => array( 'label' => 'Suburb',   'type' => 'text' ),
+            'region'          => array( 'label' => 'State',    'type' => 'text' ),
+            'country'         => array( 'label' => 'Country',  'type' => 'text' ),
+            'coverage'        => array( 'label' => 'Coverage', 'type' => 'textarea' ),
+            'industry'        => array( 'label' => 'Industry Involvement', 'type' => 'text' ),
+        );
+    }
+
+    /**
+     * Per-type field definitions. Returns array of:
+     *   array( 'fields' => array( key => labelOverride|null ), 'note' => '' )
+     * Anything not listed here (custom types) falls back to the generic set.
+     */
+    private static function schema_map() {
+        $contact     = array( 'contact_phone' => null, 'contact_email' => null );
+        $location    = array( 'suburb' => null, 'region' => null, 'country' => null );
+        $with_site   = array( 'contact_website' => null );
+
+        return array(
+            'trainer'      => $contact + $location,
+            'driver'       => $contact + $location,
+            'pre-training' => $contact + $location,
+            'syndicator'   => $contact + $with_site + $location,
+            'bloodstock'   => $contact + $with_site + $location,
+            'agistment'    => $contact + $with_site + $location,
+            'transport'    => $contact + $with_site + $location + array( 'coverage' => 'Routes Travelled' ),
+            'vet'          => $contact + $with_site + $location + array( 'coverage' => 'Locations Covered' ),
+            'feed-supplements' => $contact + $with_site + $location + array( 'coverage' => 'Delivery Locations' ),
+            'industry-service' => array( 'industry' => 'Industry Involvement' ) + $contact + $location + array( 'coverage' => 'Delivery Locations' ),
+        );
+    }
+
+    /** Layout for a type: 'stallion' (rich) or 'service' (streamlined). */
+    public static function layout( $slug ) {
+        $type = self::get( $slug );
+        return ( $type && ! empty( $type['supports_gait'] ) ) ? 'stallion' : 'service';
+    }
+
+    /**
+     * Ordered list of editable fields for a type's "service" form:
+     * array of array( 'key', 'label', 'type' ). Empty for stallion layout
+     * (stallions use their dedicated bespoke form).
+     */
+    public static function fields( $slug ) {
+        $slug = self::sanitize_slug( $slug );
+        if ( self::layout( $slug ) === 'stallion' ) {
+            return array();
+        }
+
+        $meta = self::field_meta();
+        $map  = self::schema_map();
+
+        // Generic fallback for custom types: contact + website + location.
+        $set = isset( $map[ $slug ] ) ? $map[ $slug ] : array(
+            'contact_phone' => null, 'contact_email' => null,
+            'contact_website' => null, 'suburb' => null,
+            'region' => null, 'country' => null,
+        );
+
+        $out = array();
+        foreach ( $set as $key => $label_override ) {
+            if ( ! isset( $meta[ $key ] ) ) continue;
+            $out[] = array(
+                'key'   => $key,
+                'label' => $label_override ?: $meta[ $key ]['label'],
+                'type'  => $meta[ $key ]['type'],
+            );
+        }
+        return $out;
+    }
+
+    /**
+     * Config consumed by the admin JS to adapt the add/edit modal per type:
+     * { slug: { layout, gait, fields:[keys], labels:{key:label} } }
+     */
+    public static function js_config() {
+        $cfg = array();
+        foreach ( self::get_all() as $slug => $t ) {
+            $layout = self::layout( $slug );
+            $entry  = array(
+                'layout' => $layout,
+                'gait'   => ! empty( $t['supports_gait'] ),
+                'fields' => array(),
+                'labels' => array(),
+            );
+            foreach ( self::fields( $slug ) as $f ) {
+                $entry['fields'][] = $f['key'];
+                $entry['labels'][ $f['key'] ] = $f['label'];
+            }
+            $cfg[ $slug ] = $entry;
+        }
+        return $cfg;
+    }
+
     public static function sanitize_slug( $slug ) {
         $slug = strtolower( trim( (string) $slug ) );
         $slug = preg_replace( '/[^a-z0-9\-]+/', '-', $slug );

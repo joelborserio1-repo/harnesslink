@@ -127,6 +127,29 @@ referenced by existing listings). Custom types can be deleted.
 A category with **no listings yet** automatically shows a polished, branded
 **“coming soon”** empty state with a *Contact HarnessLink* call to action.
 
+### Per-category fields
+
+Each directory type captures its own fields. Stallions keep their full
+bespoke schema (stud, gait, regional contacts, race record, progeny…).
+Every other type uses a streamlined **service** schema, and the add/edit
+form adapts automatically — stallion-only fields are hidden and labels
+adjust (e.g. Region → State):
+
+| Category | Fields |
+|---|---|
+| Trainers / Drivers / Breaking & Pre-Training | Name, Phone, Email, Suburb, State, Country |
+| Syndicators / Bloodstock / Agistment | + Website |
+| Equine Transport | + Website, **Routes Travelled** |
+| Veterinary Services | + Website, **Locations Covered** |
+| Feed & Supplements | + Website, **Delivery Locations** |
+| Equine Businesses & Industry Services | + **Industry Involvement**, Delivery Locations |
+
+On the service category pages the listing table shows **Name + Location
+(Suburb · State · Country) + Profile + Contact**; the full contact details
+appear on the profile page (gated to paid listings). CSV import recognises
+`suburb`/`town`/`city`, `state`, `industry`, and
+`coverage`/`routes`/`locations_covered`/`delivery_locations` columns.
+
 ---
 
 ## File Structure

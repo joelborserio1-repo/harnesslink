@@ -16,6 +16,9 @@
     country:         $('#hld-country'),
     region:          $('#hld-region'),
     type:            $('#hld-type'),
+    suburb:          $('#hld-suburb'),
+    industry:        $('#hld-industry'),
+    coverage:        $('#hld-coverage'),
     status_note:     $('#hld-status_note'),
     is_paying:       $('#hld-is_paying'),
     is_featured:     $('#hld-is_featured'),
@@ -35,13 +38,48 @@
     progeny_note:    $('#hld-progeny_note'),
   };
 
+  /**
+   * Adapt the modal fields to the selected directory type:
+   * stallion layout shows its full bespoke form; service layout shows only
+   * its configured fields (and relabels e.g. Region → State).
+   */
+  function applyTypeSchema(slug) {
+    const cfg = (HLD_Admin.types && HLD_Admin.types[slug]) || { layout: 'service', fields: [], labels: {} };
+    const isStallion = cfg.layout === 'stallion';
+
+    // Stallion-only fields
+    $('#hld-modal-overlay [data-stallion-only]').each(function () {
+      $(this).toggle(isStallion);
+    });
+
+    // Shared / service fields driven by the schema
+    $('#hld-modal-overlay .hld-field[data-field]').each(function () {
+      if (this.hasAttribute('data-stallion-only')) return;
+      const key  = $(this).attr('data-field');
+      const show = isStallion ? true : (cfg.fields.indexOf(key) >= 0);
+      $(this).toggle(show);
+
+      const $label = $(this).children('label').first();
+      if ($label.length) {
+        if (!$label.attr('data-base')) $label.attr('data-base', $.trim($label.text()));
+        const base = $label.attr('data-base');
+        $label.text((!isStallion && cfg.labels[key]) ? cfg.labels[key] : base);
+      }
+    });
+  }
+
   function openModal(title) {
     $('#hld-modal-title').text(title);
     overlay.show();
     switchTab('basic');
-    // Reset gallery panel for new stallion
+    applyTypeSchema(form.directory_type.val());
+    // Reset gallery panel for new listing
     galleryReset();
   }
+
+  $(document).on('change', '#hld-directory_type', function () {
+    applyTypeSchema($(this).val());
+  });
 
   function closeModal() {
     overlay.hide();

@@ -1,7 +1,9 @@
 <?php
 /**
  * Generic directory listing row — shared by the directory template and the
- * AJAX search handler. Works for any directory type.
+ * AJAX search handler. Renders one of two layouts:
+ *   - 'stallion' : Name | Stud | Country | Gait | Profile | Contact
+ *   - 'service'  : Name | Location | Profile | Contact
  *
  * Expected in scope:
  *   $listing   — the row object (falls back to legacy $stallion / $s)
@@ -17,8 +19,9 @@ if ( ! $listing ) return;
 if ( empty( $hld_type ) ) {
     $hld_type = HLD_Types::get( $listing->directory_type ?? 'stallion' );
 }
+$layout        = HLD_Types::layout( $hld_type['slug'] ?? 'stallion' );
 $supports_gait = ! empty( $hld_type['supports_gait'] );
-$cols          = $supports_gait ? 6 : 5;
+$cols          = $layout === 'stallion' ? ( $supports_gait ? 6 : 5 ) : 4;
 
 $paying      = (bool) $listing->is_paying;
 $featured    = ! empty( $listing->is_featured );
@@ -26,6 +29,13 @@ $profile_url = hld_listing_url( $listing );
 $contact_url = $profile_url . '#hld-profile-contact';
 $logged_in   = is_user_logged_in();
 $login_url   = hld_login_url( $profile_url );
+
+/* Location string: Suburb · State · Country (non-empty parts only) */
+$location = implode( ' · ', array_filter( array(
+    $listing->suburb ?? '',
+    $listing->region ?? '',
+    $listing->country ?? '',
+) ) );
 ?>
 <tr class="hld-dir-row <?= $paying ? 'hld-dir-row--paying' : 'hld-dir-row--free' ?> <?= $featured ? 'hld-dir-row--featured' : '' ?>">
   <td data-label="<?= esc_attr( $hld_type['name_label'] ?? 'Name' ) ?>">
@@ -42,24 +52,38 @@ $login_url   = hld_login_url( $profile_url );
     <?php endif; ?>
   </td>
 
-  <td data-label="<?= esc_attr( $hld_type['org_label'] ?? 'Organisation' ) ?>">
-    <?php if ( $paying ): ?>
-      <?= esc_html( $listing->stud_name ) ?>
-    <?php else: ?>
-      <span class="hld-dir-muted">Paid Feature</span>
-    <?php endif; ?>
-  </td>
+  <?php if ( $layout === 'stallion' ): ?>
 
-  <td data-label="Country"><?= esc_html( $listing->country ) ?></td>
+    <td data-label="<?= esc_attr( $hld_type['org_label'] ?? 'Organisation' ) ?>">
+      <?php if ( $paying ): ?>
+        <?= esc_html( $listing->stud_name ) ?>
+      <?php else: ?>
+        <span class="hld-dir-muted">Paid Feature</span>
+      <?php endif; ?>
+    </td>
 
-  <?php if ( $supports_gait ): ?>
-  <td data-label="Gait">
-    <?php if ( $listing->type ): ?>
-      <span class="hld-dir-pill hld-dir-pill--<?= strtolower( esc_attr( $listing->type ) ) ?>">
-        <?= esc_html( $listing->type ) ?>
-      </span>
+    <td data-label="Country"><?= esc_html( $listing->country ) ?></td>
+
+    <?php if ( $supports_gait ): ?>
+    <td data-label="Gait">
+      <?php if ( $listing->type ): ?>
+        <span class="hld-dir-pill hld-dir-pill--<?= strtolower( esc_attr( $listing->type ) ) ?>">
+          <?= esc_html( $listing->type ) ?>
+        </span>
+      <?php endif; ?>
+    </td>
     <?php endif; ?>
-  </td>
+
+  <?php else: ?>
+
+    <td data-label="Location">
+      <?php if ( $location ): ?>
+        <span class="hld-dir-location"><?= esc_html( $location ) ?></span>
+      <?php else: ?>
+        <span class="hld-dir-muted">—</span>
+      <?php endif; ?>
+    </td>
+
   <?php endif; ?>
 
   <td data-label="Profile">
@@ -102,7 +126,7 @@ $login_url   = hld_login_url( $profile_url );
         <input type="text" class="hld-claim-name" placeholder="Your name" />
         <input type="email" class="hld-claim-email" placeholder="Email address" />
         <input type="tel" class="hld-claim-phone" placeholder="Phone optional" />
-        <input type="text" class="hld-claim-stud" placeholder="Stud / organisation" />
+        <input type="text" class="hld-claim-stud" placeholder="Business / organisation" />
         <textarea class="hld-claim-message" rows="2" placeholder="Anything our team should know?"></textarea>
         <button type="button" class="hld-claim-submit">Send for Review</button>
         <button type="button" class="hld-claim-cancel">Cancel</button>

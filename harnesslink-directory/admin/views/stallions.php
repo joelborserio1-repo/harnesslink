@@ -194,15 +194,27 @@ $plural        = wp_strip_all_tags( $type_meta['plural'] );
             <label>Name <span class="req">*</span></label>
             <input type="text" id="hld-name" placeholder="e.g. Always B Miki USA" />
           </div>
-          <div class="hld-field">
+          <div class="hld-field" data-field="stud_name" data-stallion-only="1">
             <label>Organisation / Stud</label>
             <input type="text" id="hld-stud_name" placeholder="e.g. Alabar Bloodstock" />
           </div>
-          <div class="hld-field">
+          <div class="hld-field" data-field="stud_master" data-stallion-only="1">
             <label>Stud Master</label>
             <input type="text" id="hld-stud_master" placeholder="e.g. Alan Galloway" />
           </div>
-          <div class="hld-field">
+          <div class="hld-field" data-field="industry">
+            <label>Industry Involvement</label>
+            <input type="text" id="hld-industry" placeholder="e.g. Saddlery & harness supplies" />
+          </div>
+          <div class="hld-field" data-field="suburb">
+            <label>Suburb</label>
+            <input type="text" id="hld-suburb" placeholder="e.g. Werribee" />
+          </div>
+          <div class="hld-field" data-field="region">
+            <label>Region / State</label>
+            <input type="text" id="hld-region" placeholder="e.g. VIC" />
+          </div>
+          <div class="hld-field" data-field="country">
             <label>Country</label>
             <select id="hld-country">
               <option value="Australia">Australia</option>
@@ -211,11 +223,7 @@ $plural        = wp_strip_all_tags( $type_meta['plural'] );
               <option value="France">France</option>
             </select>
           </div>
-          <div class="hld-field">
-            <label>Region / State</label>
-            <input type="text" id="hld-region" placeholder="e.g. VIC" />
-          </div>
-          <div class="hld-field">
+          <div class="hld-field" data-field="type" data-stallion-only="1">
             <label>Gait</label>
             <select id="hld-type">
               <option value="Pacer">Pacer</option>
@@ -226,11 +234,15 @@ $plural        = wp_strip_all_tags( $type_meta['plural'] );
             <label>Status Note</label>
             <input type="text" id="hld-status_note" placeholder="e.g. Standing at stud" />
           </div>
+          <div class="hld-field hld-field--full" data-field="coverage">
+            <label>Coverage</label>
+            <textarea id="hld-coverage" rows="3" placeholder="e.g. Routes travelled / locations covered / delivery areas"></textarea>
+          </div>
           <div class="hld-field hld-field--full">
             <label class="hld-toggle-label">
               <input type="checkbox" id="hld-is_paying" />
               <span class="hld-toggle-text">
-                <strong>Paying Stud</strong> — enables profile link, contact details, and full listing features
+                <strong>Paying Listing</strong> — enables profile link, contact details, and full listing features
               </span>
             </label>
           </div>
@@ -238,7 +250,7 @@ $plural        = wp_strip_all_tags( $type_meta['plural'] );
             <label class="hld-toggle-label">
               <input type="checkbox" id="hld-is_featured" />
               <span class="hld-toggle-text">
-                <strong>Featured Stud</strong> — premium placement shown first in the directory and highlighted on the stallion profile
+                <strong>Featured Listing</strong> — premium placement shown first in the directory and highlighted on the profile
               </span>
             </label>
           </div>
@@ -249,43 +261,43 @@ $plural        = wp_strip_all_tags( $type_meta['plural'] );
       <div class="hld-tab-panel" id="hld-tab-contact">
         <p class="hld-tab-note">Contact details are visible on the public profile for <strong>paying studs</strong>. Add the stallion's direct website page and regional stud contact blocks.</p>
         <div class="hld-form-grid">
-          <div class="hld-field hld-field--full">
-            <label>Direct Stallion Website Page</label>
-            <input type="url" id="hld-contact_website" placeholder="https://studname.com/stallions/stallion-name" />
-          </div>
-          <div class="hld-field hld-field--full">
-            <label>Stud Website</label>
-            <input type="url" id="hld-stud_website" placeholder="https://studname.com/" />
-          </div>
-          <div class="hld-field hld-field--full">
-            <label>AU Contact</label>
-            <textarea id="hld-contact_au" rows="4" placeholder="Stud name&#10;Phone&#10;Email&#10;Address"></textarea>
-          </div>
-          <div class="hld-field hld-field--full">
-            <label>US Contact</label>
-            <textarea id="hld-contact_us" rows="4" placeholder="Stud name&#10;Phone&#10;Email&#10;Address"></textarea>
-          </div>
-          <div class="hld-field hld-field--full">
-            <label>NZ Contact</label>
-            <textarea id="hld-contact_nz" rows="4" placeholder="Stud name&#10;Phone&#10;Email&#10;Address"></textarea>
-          </div>
-          <div class="hld-field hld-field--full">
-            <label>FR Contact</label>
-            <textarea id="hld-contact_fr" rows="4" placeholder="Stud name&#10;Phone&#10;Email&#10;Address"></textarea>
-          </div>
-          <div class="hld-field hld-field--full">
-            <label>Other / Fallback Contact</label>
-            <textarea id="hld-contact_other" rows="4" placeholder="Stud name&#10;Phone&#10;Email&#10;Address"></textarea>
-          </div>
           <div class="hld-field">
             <label>Phone</label>
             <input type="text" id="hld-contact_phone" placeholder="+61 3 5555 1234" />
           </div>
           <div class="hld-field">
             <label>Email</label>
-            <input type="email" id="hld-contact_email" placeholder="info@studname.com.au" />
+            <input type="email" id="hld-contact_email" placeholder="info@business.com.au" />
           </div>
-          <div class="hld-field hld-field--full">
+          <div class="hld-field hld-field--full" data-field="contact_website">
+            <label>Website</label>
+            <input type="url" id="hld-contact_website" placeholder="https://business.com/" />
+          </div>
+          <div class="hld-field hld-field--full" data-stallion-only="1">
+            <label>Stud Website</label>
+            <input type="url" id="hld-stud_website" placeholder="https://studname.com/" />
+          </div>
+          <div class="hld-field hld-field--full" data-stallion-only="1">
+            <label>AU Contact</label>
+            <textarea id="hld-contact_au" rows="4" placeholder="Stud name&#10;Phone&#10;Email&#10;Address"></textarea>
+          </div>
+          <div class="hld-field hld-field--full" data-stallion-only="1">
+            <label>US Contact</label>
+            <textarea id="hld-contact_us" rows="4" placeholder="Stud name&#10;Phone&#10;Email&#10;Address"></textarea>
+          </div>
+          <div class="hld-field hld-field--full" data-stallion-only="1">
+            <label>NZ Contact</label>
+            <textarea id="hld-contact_nz" rows="4" placeholder="Stud name&#10;Phone&#10;Email&#10;Address"></textarea>
+          </div>
+          <div class="hld-field hld-field--full" data-stallion-only="1">
+            <label>FR Contact</label>
+            <textarea id="hld-contact_fr" rows="4" placeholder="Stud name&#10;Phone&#10;Email&#10;Address"></textarea>
+          </div>
+          <div class="hld-field hld-field--full" data-stallion-only="1">
+            <label>Other / Fallback Contact</label>
+            <textarea id="hld-contact_other" rows="4" placeholder="Stud name&#10;Phone&#10;Email&#10;Address"></textarea>
+          </div>
+          <div class="hld-field hld-field--full" data-stallion-only="1">
             <label>Fallback Address</label>
             <textarea id="hld-contact_address" rows="3" placeholder="123 Stud Lane, Werribee VIC 3030"></textarea>
           </div>
@@ -311,11 +323,11 @@ $plural        = wp_strip_all_tags( $type_meta['plural'] );
               <img src="" alt="Profile picture preview" />
             </div>
           </div>
-          <div class="hld-field">
+          <div class="hld-field" data-stallion-only="1">
             <label>Race Record</label>
             <input type="text" id="hld-race_record" placeholder="e.g. 1:46.4 | 3,4 (1:46)" />
           </div>
-          <div class="hld-field hld-field--full">
+          <div class="hld-field hld-field--full" data-stallion-only="1">
             <label>Progeny Note</label>
             <textarea id="hld-progeny_note" rows="3" placeholder="Notable progeny..."></textarea>
           </div>

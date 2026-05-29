@@ -91,6 +91,7 @@ class HLD_Admin {
         wp_localize_script( 'hld-admin', 'HLD_Admin', array(
             'ajax_url' => admin_url( 'admin-ajax.php' ),
             'nonce'    => wp_create_nonce( 'hld_admin_nonce' ),
+            'types'    => HLD_Types::js_config(),
         ) );
     }
 

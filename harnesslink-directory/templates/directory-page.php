@@ -22,10 +22,11 @@ $hld_nav_counts  = $nav_counts;
 
 $total_for_type = isset( $nav_counts[ $active_slug ] ) ? (int) $nav_counts[ $active_slug ] : 0;
 $supports_gait  = ! empty( $type['supports_gait'] );
+$layout         = HLD_Types::layout( $active_slug );
 
 $countries = HLD_DB::get_country_filter_options();
 $initial   = HLD_DB::get_listings( array( 'directory_type' => $active_slug, 'per_page' => 20 ) );
-$col_count = $supports_gait ? 6 : 5;
+$col_count = $layout === 'stallion' ? ( $supports_gait ? 6 : 5 ) : 4;
 ?>
 
 <div class="hl-directory harnesslink-directory hld-dir-wrap" data-directory-type="<?= esc_attr( $active_slug ) ?>">
@@ -97,9 +98,13 @@ $col_count = $supports_gait ? 6 : 5;
         <thead>
           <tr>
             <th><?= wp_kses( $type['name_label'], array() ) ?></th>
-            <th><?= wp_kses( $type['org_label'], array() ) ?></th>
-            <th>Country</th>
-            <?php if ( $supports_gait ): ?><th>Gait</th><?php endif; ?>
+            <?php if ( $layout === 'stallion' ): ?>
+              <th><?= wp_kses( $type['org_label'], array() ) ?></th>
+              <th>Country</th>
+              <?php if ( $supports_gait ): ?><th>Gait</th><?php endif; ?>
+            <?php else: ?>
+              <th>Location</th>
+            <?php endif; ?>
             <th>Profile</th>
             <th>Contact</th>
           </tr>
