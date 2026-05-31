@@ -48,4 +48,66 @@
       <button type="submit" class="hld-btn hld-btn--primary">Save Settings</button>
     </form>
   </div>
+
+  <!-- ── Member Access / Front-end Auth ── -->
+  <div class="hld-settings-card" style="margin-top:18px;">
+    <h2 style="margin-top:0;">Member Access (Front-end Login)</h2>
+    <p class="hld-field-hint" style="margin-top:0;">Built on the WordPress core user system — no third-party membership plugin required. Create three pages (Login, Register, Reset Password), add the shortcodes below, then select them here.</p>
+    <form method="post">
+      <?php wp_nonce_field( 'hld_settings' ); ?>
+      <input type="hidden" name="hld_settings_section" value="auth" />
+
+      <div class="hld-form-grid">
+        <div class="hld-field">
+          <label>Login Page <code>[harnesslink_login]</code></label>
+          <?php wp_dropdown_pages( array(
+            'name'              => 'login_page_id',
+            'selected'          => get_option( 'hld_login_page_id', 0 ),
+            'show_option_none'  => '— Use default wp-login —',
+            'option_none_value' => 0,
+          ) ); ?>
+        </div>
+        <div class="hld-field">
+          <label>Register Page <code>[harnesslink_register]</code></label>
+          <?php wp_dropdown_pages( array(
+            'name'              => 'register_page_id',
+            'selected'          => get_option( 'hld_register_page_id', 0 ),
+            'show_option_none'  => '— None —',
+            'option_none_value' => 0,
+          ) ); ?>
+        </div>
+        <div class="hld-field">
+          <label>Reset Password Page <code>[harnesslink_reset]</code></label>
+          <?php wp_dropdown_pages( array(
+            'name'              => 'reset_page_id',
+            'selected'          => get_option( 'hld_reset_page_id', 0 ),
+            'show_option_none'  => '— Use default ──',
+            'option_none_value' => 0,
+          ) ); ?>
+        </div>
+        <div class="hld-field">
+          <label>New Member Role</label>
+          <p class="hld-field-hint">Role assigned to self-registered members.</p>
+          <select name="register_role">
+            <?php wp_dropdown_roles( get_option( 'hld_register_role', 'subscriber' ) ); ?>
+          </select>
+        </div>
+        <div class="hld-field hld-field--full">
+          <label class="hld-toggle-label">
+            <input type="checkbox" name="allow_registration" value="1" <?= checked( get_option( 'hld_allow_registration', '1' ), '1', false ) ?> />
+            <span class="hld-toggle-text"><strong>Allow self-registration</strong> — visitors can create their own member account from the Register page.</span>
+          </label>
+        </div>
+        <div class="hld-field hld-field--full">
+          <div class="hld-shortcode-list">
+            <strong>Member shortcodes:</strong><br>
+            <code>[harnesslink_login]</code> · <code>[harnesslink_register]</code> · <code>[harnesslink_reset]</code> · <code>[harnesslink_account]</code><br><br>
+            Non-admin members are kept out of <code>wp-admin</code> and the admin bar is hidden for them. Any logged-in user can view profiles &amp; contact details.
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="hld-btn hld-btn--primary">Save Member Settings</button>
+    </form>
+  </div>
 </div>

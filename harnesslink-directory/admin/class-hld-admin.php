@@ -166,9 +166,26 @@ class HLD_Admin {
     /* ── Settings page ── */
     public static function page_settings() {
         if ( $_SERVER['REQUEST_METHOD'] === 'POST' && check_admin_referer( 'hld_settings' ) ) {
-            update_option( 'hld_directory_page_id', absint( $_POST['directory_page_id'] ?? 0 ) );
-            update_option( 'hld_accent_color',      sanitize_hex_color( $_POST['accent_color'] ?? '#0A2A66' ) );
-            echo '<div class="notice notice-success"><p>Settings saved.</p></div>';
+            if ( ( $_POST['hld_settings_section'] ?? '' ) === 'auth' ) {
+                /* Member access / front-end auth settings */
+                update_option( 'hld_login_page_id',    absint( $_POST['login_page_id'] ?? 0 ) );
+                update_option( 'hld_register_page_id',  absint( $_POST['register_page_id'] ?? 0 ) );
+                update_option( 'hld_reset_page_id',     absint( $_POST['reset_page_id'] ?? 0 ) );
+                update_option( 'hld_allow_registration', empty( $_POST['allow_registration'] ) ? '0' : '1' );
+
+                $role  = sanitize_key( $_POST['register_role'] ?? 'subscriber' );
+                $roles = array_keys( get_editable_roles() );
+                if ( ! in_array( $role, $roles, true ) || in_array( $role, array( 'administrator', 'editor' ), true ) ) {
+                    $role = 'subscriber';
+                }
+                update_option( 'hld_register_role', $role );
+
+                echo '<div class="notice notice-success"><p>Member settings saved.</p></div>';
+            } else {
+                update_option( 'hld_directory_page_id', absint( $_POST['directory_page_id'] ?? 0 ) );
+                update_option( 'hld_accent_color',      sanitize_hex_color( $_POST['accent_color'] ?? '#0A2A66' ) );
+                echo '<div class="notice notice-success"><p>Settings saved.</p></div>';
+            }
         }
         include HLD_PLUGIN_DIR . 'admin/views/settings.php';
     }

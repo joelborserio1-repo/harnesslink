@@ -3,20 +3,26 @@
  * Plugin Name: HarnessLink Directory
  * Plugin URI:  https://harnesslink.com
  * Description: Scalable multi-category directory for HarnessLink (stallions, trainers, drivers, agistment, transport, vets and more) with paid/free tier listings, CSV import, and internal profile pages.
- * Version:     1.2.3
+ * Version:     1.3.0
  * Author:      HarnessLink
  * Text Domain: harnesslink-directory
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'HLD_VERSION',    '1.2.3' );
+define( 'HLD_VERSION',    '1.3.0' );
 define( 'HLD_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'HLD_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 function hld_login_url( $redirect_to = '' ) {
     $redirect_to = $redirect_to ?: home_url( '/directory/' );
 
+    // Prefer the plugin's own front-end login page (WordPress-core based).
+    if ( class_exists( 'HLD_Auth' ) ) {
+        return HLD_Auth::login_url( $redirect_to );
+    }
+
+    // Legacy fallback: Ultimate Member login page if present.
     if ( function_exists( 'um_get_core_page' ) ) {
         $um_login_url = um_get_core_page( 'login' );
         if ( $um_login_url ) {
@@ -32,6 +38,7 @@ require_once HLD_PLUGIN_DIR . 'includes/class-hld-types.php';
 require_once HLD_PLUGIN_DIR . 'includes/class-hld-db.php';
 require_once HLD_PLUGIN_DIR . 'includes/class-hld-post-types.php';
 require_once HLD_PLUGIN_DIR . 'includes/class-hld-shortcodes.php';
+require_once HLD_PLUGIN_DIR . 'includes/class-hld-auth.php';
 require_once HLD_PLUGIN_DIR . 'includes/class-hld-ajax.php';
 require_once HLD_PLUGIN_DIR . 'admin/class-hld-admin.php';
 
@@ -52,6 +59,7 @@ add_action( 'plugins_loaded', function () {
     HLD_DB::maybe_upgrade();
     HLD_Post_Types::init();
     HLD_Shortcodes::init();
+    HLD_Auth::init();
     HLD_Ajax::init();
     HLD_Admin::init();
 } );

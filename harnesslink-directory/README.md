@@ -106,6 +106,46 @@ links keep working.
 
 ---
 
+## Member Access (front-end login — no Ultimate Member)
+
+The directory gates profile pages and contact details behind a login. This is
+handled entirely by the **WordPress core user system** via the built-in
+`HLD_Auth` module — there is **no dependency on Ultimate Member** or any other
+membership plugin. (If UM happens to still be active its login page is used as
+a legacy fallback, but it is no longer required.)
+
+### Setup
+1. Create three pages and drop one shortcode on each:
+   - **Login** → `[harnesslink_login]`
+   - **Register** → `[harnesslink_register]`
+   - **Reset Password** → `[harnesslink_reset]`
+2. Go to **HarnessLink → Settings → Member Access** and select those pages,
+   choose the **New Member Role** (default *Subscriber*), and toggle
+   **Allow self-registration**.
+3. Optionally place `[harnesslink_account]` in a header/menu for a
+   "logged in as… / Log out" control.
+
+### What it does
+- Branded, navy/white login, registration and password-reset forms (scoped to
+  `.hl-directory`, so they match the directory and never touch global styles).
+- Built on core: `wp_signon()`, `wp_insert_user()`, `get_password_reset_key()`
+  / `reset_password()`, nonces and core session cookies.
+- Self-registered members get the configured role and are logged straight in.
+- Non-admin members are redirected away from `wp-admin` and the admin toolbar
+  is hidden for them — they live entirely on the front-end.
+- Any logged-in user can view profiles & contact details; guests see
+  "Login to View".
+
+### Shortcodes
+| Shortcode | Purpose |
+|---|---|
+| `[harnesslink_login]` | Login form (links to register / reset) |
+| `[harnesslink_register]` | Self-registration form |
+| `[harnesslink_reset]` | Lost-password request + set-new-password |
+| `[harnesslink_account]` | "Logged in as… / Log out" panel |
+
+---
+
 ## Directory Types (adding new categories)
 
 Categories are managed entirely from the admin — **no code required**.
