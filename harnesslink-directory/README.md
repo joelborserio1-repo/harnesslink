@@ -135,6 +135,11 @@ a legacy fallback, but it is no longer required.)
   is hidden for them — they live entirely on the front-end.
 - Any logged-in user can view profiles & contact details; guests see
   "Login to View".
+- **Anti-bot honeypot** on the login, registration and password-reset forms:
+  a decoy field hidden from humans (off-screen + `aria-hidden`) plus a
+  submission-timing trap. Bots that fill the decoy or submit in under
+  3 seconds are silently dropped and shown a neutral notice — no signal that
+  they were caught. Degrades gracefully if the timing token is missing.
 
 ### Shortcodes
 | Shortcode | Purpose |

@@ -90,6 +90,51 @@ class HLD_Auth {
     }
 
     /* ──────────────────────────────────────────────
+       HONEYPOT (anti-bot for public forms)
+    ────────────────────────────────────────────── */
+
+    /** Minimum seconds a genuine human takes to complete the form. */
+    const HONEYPOT_MIN_SECONDS = 3;
+
+    /**
+     * Render the hidden honeypot field + a timestamp token.
+     * The decoy field is hidden from humans (and from assistive tech) but
+     * visible to naive bots that fill every input.
+     *
+     * @param string $ts_name name of the timestamp hidden input
+     */
+    private static function honeypot_fields( $ts_name ) {
+        ob_start(); ?>
+        <div class="hld-hp" aria-hidden="true" style="position:absolute!important;left:-9999px!important;top:auto;width:1px;height:1px;overflow:hidden;">
+          <label for="hld_website">Website (leave this field empty)</label>
+          <input type="text" name="hld_website" id="hld_website" tabindex="-1" autocomplete="off" value="" />
+        </div>
+        <input type="hidden" name="<?= esc_attr( $ts_name ) ?>" value="<?= esc_attr( time() ) ?>" />
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Returns false when the submission looks like a bot:
+     *   - the decoy "hld_website" field is non-empty, OR
+     *   - the form was submitted faster than a human could (timing trap).
+     *
+     * @param string $ts_name name of the timestamp field for this form
+     */
+    private static function passes_honeypot( $ts_name ) {
+        // Decoy must be empty.
+        if ( ! empty( $_POST['hld_website'] ) ) {
+            return false;
+        }
+        // Timing trap (only enforce when a sane timestamp is present).
+        $ts = isset( $_POST[ $ts_name ] ) ? absint( $_POST[ $ts_name ] ) : 0;
+        if ( $ts > 0 && ( time() - $ts ) < self::HONEYPOT_MIN_SECONDS ) {
+            return false;
+        }
+        return true;
+    }
+
+    /* ──────────────────────────────────────────────
        FORM PROCESSING  (runs on template_redirect)
     ────────────────────────────────────────────── */
 
@@ -117,6 +162,13 @@ class HLD_Auth {
             self::redirect_with( self::login_url(), array( 'hld_err' => 'nonce' ) );
         }
 
+        // Honeypot: a filled decoy field means a bot — fail as a normal
+        // "wrong credentials" so it gets no useful signal. No timing trap on
+        // login (password managers can autofill near-instantly).
+        if ( ! empty( $_POST['hld_website'] ) ) {
+            self::redirect_with( self::login_url(), array( 'hld_err' => 'login' ) );
+        }
+
         $creds = array(
             'user_login'    => sanitize_user( wp_unslash( $_POST['log'] ?? '' ) ),
             'user_password' => (string) ( $_POST['pwd'] ?? '' ),
@@ -141,6 +193,15 @@ class HLD_Auth {
         }
         if ( ! isset( $_POST['hld_register_nonce'] ) || ! wp_verify_nonce( $_POST['hld_register_nonce'], 'hld_register' ) ) {
             self::redirect_with( $login_page, array( 'hld_err' => 'nonce' ) );
+        }
+
+        /* ── Honeypot + timing trap ──
+           Real users leave the hidden "hld_website" field empty and take a
+           moment to fill the form. Bots typically fill every field and submit
+           instantly. On a hit we silently drop the request and show a neutral
+           "check your email" notice — giving the bot no signal it was caught. */
+        if ( ! self::passes_honeypot( 'hld_register_ts' ) ) {
+            self::redirect_with( self::login_url(), array( 'hld_msg' => 'reg_review' ) );
         }
 
         $email = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
@@ -187,6 +248,11 @@ class HLD_Auth {
 
         if ( ! isset( $_POST['hld_lostpass_nonce'] ) || ! wp_verify_nonce( $_POST['hld_lostpass_nonce'], 'hld_lostpass' ) ) {
             self::redirect_with( $reset_page, array( 'hld_err' => 'nonce' ) );
+        }
+
+        // Honeypot: silently report the same neutral "sent" notice for bots.
+        if ( ! self::passes_honeypot( 'hld_lostpass_ts' ) ) {
+            self::redirect_with( $reset_page, array( 'hld_msg' => 'lost_sent' ) );
         }
 
         $login = sanitize_text_field( wp_unslash( $_POST['user_login'] ?? '' ) );
@@ -280,6 +346,7 @@ class HLD_Auth {
                 'lost_sent'  => 'If an account exists for that email, a reset link is on its way.',
                 'reset_done' => 'Your password has been reset. You can now log in.',
                 'loggedout'  => 'You have been logged out.',
+                'reg_review' => 'Thanks! Your details have been received and are being reviewed.',
             ),
         );
     }
@@ -326,6 +393,7 @@ class HLD_Auth {
               <?php wp_nonce_field( 'hld_login', 'hld_login_nonce' ); ?>
               <input type="hidden" name="hld_auth_action" value="login" />
               <input type="hidden" name="redirect_to" value="<?= esc_attr( $redirect ) ?>" />
+              <?= self::honeypot_fields( 'hld_login_ts' ) ?>
               <div class="hld-auth-field">
                 <label for="hld-log">Username or Email</label>
                 <input type="text" name="log" id="hld-log" autocomplete="username" required />
@@ -373,6 +441,7 @@ class HLD_Auth {
               <?php wp_nonce_field( 'hld_register', 'hld_register_nonce' ); ?>
               <input type="hidden" name="hld_auth_action" value="register" />
               <input type="hidden" name="redirect_to" value="<?= esc_attr( $redirect ) ?>" />
+              <?= self::honeypot_fields( 'hld_register_ts' ) ?>
               <div class="hld-auth-field">
                 <label for="hld-reg-first">First Name</label>
                 <input type="text" name="first_name" id="hld-reg-first" autocomplete="given-name" />
@@ -442,6 +511,7 @@ class HLD_Auth {
             <form method="post" class="hld-auth-form">
               <?php wp_nonce_field( 'hld_lostpass', 'hld_lostpass_nonce' ); ?>
               <input type="hidden" name="hld_auth_action" value="lostpass" />
+              <?= self::honeypot_fields( 'hld_lostpass_ts' ) ?>
               <div class="hld-auth-field">
                 <label for="hld-lost">Email or Username</label>
                 <input type="text" name="user_login" id="hld-lost" autocomplete="username" required />
