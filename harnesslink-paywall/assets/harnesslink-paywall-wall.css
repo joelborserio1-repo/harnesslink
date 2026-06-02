@@ -1,0 +1,199 @@
+/**
+ * HarnessLink PayWall — registration wall styling
+ *
+ * Cosmetic only. This file styles the Leaky Paywall "subscribe nag" wall so it
+ * reads as a polished news paywall: a frosted lead-in teaser with a clean
+ * signup card floating over it, in the HarnessLink header navy.
+ *
+ * It does NOT change metering, restriction counts, access levels or any
+ * server-side gating. The full article is never placed in the page — only the
+ * short excerpt LP already exposes is blurred, and blur is purely visual.
+ *
+ * Real selectors targeted (confirmed against the rendered plugin markup):
+ *   .leaky_paywall_message_wrap          - the wall container (LP core)
+ *   #leaky_paywall_message               - the message card (LP core, id)
+ *   .hl-paywall-teaser                   - the lead-in excerpt wrapper
+ *                                          (added cosmetically by this plugin;
+ *                                           LP emits the excerpt as an
+ *                                           unwrapped text node CSS can't reach)
+ *   #leaky-paywall-payment-form          - the registration form
+ *   #email_address / [name="email_address"] - the email field
+ *   #leaky-paywall-submit                - the Continue / Subscribe button
+ *   #leaky-paywall-registration-next     - the Next button
+ *
+ * Brand navy confirmed from the HarnessLink palette: #0A2A66.
+ */
+
+:root {
+	--hlpw-navy:        #0A2A66; /* HarnessLink header navy (confirmed)       */
+	--hlpw-navy-hover:  #081D47; /* slightly darker for :hover                */
+	--hlpw-navy-accent: #123C8C; /* lighter navy for accents/links           */
+	--hlpw-card-bg:     #FFFFFF; /* clean pop-up card background              */
+	--hlpw-card-border: #E3E8F1;
+	--hlpw-text:        #0F172A; /* readable body text on the light card      */
+	--hlpw-heading:     #0A2A66; /* readable heading (fixes dark-on-dark bug) */
+	--hlpw-muted:       #667085;
+}
+
+/* ------------------------------------------------------------------ *
+ * 1. Lead-in teaser — frosted "there's more below" tease
+ *    Blur + fade ONLY the short excerpt. pointer-events/user-select
+ *    off so it can't be read, selected or interacted with.
+ * ------------------------------------------------------------------ */
+.hl-paywall-teaser {
+	display: block;
+	filter: blur(5px);
+	opacity: 0.55;
+	user-select: none;
+	-webkit-user-select: none;
+	pointer-events: none;
+	/* a soft fade toward the card so the cut-off reads as intentional */
+	-webkit-mask-image: linear-gradient(to bottom, #000 35%, rgba(0,0,0,0.15) 100%);
+	        mask-image: linear-gradient(to bottom, #000 35%, rgba(0,0,0,0.15) 100%);
+	margin-bottom: 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * 2. Wall container + signup card (sits over the blurred teaser)
+ * ------------------------------------------------------------------ */
+.leaky_paywall_message_wrap {
+	position: relative;
+	z-index: 2;
+	width: 100%;
+	max-width: 560px;
+	margin: -3.5em auto 2.5em;   /* overlap the blurred teaser slightly */
+	padding: 0;
+	background: none;            /* drop LP's white gradient veil       */
+}
+
+#leaky_paywall_message {
+	background-color: var(--hlpw-card-bg);
+	color: var(--hlpw-text);
+	border: 1px solid var(--hlpw-card-border);
+	border-radius: 14px;
+	box-shadow: 0 18px 50px rgba(10, 42, 102, 0.18);
+	padding: 2em 2em 2.25em;
+	font-size: 1em;
+	line-height: 1.6;
+	text-align: center;
+}
+
+/* ------------------------------------------------------------------ *
+ * 3. Readable heading + body text (fixes dark-on-dark heading bug)
+ * ------------------------------------------------------------------ */
+#leaky_paywall_message h1,
+#leaky_paywall_message h2,
+#leaky_paywall_message h3,
+#leaky_paywall_message h4 {
+	color: var(--hlpw-heading) !important;
+	margin-top: 0;
+	margin-bottom: 0.5em;
+	font-weight: 800;
+	line-height: 1.25;
+}
+
+#leaky_paywall_message,
+#leaky_paywall_message p,
+#leaky_paywall_message li,
+#leaky_paywall_message label {
+	color: var(--hlpw-text) !important;
+}
+
+#leaky_paywall_message a:not(.button) {
+	color: var(--hlpw-navy-accent);
+	font-weight: 600;
+	text-decoration: underline;
+}
+
+/* ------------------------------------------------------------------ *
+ * 4. Email field
+ * ------------------------------------------------------------------ */
+#leaky_paywall_message #email_address,
+#leaky_paywall_message input[name="email_address"],
+#leaky_paywall_message input[type="email"],
+#leaky_paywall_message input[type="text"] {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 0.75em 0.9em;
+	margin: 0.35em 0 0.25em;
+	border: 1px solid var(--hlpw-card-border);
+	border-radius: 10px;
+	font-size: 1em;
+	background: #F8FAFC;
+	color: var(--hlpw-text);
+}
+
+#leaky_paywall_message #email_address:focus,
+#leaky_paywall_message input[type="email"]:focus,
+#leaky_paywall_message input[type="text"]:focus {
+	outline: none;
+	border-color: var(--hlpw-navy-accent);
+	box-shadow: 0 0 0 4px rgba(31, 95, 191, 0.12);
+	background: #fff;
+}
+
+/* ------------------------------------------------------------------ *
+ * 5. Buttons + accents — HarnessLink navy, white text, rounded,
+ *    darker on hover. Covers Continue/Subscribe, Next, and any
+ *    subscribe/login buttons rendered inside the wall.
+ *    IDs are used by LP core, so we match/exceed their specificity.
+ * ------------------------------------------------------------------ */
+#leaky_paywall_message #leaky-paywall-submit,
+#leaky_paywall_message #leaky-paywall-registration-next,
+.leaky_paywall_message_wrap #leaky-paywall-submit,
+.leaky_paywall_message_wrap #leaky-paywall-registration-next,
+.leaky_paywall_message_wrap button,
+.leaky_paywall_message_wrap input[type="submit"],
+.leaky_paywall_message_wrap .leaky-paywall-payment-button a,
+.leaky_paywall_message_wrap .leaky-paywall-free-button a,
+.leaky_paywall_message_wrap a.button {
+	background-color: var(--hlpw-navy) !important;
+	background-image: none !important;
+	color: #fff !important;
+	border: 1px solid var(--hlpw-navy) !important;
+	border-radius: 10px !important;
+	padding: 0.85em 1.6em !important;
+	font-weight: 700;
+	text-transform: none !important;
+	text-decoration: none !important;
+	box-shadow: 0 6px 18px rgba(10, 42, 102, 0.22);
+	cursor: pointer;
+	transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+#leaky_paywall_message #leaky-paywall-submit:hover,
+#leaky_paywall_message #leaky-paywall-registration-next:hover,
+.leaky_paywall_message_wrap #leaky-paywall-submit:hover,
+.leaky_paywall_message_wrap #leaky-paywall-registration-next:hover,
+.leaky_paywall_message_wrap button:hover,
+.leaky_paywall_message_wrap input[type="submit"]:hover,
+.leaky_paywall_message_wrap .leaky-paywall-payment-button a:hover,
+.leaky_paywall_message_wrap .leaky-paywall-free-button a:hover,
+.leaky_paywall_message_wrap a.button:hover {
+	background-color: var(--hlpw-navy-hover) !important;
+	border-color: var(--hlpw-navy-hover) !important;
+	text-decoration: none !important;
+	box-shadow: 0 8px 22px rgba(10, 42, 102, 0.30);
+}
+
+.leaky_paywall_message_wrap #leaky-paywall-submit:disabled,
+.leaky_paywall_message_wrap #leaky-paywall-registration-next:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	pointer-events: none;
+}
+
+/* Re-accent LP's teal order-summary trim to navy (inline-styled in LP,
+   so these need !important to win). */
+.leaky_paywall_message_wrap .leaky-paywall-form-login-toggle {
+	border-top-color: var(--hlpw-navy) !important;
+	background: #EAF1FF !important;
+}
+
+/* ------------------------------------------------------------------ *
+ * 6. Small-screen polish
+ * ------------------------------------------------------------------ */
+@media (max-width: 600px) {
+	.leaky_paywall_message_wrap { margin-top: -2em; }
+	#leaky_paywall_message { padding: 1.5em 1.25em 1.75em; }
+}
