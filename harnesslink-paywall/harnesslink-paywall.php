@@ -15,12 +15,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'HLPW_VERSION',    '1.0.0' );
+define( 'HLPW_VERSION',    '1.0.1' );
 define( 'HLPW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 /* ------------------------------------------------------------------ *
  * 1. Front-end wall styling
- *    Load the wall CSS only when Leaky Paywall is present.
+ *
+ *    We REGISTER the stylesheet on wp_enqueue_scripts but PRINT it late,
+ *    on wp_head at priority 200. WordPress prints normally-enqueued
+ *    plugin styles early (~priority 8) — i.e. BEFORE the Customizer's
+ *    "Additional CSS" (wp_custom_css_cb, priority 101). That ordering is
+ *    exactly why old paywall rules in Additional CSS were overriding us.
+ *    Printing at 200 puts our file after Additional CSS so we win ties,
+ *    and the CSS itself also uses !important for good measure.
  * ------------------------------------------------------------------ */
 add_action( 'wp_enqueue_scripts', function () {
 	if ( ! hlpw_leaky_paywall_active() ) {
@@ -29,15 +36,22 @@ add_action( 'wp_enqueue_scripts', function () {
 
 	// No hard dependency on LP's 'issuem-leaky-paywall' handle: LP only
 	// enqueues it when its CSS style is "default", so depending on it would
-	// suppress our styles on sites using a custom/none style. Priority 20 +
-	// our selector specificity (and targeted !important) keep us winning.
-	wp_enqueue_style(
+	// suppress our styles on sites using a custom/none style.
+	wp_register_style(
 		'harnesslink-paywall-wall',
 		HLPW_PLUGIN_URL . 'assets/harnesslink-paywall-wall.css',
 		array(),
 		HLPW_VERSION
 	);
 }, 20 );
+
+// Print our registered stylesheet after Additional CSS (priority 101).
+add_action( 'wp_head', function () {
+	if ( ! hlpw_leaky_paywall_active() ) {
+		return;
+	}
+	wp_print_styles( 'harnesslink-paywall-wall' );
+}, 200 );
 
 /* ------------------------------------------------------------------ *
  * 2. Make the lead-in teaser targetable so CSS can blur it.
