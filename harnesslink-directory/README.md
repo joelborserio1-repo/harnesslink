@@ -94,6 +94,32 @@ Navigate to **HarnessLink** in the WordPress admin sidebar.
 | `[harnesslink_directory type="trainer"]`    | Opens the directory on a specific category (any registered slug)    |
 | `[harnesslink_directory nav="false"]`       | Same, but hides the category navigation bar                         |
 | `[harnesslink_stallion id="42"]`            | Single listing profile card on any page                            |
+| `[harnesslink_advertise]`                   | Marketing landing page — packages, contact form & booking calendar  |
+
+### Advertise / marketing page
+
+`[harnesslink_advertise]` renders a self-contained, responsive marketing page
+adapted from the HarnessLink marketing booklet: platform-performance stats, the
+Quick Build advertising packages, the Progeny & Stud Auto-Link differentiator,
+the directory tiers, and a **“Let’s get started”** section that lets a visitor
+either **choose a package** (submits straight into the **Enquiries** inbox) or
+**book a meeting** via an embedded calendar.
+
+Configure it under **HarnessLink → Settings**:
+
+- **Advertise / Marketing Page** — the page the shortcode lives on.
+- **Booking Calendar URL** — a Calendly link embeds inline; any other scheduler
+  URL is embedded in an iframe; blank shows an “email to book” fallback.
+- **Advertise Contact Email / Phone** — the direct contact shown on the page.
+
+Per-instance overrides are also available as attributes:
+
+```
+[harnesslink_advertise email="ads@harnesslink.com" phone="+61 3 5555 1234" scheduler="https://calendly.com/harnesslink/intro"]
+```
+
+Package enquiries land in **HarnessLink → Enquiries** with the chosen package
+captured as the listing type, and are protected by a hidden honeypot field.
 
 Recognised type slugs out of the box: `stallion`, `trainer`, `driver`,
 `agistment`, `transport`, `vet`, `feed-supplements`, `bloodstock`,
@@ -207,8 +233,8 @@ harnesslink-directory/
 │   ├── class-hld-types.php         # Directory Types registry (categories)
 │   ├── class-hld-db.php            # Database layer (type-aware CRUD + queries)
 │   ├── class-hld-post-types.php    # Type-aware rewrite rules + URL helpers
-│   ├── class-hld-shortcodes.php    # [harnesslink_directory type="…"]
-│   └── class-hld-ajax.php          # AJAX: search, save, delete, CSV import
+│   ├── class-hld-shortcodes.php    # [harnesslink_directory], [harnesslink_advertise]
+│   └── class-hld-ajax.php          # AJAX: search, save, delete, CSV import, enquiry
 ├── admin/
 │   ├── class-hld-admin.php         # Admin menu + asset registration
 │   ├── css/hld-admin.css           # Admin dashboard styles
@@ -221,9 +247,12 @@ harnesslink-directory/
 │       └── settings.php            # Plugin settings
 ├── public/
 │   ├── css/hld-public.css          # Directory + profile styles (scoped .hl-directory)
-│   └── js/hld-public.js            # Live search, filter, claim, enquiry modal
+│   ├── css/hld-advertise.css       # Advertise landing page styles (scoped .hl-advertise)
+│   ├── js/hld-public.js            # Live search, filter, claim, enquiry modal
+│   └── js/hld-advertise.js         # Advertise page: package select, mode toggle, submit
 └── templates/
     ├── directory-page.php          # Generic directory template (any type)
+    ├── advertise-page.php          # Marketing / advertise landing page
     ├── stallion-profile.php        # Generic listing profile page
     └── partials/
         ├── listing-row.php         # Generic table row (shared by PHP + AJAX)

@@ -280,6 +280,15 @@ class HLD_Ajax {
     public static function submit_enquiry() {
         check_ajax_referer( 'hld_nonce', 'nonce' );
 
+        // Anti-bot honeypot: real visitors never fill the hidden "hld_website" field.
+        // Pretend success so bots get no signal, but save nothing.
+        if ( ! empty( $_POST['hld_website'] ) ) {
+            wp_send_json_success( array(
+                'message' => 'Thank you! Your enquiry has been received.',
+                'id'      => 0,
+            ) );
+        }
+
         $name  = sanitize_text_field( $_POST['contact_name']  ?? '' );
         $email = sanitize_email(      $_POST['contact_email'] ?? '' );
         $type  = sanitize_text_field( $_POST['listing_type']  ?? '' );

@@ -3,14 +3,14 @@
  * Plugin Name: HarnessLink Directory
  * Plugin URI:  https://harnesslink.com
  * Description: Scalable multi-category directory for HarnessLink (stallions, trainers, drivers, agistment, transport, vets and more) with paid/free tier listings, CSV import, and internal profile pages.
- * Version:     1.3.1
+ * Version:     1.4.0
  * Author:      HarnessLink
  * Text Domain: harnesslink-directory
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'HLD_VERSION',    '1.3.1' );
+define( 'HLD_VERSION',    '1.4.0' );
 define( 'HLD_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'HLD_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
@@ -91,4 +91,37 @@ add_action( 'wp_enqueue_scripts', function () {
         'ajax_url' => admin_url( 'admin-ajax.php' ),
         'nonce'    => wp_create_nonce( 'hld_nonce' ),
     ) );
+
+    /* ── Advertise landing page assets (only where the shortcode is used) ── */
+    if ( hld_post_has_advertise_shortcode() ) {
+        wp_enqueue_style(
+            'hld-advertise-fonts',
+            'https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap',
+            array(),
+            null
+        );
+        wp_enqueue_style(
+            'hld-advertise',
+            HLD_PLUGIN_URL . 'public/css/hld-advertise.css',
+            array( 'hld-public' ),
+            HLD_VERSION
+        );
+        wp_enqueue_script(
+            'hld-advertise',
+            HLD_PLUGIN_URL . 'public/js/hld-advertise.js',
+            array( 'jquery', 'hld-public' ),
+            HLD_VERSION,
+            true
+        );
+    }
 } );
+
+/**
+ * Detect whether the current singular view contains the [harnesslink_advertise]
+ * shortcode, so its assets only load where they're needed.
+ */
+function hld_post_has_advertise_shortcode() {
+    if ( ! is_singular() ) return false;
+    $post = get_post();
+    return $post && has_shortcode( (string) $post->post_content, 'harnesslink_advertise' );
+}

@@ -34,12 +34,42 @@
         </div>
 
         <div class="hld-field hld-field--full">
+          <label>Advertise / Marketing Page</label>
+          <p class="hld-field-hint">Select the WordPress page where you've placed the <code>[harnesslink_advertise]</code> shortcode.</p>
+          <?php wp_dropdown_pages( array(
+            'name'              => 'advertise_page_id',
+            'selected'          => get_option( 'hld_advertise_page_id', 0 ),
+            'show_option_none'  => '— Select page —',
+            'option_none_value' => 0,
+          ) ); ?>
+        </div>
+
+        <div class="hld-field hld-field--full">
+          <label>Booking Calendar URL</label>
+          <p class="hld-field-hint">Used by the <strong>“Book a Meeting”</strong> tab on the advertise page. Paste a Calendly link (e.g. <code>https://calendly.com/harnesslink/intro</code>) — it embeds inline. Any other scheduler URL (Cal.com, Google&nbsp;Appointment&nbsp;Schedule, etc.) is embedded in an iframe. Leave blank to show an “email to book” fallback.</p>
+          <input type="url" name="scheduler_url" class="regular-text" style="width:100%;max-width:560px;" placeholder="https://calendly.com/your-handle/intro-call" value="<?= esc_attr( get_option( 'hld_scheduler_url', '' ) ) ?>" />
+        </div>
+
+        <div class="hld-field">
+          <label>Advertise Contact Email</label>
+          <p class="hld-field-hint">Shown as the direct contact on the advertise page. Defaults to the site admin email.</p>
+          <input type="email" name="advertise_email" class="regular-text" placeholder="<?= esc_attr( get_option( 'admin_email' ) ) ?>" value="<?= esc_attr( get_option( 'hld_advertise_email', '' ) ) ?>" />
+        </div>
+
+        <div class="hld-field">
+          <label>Advertise Contact Phone</label>
+          <p class="hld-field-hint">Optional. Shown as a “call us” link on the advertise page.</p>
+          <input type="text" name="advertise_phone" class="regular-text" placeholder="+61 3 5555 1234" value="<?= esc_attr( get_option( 'hld_advertise_phone', '' ) ) ?>" />
+        </div>
+
+        <div class="hld-field hld-field--full">
           <label>Shortcodes Reference</label>
           <div class="hld-shortcode-list">
             <code>[harnesslink_directory]</code> — Full directory hub with category navigation, search and listings (opens on Stallions).<br><br>
             <code>[harnesslink_directory type="trainer"]</code> — Opens the directory on a specific category. Any registered slug works (<code>stallion</code>, <code>trainer</code>, <code>driver</code>, <code>agistment</code>, <code>transport</code>, <code>vet</code>, …).<br><br>
             <code>[harnesslink_directory nav="false"]</code> — Hide the category navigation bar.<br><br>
             <code>[harnesslink_stallion id="42"]</code> — Embeds a single listing profile card on any page.<br><br>
+            <code>[harnesslink_advertise]</code> — Marketing landing page with packages, the contact form and the booking calendar. Optional overrides: <code>email=""</code>, <code>phone=""</code>, <code>scheduler=""</code>.<br><br>
             Manage categories under <strong>HarnessLink → Directory Types</strong>. Each type also has an archive at <code>/directory/&lt;slug&gt;/</code>.
           </div>
         </div>

@@ -184,6 +184,13 @@ class HLD_Admin {
             } else {
                 update_option( 'hld_directory_page_id', absint( $_POST['directory_page_id'] ?? 0 ) );
                 update_option( 'hld_accent_color',      sanitize_hex_color( $_POST['accent_color'] ?? '#0A2A66' ) );
+
+                /* Advertise / marketing page */
+                update_option( 'hld_advertise_page_id', absint( $_POST['advertise_page_id'] ?? 0 ) );
+                update_option( 'hld_scheduler_url',     esc_url_raw( trim( (string) ( $_POST['scheduler_url'] ?? '' ) ) ) );
+                update_option( 'hld_advertise_email',   sanitize_email( $_POST['advertise_email'] ?? '' ) );
+                update_option( 'hld_advertise_phone',   sanitize_text_field( $_POST['advertise_phone'] ?? '' ) );
+
                 echo '<div class="notice notice-success"><p>Settings saved.</p></div>';
             }
         }
