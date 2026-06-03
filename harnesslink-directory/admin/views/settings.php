@@ -50,6 +50,12 @@
           <input type="email" name="advertise_email" class="regular-text" placeholder="sales@harnesslink.com" value="<?= esc_attr( get_option( 'hld_advertise_email', '' ) ) ?>" />
         </div>
 
+        <div class="hld-field hld-field--full">
+          <label>Hero Background Image</label>
+          <p class="hld-field-hint">Optional photo behind the top banner. Upload it under <strong>Media → Add New</strong>, copy its <strong>File URL</strong>, and paste it here. A navy overlay is applied automatically so the headline stays readable. Leave blank for the plain navy gradient.</p>
+          <input type="url" name="advertise_hero" class="regular-text" style="width:100%;max-width:560px;" placeholder="https://harnesslink.com/wp-content/uploads/2026/06/race.jpg" value="<?= esc_attr( get_option( 'hld_advertise_hero', '' ) ) ?>" />
+        </div>
+
         <div class="hld-field">
           <label>Advertise Contact Phone</label>
           <p class="hld-field-hint">Optional. Shown as a “call us” link on the advertise page.</p>

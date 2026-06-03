@@ -6,16 +6,28 @@
  * Exposed vars (from the shortcode):
  *   $hld_contact_email  — direct enquiry email (also the lead notification recipient)
  *   $hld_phone          — direct enquiry phone (may be empty)
+ *   $hld_hero_image     — optional hero background image URL
  */
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 $contact_email = ! empty( $hld_contact_email ) ? $hld_contact_email : get_option( 'admin_email' );
 $phone         = isset( $hld_phone ) ? $hld_phone : '';
+$hero_image    = isset( $hld_hero_image ) ? trim( (string) $hld_hero_image ) : '';
+
+/* When a hero photo is set, layer a navy scrim over it (keeps the headline legible)
+   and override the default gradient background. */
+$hero_style = '';
+if ( $hero_image ) {
+    $hero_style = " style=\"background-image:"
+        . "linear-gradient(115deg,rgba(11,27,54,.93) 0%,rgba(11,27,54,.80) 42%,rgba(1,32,96,.55) 100%),"
+        . "url('" . esc_url( $hero_image ) . "');"
+        . "background-size:cover;background-position:center;\"";
+}
 ?>
 <div class="hl-advertise" id="hld-advertise">
 
   <!-- ══════════ HERO ══════════ -->
-  <header class="adv-hero">
+  <header class="adv-hero<?= $hero_image ? ' adv-hero--photo' : '' ?>"<?= $hero_style ?>>
     <div class="adv-wrap">
       <div class="adv-eyebrow">Australia's Leading Harness Racing Platform</div>
       <h1 class="adv-serif">Your audience is already here.</h1>
@@ -100,19 +112,21 @@ $phone         = isset( $hld_phone ) ? $hld_phone : '';
       </div>
 
       <div class="adv-pkgs">
-        <!-- Starter -->
+        <!-- Premium -->
         <div class="adv-pkg">
-          <div class="adv-pname">Starter</div>
-          <div class="adv-price">$1,500<small> /mo</small></div>
-          <div class="adv-valued">Valued at $2,700</div>
+          <div class="adv-pname">Premium</div>
+          <div class="adv-price">$5,000<small> /mo</small></div>
+          <div class="adv-valued">Valued at $9,500</div>
           <hr>
           <ul>
-            <li>Sidebar &amp; Mobile Banners</li>
-            <li>Partner Supplied Articles</li>
-            <li>FB &amp; X Advertising / Articles</li>
+            <li>Article, Leaderboard, Sidebar &amp; Mobile Banners</li>
+            <li>EDM Sponsored Article + Leaderboard Banner</li>
+            <li>Branded &amp; Partner Supplied Articles</li>
+            <li>FB &amp; X Advertising</li>
+            <li>Instagram Takeover</li>
           </ul>
-          <div class="adv-bestfor"><b>Best for</b>Getting started with meaningful visibility.</div>
-          <button type="button" class="adv-btn adv-btn--royal adv-pkg-btn adv-choose" data-package="Starter — $1,500/mo">Choose Starter</button>
+          <div class="adv-bestfor"><b>Best for</b>Full market visibility and brand positioning.</div>
+          <button type="button" class="adv-btn adv-btn--royal adv-pkg-btn adv-choose" data-package="Premium — $5,000/mo">Choose Premium</button>
         </div>
 
         <!-- Growth -->
@@ -132,21 +146,19 @@ $phone         = isset( $hld_phone ) ? $hld_phone : '';
           <button type="button" class="adv-btn adv-btn--primary adv-pkg-btn adv-choose" data-package="Growth — $3,000/mo">Choose Growth</button>
         </div>
 
-        <!-- Premium -->
+        <!-- Starter -->
         <div class="adv-pkg">
-          <div class="adv-pname">Premium</div>
-          <div class="adv-price">$5,000<small> /mo</small></div>
-          <div class="adv-valued">Valued at $9,500</div>
+          <div class="adv-pname">Starter</div>
+          <div class="adv-price">$1,500<small> /mo</small></div>
+          <div class="adv-valued">Valued at $2,700</div>
           <hr>
           <ul>
-            <li>Article, Leaderboard, Sidebar &amp; Mobile Banners</li>
-            <li>EDM Sponsored Article + Leaderboard Banner</li>
-            <li>Branded &amp; Partner Supplied Articles</li>
-            <li>FB &amp; X Advertising</li>
-            <li>Instagram Takeover</li>
+            <li>Sidebar &amp; Mobile Banners</li>
+            <li>Partner Supplied Articles</li>
+            <li>FB &amp; X Advertising / Articles</li>
           </ul>
-          <div class="adv-bestfor"><b>Best for</b>Full market visibility and brand positioning.</div>
-          <button type="button" class="adv-btn adv-btn--royal adv-pkg-btn adv-choose" data-package="Premium — $5,000/mo">Choose Premium</button>
+          <div class="adv-bestfor"><b>Best for</b>Getting started with meaningful visibility.</div>
+          <button type="button" class="adv-btn adv-btn--royal adv-pkg-btn adv-choose" data-package="Starter — $1,500/mo">Choose Starter</button>
         </div>
       </div>
     </div>
@@ -256,9 +268,9 @@ $phone         = isset( $hld_phone ) ? $hld_phone : '';
               <div class="adv-field adv-field--full">
                 <label>Package(s) interested in <span class="req">*</span></label>
                 <div class="adv-pkg-choices" id="adv-packages">
-                  <label class="adv-check"><input type="checkbox" name="packages[]" value="Starter — $1,500/mo"><span>Starter — $1,500/mo</span></label>
-                  <label class="adv-check"><input type="checkbox" name="packages[]" value="Growth — $3,000/mo"><span>Growth — $3,000/mo</span></label>
                   <label class="adv-check"><input type="checkbox" name="packages[]" value="Premium — $5,000/mo"><span>Premium — $5,000/mo</span></label>
+                  <label class="adv-check"><input type="checkbox" name="packages[]" value="Growth — $3,000/mo"><span>Growth — $3,000/mo</span></label>
+                  <label class="adv-check"><input type="checkbox" name="packages[]" value="Starter — $1,500/mo"><span>Starter — $1,500/mo</span></label>
                   <label class="adv-check"><input type="checkbox" name="packages[]" value="Standard Listing — from $450/yr"><span>Standard Listing — from $450/yr</span></label>
                   <label class="adv-check"><input type="checkbox" name="packages[]" value="Partnering Stud — from $2,000/yr"><span>Partnering Stud — from $2,000/yr</span></label>
                   <label class="adv-check"><input type="checkbox" name="packages[]" value="Not sure yet — happy to discuss"><span>Not sure yet — happy to discuss</span></label>

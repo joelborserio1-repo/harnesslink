@@ -189,6 +189,7 @@ class HLD_Admin {
                 update_option( 'hld_advertise_page_id', absint( $_POST['advertise_page_id'] ?? 0 ) );
                 update_option( 'hld_advertise_email',   sanitize_email( $_POST['advertise_email'] ?? '' ) );
                 update_option( 'hld_advertise_phone',   sanitize_text_field( $_POST['advertise_phone'] ?? '' ) );
+                update_option( 'hld_advertise_hero',    esc_url_raw( trim( (string) ( $_POST['advertise_hero'] ?? '' ) ) ) );
 
                 echo '<div class="notice notice-success"><p>Settings saved.</p></div>';
             }

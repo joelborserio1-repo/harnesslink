@@ -13,22 +13,26 @@ class HLD_Shortcodes {
      * [harnesslink_advertise]                       → full marketing / advertise landing page
      * [harnesslink_advertise email="sales@harnesslink.com"]  → contact + lead-notification email
      * [harnesslink_advertise phone="+61 3 5555 1234"]        → direct phone
+     * [harnesslink_advertise hero_image="https://…/race.jpg"] → hero background photo
      *
      * Attributes fall back to the values configured under
      * HarnessLink → Settings, then to sensible site defaults.
      */
     public static function advertise( $atts ) {
         $a = shortcode_atts( array(
-            'email' => '',
-            'phone' => '',
+            'email'      => '',
+            'phone'      => '',
+            'hero_image' => '',
         ), $atts, 'harnesslink_advertise' );
 
         $hld_contact_email = $a['email'] ?: get_option( 'hld_advertise_email', get_option( 'admin_email' ) );
         $hld_phone         = $a['phone'] ?: get_option( 'hld_advertise_phone', '' );
+        $hld_hero_image    = $a['hero_image'] ?: get_option( 'hld_advertise_hero', '' );
 
         // Sanitise for safe template use.
         $hld_contact_email = sanitize_email( $hld_contact_email );
         $hld_phone         = sanitize_text_field( $hld_phone );
+        $hld_hero_image    = esc_url_raw( $hld_hero_image );
 
         ob_start();
         include HLD_PLUGIN_DIR . 'templates/advertise-page.php';

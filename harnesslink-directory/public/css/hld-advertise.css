@@ -5,6 +5,26 @@
    collide with theme or directory styles.
    ============================================================ */
 
+/* Hide the theme breadcrumb on the advertise page (covers the common
+   breadcrumb plugins/themes — Yoast, Rank Math, WooCommerce, NavXT, etc.). */
+body.hld-advertise-page .breadcrumb,
+body.hld-advertise-page .breadcrumbs,
+body.hld-advertise-page .breadcrumb-trail,
+body.hld-advertise-page .breadcrumb-nav,
+body.hld-advertise-page .breadcrumbs-wrap,
+body.hld-advertise-page .yoast-breadcrumb,
+body.hld-advertise-page .rank-math-breadcrumb,
+body.hld-advertise-page .woocommerce-breadcrumb,
+body.hld-advertise-page .entry-breadcrumbs,
+body.hld-advertise-page #breadcrumbs,
+body.hld-advertise-page .site-breadcrumb,
+body.hld-advertise-page .page-breadcrumb,
+body.hld-advertise-page nav[aria-label="breadcrumb"],
+body.hld-advertise-page nav[aria-label="Breadcrumb"],
+body.hld-advertise-page nav[aria-label="Breadcrumbs"]{
+  display:none !important;
+}
+
 .hl-advertise{
   --adv-navy:#012060;
   --adv-ink:#0B1B36;
@@ -57,6 +77,8 @@
   background-image:radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
   background-size:22px 22px;opacity:.6;
 }
+/* photo hero: background is set inline (scrim gradient + image); drop the dot pattern */
+.hl-advertise .adv-hero--photo::after{display:none;}
 .hl-advertise .adv-hero .adv-wrap{position:relative;z-index:2;padding-top:84px;padding-bottom:84px;}
 .hl-advertise .adv-hero .adv-eyebrow{color:var(--adv-sky);}
 .hl-advertise .adv-hero h1{

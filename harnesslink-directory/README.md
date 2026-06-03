@@ -116,11 +116,17 @@ Configure it under **HarnessLink → Settings**:
   emailed (e.g. `sales@harnesslink.com`); also shown as the direct contact on the
   page. Falls back to the site admin email if blank.
 - **Advertise Contact Phone** — optional “call us” link.
+- **Hero Background Image** — optional photo behind the top banner. Upload it to
+  the Media Library and paste the File URL; a navy overlay is applied so the
+  headline stays readable.
+
+The theme breadcrumb is automatically hidden on the advertise page (a
+`hld-advertise-page` body class hides the common breadcrumb plugins/themes).
 
 Per-instance overrides are also available as attributes:
 
 ```
-[harnesslink_advertise email="sales@harnesslink.com" phone="+61 3 5555 1234"]
+[harnesslink_advertise email="sales@harnesslink.com" phone="+61 3 5555 1234" hero_image="https://harnesslink.com/wp-content/uploads/2026/06/race.jpg"]
 ```
 
 Recognised type slugs out of the box: `stallion`, `trainer`, `driver`,
