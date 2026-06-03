@@ -3,7 +3,7 @@
  * Plugin Name: HarnessLink PayWall
  * Plugin URI:  https://harnesslink.com
  * Description: HarnessLink companion for Leaky Paywall. Restyles the registration wall (frosted lead-in teaser + clean navy signup card) and rebrands the Leaky Paywall admin experience as "HarnessLink PayWall". Cosmetic only — does not change metering, restriction counts, access levels or any server-side gating.
- * Version:     1.0.3
+ * Version:     1.0.4
  * Author:      HarnessLink
  * Text Domain: harnesslink-paywall
  *
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'HLPW_VERSION',    '1.0.3' );
+define( 'HLPW_VERSION',    '1.0.4' );
 define( 'HLPW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'HLPW_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
@@ -46,6 +46,15 @@ add_action( 'wp_enqueue_scripts', function () {
 		HLPW_PLUGIN_URL . 'assets/harnesslink-paywall-wall.css',
 		array(),
 		HLPW_VERSION
+	);
+
+	// Front-end enhancements: closeable wall (X + Esc) and the FREE badge.
+	wp_enqueue_script(
+		'harnesslink-paywall',
+		HLPW_PLUGIN_URL . 'assets/harnesslink-paywall.js',
+		array(),
+		HLPW_VERSION,
+		true
 	);
 }, 20 );
 
