@@ -44,27 +44,10 @@
           ) ); ?>
         </div>
 
-        <div class="hld-field hld-field--full">
-          <label>Booking Calendar URL</label>
-          <p class="hld-field-hint">Used by the <strong>“Book a Meeting”</strong> tab on the advertise page. Paste your full booking link — e.g. Cal.com / self-hosted <strong>cal.diy</strong> (<code>https://your-cal-domain/team/intro</code>) or Calendly (<code>https://calendly.com/harnesslink/intro</code>). Leave blank to show an “email to book” fallback.</p>
-          <input type="url" name="scheduler_url" class="regular-text" style="width:100%;max-width:560px;" placeholder="https://your-cal-domain/harnesslink/intro-call" value="<?= esc_attr( get_option( 'hld_scheduler_url', '' ) ) ?>" />
-        </div>
-
         <div class="hld-field">
-          <label>Calendar Type</label>
-          <p class="hld-field-hint">How to embed the booking URL above. <strong>Auto</strong> detects Cal.com/Calendly by domain and iframes anything else. Choose <strong>Cal.com / cal.diy</strong> for a self-hosted cal.diy instance on your own domain.</p>
-          <?php $sched_type = get_option( 'hld_scheduler_type', 'auto' ); ?>
-          <select name="scheduler_type">
-            <option value="auto" <?= selected( $sched_type, 'auto', false ) ?>>Auto-detect (recommended)</option>
-            <option value="cal"  <?= selected( $sched_type, 'cal', false ) ?>>Cal.com / cal.diy (inline embed)</option>
-            <option value="calendly" <?= selected( $sched_type, 'calendly', false ) ?>>Calendly (inline embed)</option>
-          </select>
-        </div>
-
-        <div class="hld-field">
-          <label>Advertise Contact Email</label>
-          <p class="hld-field-hint">Shown as the direct contact on the advertise page. Defaults to the site admin email.</p>
-          <input type="email" name="advertise_email" class="regular-text" placeholder="<?= esc_attr( get_option( 'admin_email' ) ) ?>" value="<?= esc_attr( get_option( 'hld_advertise_email', '' ) ) ?>" />
+          <label>Advertise Contact / Leads Email</label>
+          <p class="hld-field-hint">Contact form submissions from the advertise page are emailed here, and this address is shown as the direct contact on the page. Falls back to the site admin email if blank.</p>
+          <input type="email" name="advertise_email" class="regular-text" placeholder="sales@harnesslink.com" value="<?= esc_attr( get_option( 'hld_advertise_email', '' ) ) ?>" />
         </div>
 
         <div class="hld-field">
@@ -80,7 +63,7 @@
             <code>[harnesslink_directory type="trainer"]</code> — Opens the directory on a specific category. Any registered slug works (<code>stallion</code>, <code>trainer</code>, <code>driver</code>, <code>agistment</code>, <code>transport</code>, <code>vet</code>, …).<br><br>
             <code>[harnesslink_directory nav="false"]</code> — Hide the category navigation bar.<br><br>
             <code>[harnesslink_stallion id="42"]</code> — Embeds a single listing profile card on any page.<br><br>
-            <code>[harnesslink_advertise]</code> — Marketing landing page with packages, the contact form and the booking calendar. Optional overrides: <code>email=""</code>, <code>phone=""</code>, <code>scheduler=""</code>.<br><br>
+            <code>[harnesslink_advertise]</code> — Marketing landing page with packages and a contact form (leads emailed to the address above). Optional overrides: <code>email=""</code>, <code>phone=""</code>.<br><br>
             Manage categories under <strong>HarnessLink → Directory Types</strong>. Each type also has an archive at <code>/directory/&lt;slug&gt;/</code>.
           </div>
         </div>

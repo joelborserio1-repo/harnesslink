@@ -303,21 +303,33 @@ class HLD_Ajax {
             wp_send_json_error( 'Sorry, there was a problem saving your enquiry. Please try again.' );
         }
 
-        /* Optional: ping the admin with a simple WP mail */
-        $admin_email = get_option( 'admin_email' );
-        $subject     = '[HarnessLink] New listing enquiry — ' . $type . ' from ' . $name;
-        $body        = "A new listing enquiry was submitted on HarnessLink.\n\n"
-                     . "Name:         {$name}\n"
-                     . "Email:        {$email}\n"
-                     . "Phone:        " . sanitize_text_field( $_POST['contact_phone'] ?? '—' ) . "\n"
-                     . "Listing Type: {$type}\n"
-                     . "Stud / Name:  " . sanitize_text_field( $_POST['stud_name'] ?? '—' ) . "\n"
-                     . "Country:      " . sanitize_text_field( $_POST['country'] ?? '—' ) . "\n"
-                     . "Region:       " . sanitize_text_field( $_POST['region'] ?? '—' ) . "\n\n"
-                     . "Message:\n" . sanitize_textarea_field( $_POST['message'] ?? '—' ) . "\n\n"
-                     . "View in admin: " . admin_url( 'admin.php?page=hld-enquiries' );
+        /* Where to send the notification.
+           Advertise-page leads go to the configured advertise address
+           (e.g. sales@harnesslink.com); everything else goes to the site admin. */
+        $is_advertise = ( sanitize_key( $_POST['source'] ?? '' ) === 'advertise' );
+        $notify_email = get_option( 'admin_email' );
+        if ( $is_advertise ) {
+            $advertise_email = sanitize_email( get_option( 'hld_advertise_email', '' ) );
+            if ( is_email( $advertise_email ) ) {
+                $notify_email = $advertise_email;
+            }
+        }
 
-        wp_mail( $admin_email, $subject, $body );
+        $label   = $is_advertise ? 'advertising enquiry' : 'listing enquiry';
+        $subject = '[HarnessLink] New ' . $label . ' — ' . $type . ' from ' . $name;
+        $body    = "A new {$label} was submitted on HarnessLink.\n\n"
+                 . "Name:         {$name}\n"
+                 . "Email:        {$email}\n"
+                 . "Phone:        " . sanitize_text_field( $_POST['contact_phone'] ?? '—' ) . "\n"
+                 . "Business:     " . sanitize_text_field( $_POST['stud_name'] ?? '—' ) . "\n"
+                 . "Interested in: {$type}\n\n"
+                 . "Details:\n" . sanitize_textarea_field( $_POST['message'] ?? '—' ) . "\n\n"
+                 . "View in admin: " . admin_url( 'admin.php?page=hld-enquiries' );
+
+        /* Reply-To the enquirer so the team can respond directly. */
+        $headers = array( 'Reply-To: ' . $name . ' <' . $email . '>' );
+
+        wp_mail( $notify_email, $subject, $body, $headers );
 
         wp_send_json_success( array(
             'message' => 'Thank you! Your enquiry has been received. A member of the HarnessLink team will be in touch shortly.',

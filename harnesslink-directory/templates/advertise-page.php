@@ -4,46 +4,13 @@
  * Rendered by the [harnesslink_advertise] shortcode.
  *
  * Exposed vars (from the shortcode):
- *   $hld_contact_email  — direct enquiry email
+ *   $hld_contact_email  — direct enquiry email (also the lead notification recipient)
  *   $hld_phone          — direct enquiry phone (may be empty)
- *   $hld_scheduler_url  — booking calendar URL (Calendly / Cal.com / cal.diy / iframe-able)
- *   $hld_scheduler_type — 'auto' | 'calendly' | 'cal' (Cal.com or self-hosted cal.diy)
  */
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 $contact_email = ! empty( $hld_contact_email ) ? $hld_contact_email : get_option( 'admin_email' );
 $phone         = isset( $hld_phone ) ? $hld_phone : '';
-$scheduler_url = isset( $hld_scheduler_url ) ? trim( (string) $hld_scheduler_url ) : '';
-$scheduler_type = isset( $hld_scheduler_type ) ? $hld_scheduler_type : 'auto';
-
-/* Resolve which embed to render. "auto" sniffs the URL host; an explicit type wins. */
-$host_has = function ( $needle ) use ( $scheduler_url ) {
-    return $scheduler_url && stripos( $scheduler_url, $needle ) !== false;
-};
-$is_calendly = $scheduler_url && ( $scheduler_type === 'calendly'
-    || ( $scheduler_type === 'auto' && $host_has( 'calendly.com' ) ) );
-$is_cal = $scheduler_url && ( $scheduler_type === 'cal'
-    || ( $scheduler_type === 'auto' && ( $host_has( 'cal.com' ) || $host_has( 'cal.diy' ) ) ) );
-
-/* For Cal.com / cal.diy: split the full booking URL into an embed origin + calLink.
-   e.g. https://book.harnesslink.com/team/intro
-        origin  = https://book.harnesslink.com
-        calLink = team/intro
-        embedjs = https://book.harnesslink.com/embed/embed.js  (served by the cal instance) */
-$cal_origin = $cal_link = $cal_embedjs = '';
-if ( $is_cal ) {
-    $parts = wp_parse_url( $scheduler_url );
-    if ( ! empty( $parts['host'] ) ) {
-        $scheme      = ! empty( $parts['scheme'] ) ? $parts['scheme'] : 'https';
-        $cal_origin  = $scheme . '://' . $parts['host'] . ( ! empty( $parts['port'] ) ? ':' . (int) $parts['port'] : '' );
-        $cal_link    = trim( $parts['path'] ?? '', '/' );
-        $cal_embedjs = $cal_origin . '/embed/embed.js';
-    }
-    // Without an origin + booking path we can't build the inline embed — fall back to iframe.
-    if ( ! $cal_origin || ! $cal_link ) {
-        $is_cal = false;
-    }
-}
 ?>
 <div class="hl-advertise" id="hld-advertise">
 
@@ -55,8 +22,8 @@ if ( $is_cal ) {
       <p class="adv-hero-sub">HarnessLink is the single digital platform dedicated exclusively to harness racing — reaching <b>539,000 impressions</b> every month across owners, trainers, drivers, breeders and enthusiasts worldwide.</p>
 
       <div class="adv-hero-cta">
-        <a href="#hld-packages" class="adv-btn adv-btn--primary">Choose a Package</a>
-        <a href="#hld-connect" class="adv-btn adv-btn--ghost" data-adv-mode="meeting">Book a Meeting</a>
+        <a href="#hld-packages" class="adv-btn adv-btn--primary">View Packages</a>
+        <a href="#hld-connect" class="adv-btn adv-btn--ghost">Get in Touch</a>
       </div>
 
       <div class="adv-statband">
@@ -145,7 +112,7 @@ if ( $is_cal ) {
             <li>FB &amp; X Advertising / Articles</li>
           </ul>
           <div class="adv-bestfor"><b>Best for</b>Getting started with meaningful visibility.</div>
-          <button type="button" class="adv-btn adv-btn--royal adv-pkg-btn adv-choose" data-package="Starter Package — $1,500/mo">Choose Starter</button>
+          <button type="button" class="adv-btn adv-btn--royal adv-pkg-btn adv-choose" data-package="Starter — $1,500/mo">Choose Starter</button>
         </div>
 
         <!-- Growth -->
@@ -162,7 +129,7 @@ if ( $is_cal ) {
             <li>FB &amp; X Advertising</li>
           </ul>
           <div class="adv-bestfor"><b>Best for</b>Consistent multi-channel exposure.</div>
-          <button type="button" class="adv-btn adv-btn--primary adv-pkg-btn adv-choose" data-package="Growth Package — $3,000/mo">Choose Growth</button>
+          <button type="button" class="adv-btn adv-btn--primary adv-pkg-btn adv-choose" data-package="Growth — $3,000/mo">Choose Growth</button>
         </div>
 
         <!-- Premium -->
@@ -179,7 +146,7 @@ if ( $is_cal ) {
             <li>Instagram Takeover</li>
           </ul>
           <div class="adv-bestfor"><b>Best for</b>Full market visibility and brand positioning.</div>
-          <button type="button" class="adv-btn adv-btn--royal adv-pkg-btn adv-choose" data-package="Premium Package — $5,000/mo">Choose Premium</button>
+          <button type="button" class="adv-btn adv-btn--royal adv-pkg-btn adv-choose" data-package="Premium — $5,000/mo">Choose Premium</button>
         </div>
       </div>
     </div>
@@ -229,7 +196,7 @@ if ( $is_cal ) {
           </table>
           <div class="adv-inc"><b>Includes:</b> Directory listing · Full contact details visible · Profile page · 539,000 monthly impressions.</div>
           <div class="adv-foot-note">CPM equivalent <b>$0.09</b> vs industry standard $10–25.</div>
-          <button type="button" class="adv-btn adv-btn--royal adv-tier-btn adv-choose" data-package="Standard Directory Listing — from $450/yr">Choose Standard</button>
+          <button type="button" class="adv-btn adv-btn--royal adv-tier-btn adv-choose" data-package="Standard Listing — from $450/yr">Choose Standard</button>
         </div>
 
         <div class="adv-tier adv-tier--partner">
@@ -255,126 +222,69 @@ if ( $is_cal ) {
     </div>
   </section>
 
-  <!-- ══════════ CONNECT: PACKAGE FORM + CALENDAR ══════════ -->
+  <!-- ══════════ CONNECT: CONTACT FORM ══════════ -->
   <section class="adv-section adv-connect" id="hld-connect">
     <div class="adv-wrap">
       <div class="adv-eyebrow">Let's Get Started</div>
-      <h2 class="adv-h2">Choose a package or book a meeting</h2>
-      <p class="adv-connect-intro">Ready to move? Send your details and the package you're interested in below — or book a time directly with the HarnessLink team to talk it through.</p>
-
-      <div class="adv-modeswitch" role="tablist">
-        <button type="button" class="adv-mode-btn is-active" data-adv-mode="package" role="tab" aria-selected="true">Choose a Package</button>
-        <button type="button" class="adv-mode-btn" data-adv-mode="meeting" role="tab" aria-selected="false">Book a Meeting</button>
-      </div>
+      <h2 class="adv-h2">Get in touch</h2>
+      <p class="adv-connect-intro">Tell us a little about you and which package(s) you're interested in. We'll be in touch — usually within one business day.</p>
 
       <div class="adv-connect-panels">
 
-        <!-- ── PACKAGE / CONTACT FORM ── -->
-        <div class="adv-panel adv-panel--package is-active" id="adv-panel-package">
-          <div class="adv-formcard">
+        <div class="adv-formcard">
+          <form id="adv-form" novalidate>
+            <input type="hidden" name="source" value="advertise">
 
-            <div class="adv-chosen" id="adv-chosen">
-              <span>Selected:</span> <strong id="adv-chosen-label"></strong>
-            </div>
+            <div class="adv-form-grid">
+              <div class="adv-field">
+                <label for="adv-name">Full Name <span class="req">*</span></label>
+                <input type="text" id="adv-name" name="contact_name" placeholder="e.g. Alan Galloway" autocomplete="name">
+              </div>
+              <div class="adv-field">
+                <label for="adv-business">Business <span class="req">*</span></label>
+                <input type="text" id="adv-business" name="stud_name" placeholder="e.g. Alabar Bloodstock" autocomplete="organization">
+              </div>
+              <div class="adv-field">
+                <label for="adv-phone">Phone <span class="req">*</span></label>
+                <input type="tel" id="adv-phone" name="contact_phone" placeholder="+61 3 5555 1234" autocomplete="tel">
+              </div>
+              <div class="adv-field">
+                <label for="adv-email">Email <span class="req">*</span></label>
+                <input type="email" id="adv-email" name="contact_email" placeholder="you@yourbusiness.com" autocomplete="email">
+              </div>
 
-            <form id="adv-form" novalidate>
-              <div class="adv-form-grid">
-                <div class="adv-field adv-field--full">
-                  <label for="adv-package">I'm interested in <span class="req">*</span></label>
-                  <select id="adv-package" name="package">
-                    <option value="">— Select a package or option —</option>
-                    <optgroup label="Quick Build Packages (per month)">
-                      <option value="Starter Package — $1,500/mo">Starter — $1,500/mo</option>
-                      <option value="Growth Package — $3,000/mo">Growth — $3,000/mo</option>
-                      <option value="Premium Package — $5,000/mo">Premium — $5,000/mo</option>
-                    </optgroup>
-                    <optgroup label="Directory Listings (per year)">
-                      <option value="Standard Directory Listing — from $450/yr">Standard Listing — from $450/yr</option>
-                      <option value="Partnering Stud — from $2,000/yr">Partnering Stud — from $2,000/yr</option>
-                    </optgroup>
-                    <option value="Not sure yet — let's discuss">Not sure yet — I'd like to discuss</option>
-                  </select>
-                </div>
-
-                <div class="adv-field">
-                  <label for="adv-name">Your Name <span class="req">*</span></label>
-                  <input type="text" id="adv-name" name="contact_name" placeholder="e.g. Alan Galloway" autocomplete="name">
-                </div>
-                <div class="adv-field">
-                  <label for="adv-email">Email Address <span class="req">*</span></label>
-                  <input type="email" id="adv-email" name="contact_email" placeholder="you@yourbusiness.com" autocomplete="email">
-                </div>
-                <div class="adv-field">
-                  <label for="adv-phone">Phone Number</label>
-                  <input type="tel" id="adv-phone" name="contact_phone" placeholder="+61 3 5555 1234" autocomplete="tel">
-                </div>
-                <div class="adv-field">
-                  <label for="adv-business">Business / Stud Name</label>
-                  <input type="text" id="adv-business" name="stud_name" placeholder="e.g. Alabar Bloodstock" autocomplete="organization">
-                </div>
-                <div class="adv-field">
-                  <label for="adv-country">Country</label>
-                  <input type="text" id="adv-country" name="country" placeholder="e.g. Australia">
-                </div>
-                <div class="adv-field">
-                  <label for="adv-region">State / Region</label>
-                  <input type="text" id="adv-region" name="region" placeholder="e.g. VIC">
-                </div>
-                <div class="adv-field adv-field--full">
-                  <label for="adv-message">Anything else you'd like to share?</label>
-                  <textarea id="adv-message" name="message" rows="4" placeholder="Tell us about your goals, timing, or any questions…"></textarea>
-                </div>
-
-                <!-- honeypot: must stay empty -->
-                <div class="adv-hp" aria-hidden="true">
-                  <label for="adv-website">Website</label>
-                  <input type="text" id="adv-website" name="hld_website" tabindex="-1" autocomplete="off">
+              <div class="adv-field adv-field--full">
+                <label>Package(s) interested in <span class="req">*</span></label>
+                <div class="adv-pkg-choices" id="adv-packages">
+                  <label class="adv-check"><input type="checkbox" name="packages[]" value="Starter — $1,500/mo"><span>Starter — $1,500/mo</span></label>
+                  <label class="adv-check"><input type="checkbox" name="packages[]" value="Growth — $3,000/mo"><span>Growth — $3,000/mo</span></label>
+                  <label class="adv-check"><input type="checkbox" name="packages[]" value="Premium — $5,000/mo"><span>Premium — $5,000/mo</span></label>
+                  <label class="adv-check"><input type="checkbox" name="packages[]" value="Standard Listing — from $450/yr"><span>Standard Listing — from $450/yr</span></label>
+                  <label class="adv-check"><input type="checkbox" name="packages[]" value="Partnering Stud — from $2,000/yr"><span>Partnering Stud — from $2,000/yr</span></label>
+                  <label class="adv-check"><input type="checkbox" name="packages[]" value="Not sure yet — happy to discuss"><span>Not sure yet — happy to discuss</span></label>
                 </div>
               </div>
 
-              <div class="adv-form-error" id="adv-form-error"></div>
-
-              <div class="adv-form-foot">
-                <button type="submit" class="adv-btn adv-btn--primary" id="adv-submit">Send Enquiry</button>
-                <span style="font-size:13px;color:#6f7682;">We'll reply within one business day.</span>
+              <!-- honeypot: must stay empty -->
+              <div class="adv-hp" aria-hidden="true">
+                <label for="adv-website">Website</label>
+                <input type="text" id="adv-website" name="hld_website" tabindex="-1" autocomplete="off">
               </div>
-            </form>
-
-            <div class="adv-form-success" id="adv-form-success">
-              <div class="adv-tick">✓</div>
-              <h3>Enquiry received!</h3>
-              <p>Thanks for reaching out. A member of the HarnessLink team will be in touch shortly to get you set up.</p>
             </div>
+
+            <div class="adv-form-error" id="adv-form-error"></div>
+
+            <div class="adv-form-foot">
+              <button type="submit" class="adv-btn adv-btn--primary" id="adv-submit">Send Enquiry</button>
+              <span style="font-size:13px;color:#6f7682;">We'll reply within one business day.</span>
+            </div>
+          </form>
+
+          <div class="adv-form-success" id="adv-form-success">
+            <div class="adv-tick">✓</div>
+            <h3>Enquiry received!</h3>
+            <p>Thanks for reaching out. A member of the HarnessLink team will be in touch shortly to get you set up.</p>
           </div>
-        </div>
-
-        <!-- ── BOOK A MEETING / CALENDAR ── -->
-        <div class="adv-panel adv-panel--meeting" id="adv-panel-meeting">
-          <?php if ( $is_cal ): ?>
-            <div class="adv-calwrap">
-              <div id="hld-cal-inline" class="adv-cal-inline"
-                   data-cal-origin="<?= esc_url( $cal_origin ) ?>"
-                   data-cal-link="<?= esc_attr( $cal_link ) ?>"
-                   data-cal-embedjs="<?= esc_url( $cal_embedjs ) ?>"
-                   style="min-width:320px;height:700px;overflow:auto;"></div>
-            </div>
-          <?php elseif ( $is_calendly ): ?>
-            <div class="adv-calwrap">
-              <div class="calendly-inline-widget" data-url="<?= esc_url( $scheduler_url ) ?>" style="min-width:320px;height:700px;"></div>
-            </div>
-          <?php elseif ( $scheduler_url ): ?>
-            <div class="adv-calwrap">
-              <iframe src="<?= esc_url( $scheduler_url ) ?>" title="Book a meeting with HarnessLink" loading="lazy" allow="fullscreen"></iframe>
-            </div>
-          <?php else: ?>
-            <div class="adv-cal-fallback">
-              <h3>Book a time to talk</h3>
-              <p>Prefer a conversation first? Email us and we'll send through a few times that suit.</p>
-              <p style="margin-top:18px;">
-                <a class="adv-btn adv-btn--royal" href="mailto:<?= antispambot( $contact_email ) ?>?subject=HarnessLink%20Advertising%20%E2%80%94%20Meeting%20Request">Email to Book a Meeting</a>
-              </p>
-            </div>
-          <?php endif; ?>
         </div>
 
       </div>

@@ -101,34 +101,27 @@ Navigate to **HarnessLink** in the WordPress admin sidebar.
 `[harnesslink_advertise]` renders a self-contained, responsive marketing page
 adapted from the HarnessLink marketing booklet: platform-performance stats, the
 Quick Build advertising packages, the Progeny & Stud Auto-Link differentiator,
-the directory tiers, and a **“Let’s get started”** section that lets a visitor
-either **choose a package** (submits straight into the **Enquiries** inbox) or
-**book a meeting** via an embedded calendar.
+the directory tiers, and a **“Get in touch”** section with a short contact form
+(Full Name, Business, Phone, Email, and Package(s) interested in).
+
+When a visitor submits, the enquiry is saved to **HarnessLink → Enquiries** *and*
+emailed to your leads address (with the enquirer set as Reply-To). The package
+“Choose” buttons on the cards tick the matching checkbox and scroll to the form.
+A hidden honeypot field blocks bots.
 
 Configure it under **HarnessLink → Settings**:
 
 - **Advertise / Marketing Page** — the page the shortcode lives on.
-- **Booking Calendar URL** — the full booking link for the “Book a Meeting” tab.
-- **Calendar Type** — how that URL is embedded:
-  - **Auto** (default) — detects Cal.com / Calendly by domain and inline-embeds
-    them; anything else is embedded in an iframe.
-  - **Cal.com / cal.diy** — uses the official Cal inline embed. Works with a
-    self-hosted [cal.diy](https://github.com/calcom/cal.diy) instance on your own
-    domain: paste the full booking URL (e.g. `https://book.harnesslink.com/team/intro`)
-    and the embed origin, `calLink` and `embed.js` are derived from it
-    automatically.
-  - **Calendly** — uses the Calendly inline widget.
-  - Blank URL shows an “email to book” fallback.
-- **Advertise Contact Email / Phone** — the direct contact shown on the page.
+- **Advertise Contact / Leads Email** — where contact-form submissions are
+  emailed (e.g. `sales@harnesslink.com`); also shown as the direct contact on the
+  page. Falls back to the site admin email if blank.
+- **Advertise Contact Phone** — optional “call us” link.
 
 Per-instance overrides are also available as attributes:
 
 ```
-[harnesslink_advertise email="ads@harnesslink.com" phone="+61 3 5555 1234" scheduler="https://book.harnesslink.com/team/intro" scheduler_type="cal"]
+[harnesslink_advertise email="sales@harnesslink.com" phone="+61 3 5555 1234"]
 ```
-
-Package enquiries land in **HarnessLink → Enquiries** with the chosen package
-captured as the listing type, and are protected by a hidden honeypot field.
 
 Recognised type slugs out of the box: `stallion`, `trainer`, `driver`,
 `agistment`, `transport`, `vet`, `feed-supplements`, `bloodstock`,
