@@ -46,6 +46,14 @@ body.hld-advertise-page nav[aria-label="You are here:"]{
   display:none !important;
 }
 
+/* JNews: also hide the page-title bar above the hero on the advertise page. */
+body.hld-advertise-page .jeg_pagebar,
+body.hld-advertise-page .jeg_archive_title,
+body.hld-advertise-page .jeg_page_title,
+body.hld-advertise-page .jeg_archive_header{
+  display:none !important;
+}
+
 .hl-advertise{
   --adv-navy:#012060;
   --adv-ink:#0B1B36;
