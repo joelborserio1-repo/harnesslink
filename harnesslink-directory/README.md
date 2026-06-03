@@ -108,14 +108,23 @@ either **choose a package** (submits straight into the **Enquiries** inbox) or
 Configure it under **HarnessLink → Settings**:
 
 - **Advertise / Marketing Page** — the page the shortcode lives on.
-- **Booking Calendar URL** — a Calendly link embeds inline; any other scheduler
-  URL is embedded in an iframe; blank shows an “email to book” fallback.
+- **Booking Calendar URL** — the full booking link for the “Book a Meeting” tab.
+- **Calendar Type** — how that URL is embedded:
+  - **Auto** (default) — detects Cal.com / Calendly by domain and inline-embeds
+    them; anything else is embedded in an iframe.
+  - **Cal.com / cal.diy** — uses the official Cal inline embed. Works with a
+    self-hosted [cal.diy](https://github.com/calcom/cal.diy) instance on your own
+    domain: paste the full booking URL (e.g. `https://book.harnesslink.com/team/intro`)
+    and the embed origin, `calLink` and `embed.js` are derived from it
+    automatically.
+  - **Calendly** — uses the Calendly inline widget.
+  - Blank URL shows an “email to book” fallback.
 - **Advertise Contact Email / Phone** — the direct contact shown on the page.
 
 Per-instance overrides are also available as attributes:
 
 ```
-[harnesslink_advertise email="ads@harnesslink.com" phone="+61 3 5555 1234" scheduler="https://calendly.com/harnesslink/intro"]
+[harnesslink_advertise email="ads@harnesslink.com" phone="+61 3 5555 1234" scheduler="https://book.harnesslink.com/team/intro" scheduler_type="cal"]
 ```
 
 Package enquiries land in **HarnessLink → Enquiries** with the chosen package

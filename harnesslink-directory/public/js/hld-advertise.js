@@ -21,7 +21,7 @@
     });
     $('#adv-panel-package').toggleClass('is-active', mode === 'package');
     $('#adv-panel-meeting').toggleClass('is-active', mode === 'meeting');
-    if (mode === 'meeting') loadCalendly();
+    if (mode === 'meeting') { loadCalendly(); loadCal(); }
   }
 
   // Tabs inside the connect section
@@ -86,6 +86,47 @@
     s.src = 'https://assets.calendly.com/assets/external/widget.js';
     s.async = true;
     document.body.appendChild(s);
+  }
+
+  /* ── Cal.com / cal.diy: lazy-init the official inline embed once ──
+     Works for both cal.com and self-hosted cal.diy — embed.js, origin and
+     calLink are all read from the container's data-* attributes (PHP-supplied). */
+  var calRequested = false;
+  function loadCal() {
+    if (calRequested) return;
+    var el = document.getElementById('hld-cal-inline');
+    if (!el) return;
+    var origin  = el.getAttribute('data-cal-origin');
+    var link    = el.getAttribute('data-cal-link');
+    var embedjs = el.getAttribute('data-cal-embedjs');
+    if (!origin || !link || !embedjs) return;
+    calRequested = true;
+
+    // Official Cal embed bootstrap snippet, parameterised for self-hosting.
+    (function (C, A, L) {
+      var p = function (a, ar) { a.q.push(ar); };
+      var d = C.document;
+      C.Cal = C.Cal || function () {
+        var cal = C.Cal; var ar = arguments;
+        if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement('script')).src = A; cal.loaded = true; }
+        if (ar[0] === L) {
+          var api = function () { p(api, arguments); };
+          var namespace = ar[1];
+          api.q = api.q || [];
+          if (typeof namespace === 'string') { cal.ns[namespace] = cal.ns[namespace] || api; p(cal.ns[namespace], ar); p(cal, ['initNamespace', namespace]); }
+          else { p(cal, ar); }
+          return;
+        }
+        p(cal, ar);
+      };
+    })(window, embedjs, 'init');
+
+    window.Cal('init', { origin: origin });
+    window.Cal('inline', {
+      elementOrSelector: '#hld-cal-inline',
+      calLink: link,
+      layout: 'month_view'
+    });
   }
 
   /* ── Enquiry submit ── */

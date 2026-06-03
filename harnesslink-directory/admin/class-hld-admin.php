@@ -188,6 +188,8 @@ class HLD_Admin {
                 /* Advertise / marketing page */
                 update_option( 'hld_advertise_page_id', absint( $_POST['advertise_page_id'] ?? 0 ) );
                 update_option( 'hld_scheduler_url',     esc_url_raw( trim( (string) ( $_POST['scheduler_url'] ?? '' ) ) ) );
+                $sched_type = sanitize_key( $_POST['scheduler_type'] ?? 'auto' );
+                update_option( 'hld_scheduler_type',    in_array( $sched_type, array( 'auto', 'calendly', 'cal' ), true ) ? $sched_type : 'auto' );
                 update_option( 'hld_advertise_email',   sanitize_email( $_POST['advertise_email'] ?? '' ) );
                 update_option( 'hld_advertise_phone',   sanitize_text_field( $_POST['advertise_phone'] ?? '' ) );
 

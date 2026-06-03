@@ -6,14 +6,44 @@
  * Exposed vars (from the shortcode):
  *   $hld_contact_email  — direct enquiry email
  *   $hld_phone          — direct enquiry phone (may be empty)
- *   $hld_scheduler_url  — booking calendar URL (Calendly / Cal.com / iframe-able)
+ *   $hld_scheduler_url  — booking calendar URL (Calendly / Cal.com / cal.diy / iframe-able)
+ *   $hld_scheduler_type — 'auto' | 'calendly' | 'cal' (Cal.com or self-hosted cal.diy)
  */
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 $contact_email = ! empty( $hld_contact_email ) ? $hld_contact_email : get_option( 'admin_email' );
 $phone         = isset( $hld_phone ) ? $hld_phone : '';
 $scheduler_url = isset( $hld_scheduler_url ) ? trim( (string) $hld_scheduler_url ) : '';
-$is_calendly   = $scheduler_url && ( stripos( $scheduler_url, 'calendly.com' ) !== false );
+$scheduler_type = isset( $hld_scheduler_type ) ? $hld_scheduler_type : 'auto';
+
+/* Resolve which embed to render. "auto" sniffs the URL host; an explicit type wins. */
+$host_has = function ( $needle ) use ( $scheduler_url ) {
+    return $scheduler_url && stripos( $scheduler_url, $needle ) !== false;
+};
+$is_calendly = $scheduler_url && ( $scheduler_type === 'calendly'
+    || ( $scheduler_type === 'auto' && $host_has( 'calendly.com' ) ) );
+$is_cal = $scheduler_url && ( $scheduler_type === 'cal'
+    || ( $scheduler_type === 'auto' && ( $host_has( 'cal.com' ) || $host_has( 'cal.diy' ) ) ) );
+
+/* For Cal.com / cal.diy: split the full booking URL into an embed origin + calLink.
+   e.g. https://book.harnesslink.com/team/intro
+        origin  = https://book.harnesslink.com
+        calLink = team/intro
+        embedjs = https://book.harnesslink.com/embed/embed.js  (served by the cal instance) */
+$cal_origin = $cal_link = $cal_embedjs = '';
+if ( $is_cal ) {
+    $parts = wp_parse_url( $scheduler_url );
+    if ( ! empty( $parts['host'] ) ) {
+        $scheme      = ! empty( $parts['scheme'] ) ? $parts['scheme'] : 'https';
+        $cal_origin  = $scheme . '://' . $parts['host'] . ( ! empty( $parts['port'] ) ? ':' . (int) $parts['port'] : '' );
+        $cal_link    = trim( $parts['path'] ?? '', '/' );
+        $cal_embedjs = $cal_origin . '/embed/embed.js';
+    }
+    // Without an origin + booking path we can't build the inline embed — fall back to iframe.
+    if ( ! $cal_origin || ! $cal_link ) {
+        $is_cal = false;
+    }
+}
 ?>
 <div class="hl-advertise" id="hld-advertise">
 
@@ -320,7 +350,15 @@ $is_calendly   = $scheduler_url && ( stripos( $scheduler_url, 'calendly.com' ) !
 
         <!-- ── BOOK A MEETING / CALENDAR ── -->
         <div class="adv-panel adv-panel--meeting" id="adv-panel-meeting">
-          <?php if ( $scheduler_url && $is_calendly ): ?>
+          <?php if ( $is_cal ): ?>
+            <div class="adv-calwrap">
+              <div id="hld-cal-inline" class="adv-cal-inline"
+                   data-cal-origin="<?= esc_url( $cal_origin ) ?>"
+                   data-cal-link="<?= esc_attr( $cal_link ) ?>"
+                   data-cal-embedjs="<?= esc_url( $cal_embedjs ) ?>"
+                   style="min-width:320px;height:700px;overflow:auto;"></div>
+            </div>
+          <?php elseif ( $is_calendly ): ?>
             <div class="adv-calwrap">
               <div class="calendly-inline-widget" data-url="<?= esc_url( $scheduler_url ) ?>" style="min-width:320px;height:700px;"></div>
             </div>

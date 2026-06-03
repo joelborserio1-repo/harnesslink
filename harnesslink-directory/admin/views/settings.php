@@ -46,8 +46,19 @@
 
         <div class="hld-field hld-field--full">
           <label>Booking Calendar URL</label>
-          <p class="hld-field-hint">Used by the <strong>“Book a Meeting”</strong> tab on the advertise page. Paste a Calendly link (e.g. <code>https://calendly.com/harnesslink/intro</code>) — it embeds inline. Any other scheduler URL (Cal.com, Google&nbsp;Appointment&nbsp;Schedule, etc.) is embedded in an iframe. Leave blank to show an “email to book” fallback.</p>
-          <input type="url" name="scheduler_url" class="regular-text" style="width:100%;max-width:560px;" placeholder="https://calendly.com/your-handle/intro-call" value="<?= esc_attr( get_option( 'hld_scheduler_url', '' ) ) ?>" />
+          <p class="hld-field-hint">Used by the <strong>“Book a Meeting”</strong> tab on the advertise page. Paste your full booking link — e.g. Cal.com / self-hosted <strong>cal.diy</strong> (<code>https://your-cal-domain/team/intro</code>) or Calendly (<code>https://calendly.com/harnesslink/intro</code>). Leave blank to show an “email to book” fallback.</p>
+          <input type="url" name="scheduler_url" class="regular-text" style="width:100%;max-width:560px;" placeholder="https://your-cal-domain/harnesslink/intro-call" value="<?= esc_attr( get_option( 'hld_scheduler_url', '' ) ) ?>" />
+        </div>
+
+        <div class="hld-field">
+          <label>Calendar Type</label>
+          <p class="hld-field-hint">How to embed the booking URL above. <strong>Auto</strong> detects Cal.com/Calendly by domain and iframes anything else. Choose <strong>Cal.com / cal.diy</strong> for a self-hosted cal.diy instance on your own domain.</p>
+          <?php $sched_type = get_option( 'hld_scheduler_type', 'auto' ); ?>
+          <select name="scheduler_type">
+            <option value="auto" <?= selected( $sched_type, 'auto', false ) ?>>Auto-detect (recommended)</option>
+            <option value="cal"  <?= selected( $sched_type, 'cal', false ) ?>>Cal.com / cal.diy (inline embed)</option>
+            <option value="calendly" <?= selected( $sched_type, 'calendly', false ) ?>>Calendly (inline embed)</option>
+          </select>
         </div>
 
         <div class="hld-field">

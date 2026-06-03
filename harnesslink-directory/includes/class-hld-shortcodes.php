@@ -12,7 +12,8 @@ class HLD_Shortcodes {
     /**
      * [harnesslink_advertise]                       → full marketing / advertise landing page
      * [harnesslink_advertise email="ads@x.com"]     → override the direct contact email
-     * [harnesslink_advertise scheduler="https://calendly.com/…"]  → booking calendar URL
+     * [harnesslink_advertise scheduler="https://cal.diy/team/intro"]  → booking calendar URL
+     * [harnesslink_advertise scheduler_type="cal"]  → force the embed (auto|calendly|cal)
      * [harnesslink_advertise phone="+61 3 5555 1234"]            → direct phone
      *
      * Attributes fall back to the values configured under
@@ -20,19 +21,22 @@ class HLD_Shortcodes {
      */
     public static function advertise( $atts ) {
         $a = shortcode_atts( array(
-            'email'     => '',
-            'phone'     => '',
-            'scheduler' => '',
+            'email'          => '',
+            'phone'          => '',
+            'scheduler'      => '',
+            'scheduler_type' => '',
         ), $atts, 'harnesslink_advertise' );
 
-        $hld_contact_email = $a['email']     ?: get_option( 'hld_advertise_email', get_option( 'admin_email' ) );
-        $hld_phone         = $a['phone']     ?: get_option( 'hld_advertise_phone', '' );
-        $hld_scheduler_url = $a['scheduler'] ?: get_option( 'hld_scheduler_url', '' );
+        $hld_contact_email  = $a['email']     ?: get_option( 'hld_advertise_email', get_option( 'admin_email' ) );
+        $hld_phone          = $a['phone']     ?: get_option( 'hld_advertise_phone', '' );
+        $hld_scheduler_url  = $a['scheduler'] ?: get_option( 'hld_scheduler_url', '' );
+        $hld_scheduler_type = $a['scheduler_type'] ?: get_option( 'hld_scheduler_type', 'auto' );
 
         // Sanitise for safe template use.
-        $hld_contact_email = sanitize_email( $hld_contact_email );
-        $hld_phone         = sanitize_text_field( $hld_phone );
-        $hld_scheduler_url = esc_url_raw( $hld_scheduler_url );
+        $hld_contact_email  = sanitize_email( $hld_contact_email );
+        $hld_phone          = sanitize_text_field( $hld_phone );
+        $hld_scheduler_url  = esc_url_raw( $hld_scheduler_url );
+        $hld_scheduler_type = in_array( $hld_scheduler_type, array( 'auto', 'calendly', 'cal' ), true ) ? $hld_scheduler_type : 'auto';
 
         ob_start();
         include HLD_PLUGIN_DIR . 'templates/advertise-page.php';
