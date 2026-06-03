@@ -345,6 +345,31 @@ body #lplb-portal .Slider a:not(.Slider__ExpandedButton) {
 	color: var(--hlpw-navy-accent) !important;
 }
 
+/* "The Insider" newsletter opt-in checkbox row */
+body #lplb-portal .hlpw-insider-optin {
+	width: 100% !important;
+	margin: 2px 0 14px !important;
+}
+body #lplb-portal .hlpw-insider-optin__label {
+	display: flex !important;
+	align-items: flex-start !important;
+	gap: 10px !important;
+	text-align: left !important;
+	font-size: 14px !important;
+	line-height: 1.4 !important;
+	font-weight: 500 !important;
+	color: var(--hlpw-text) !important;
+	cursor: pointer !important;
+	margin: 0 !important;
+}
+body #lplb-portal .hlpw-insider-optin input[type="checkbox"] {
+	flex: 0 0 auto !important;
+	width: 18px !important;
+	height: 18px !important;
+	margin: 2px 0 0 !important;
+	accent-color: var(--hlpw-navy) !important;
+}
+
 @media (max-width: 600px) {
 	body #lplb-portal .Slider__InnerContainer { padding: 28px 20px !important; }
 	body #lplb-portal .Slider__ExpandedHeader { font-size: 22px !important; }
