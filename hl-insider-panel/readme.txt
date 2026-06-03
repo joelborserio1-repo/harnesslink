@@ -21,6 +21,11 @@ shared PHP render function so output is always the same:
 2. A shortcode **[insider_panel]** for use in the Elementor "Shortcode" widget,
    the Classic editor, or anywhere shortcodes run.
 
+There is also a central **Insider Panel** admin dashboard (top-level menu) where
+the team edits every line, the items, colours and spacing in ONE place. By
+default the block and shortcode use those saved values, so one edit updates the
+panel everywhere it appears.
+
 Features:
 
 * No dependencies — no ACF, no Composer, no npm/webpack build.
@@ -50,6 +55,42 @@ From the directory that CONTAINS `hl-insider-panel/`:
       -x "*.DS_Store" -x "*/.git/*"
 
 That produces `hl-insider-panel.zip`, ready for **Upload Plugin**.
+
+== Usage: the dashboard (central editing) ==
+
+After activating, go to **wp-admin → Insider Panel** (top-level menu, megaphone
+icon). Edit everything in one form:
+
+* Content (eyebrow, headline, subhead)
+* Badge, Call to action
+* This week items (up to 8 rows, each a text box + icon dropdown; blank rows are
+  dropped)
+* Footer (schedule + proof)
+* Position & spacing (see below)
+* Colors
+
+Click **Save changes**. A live preview at the bottom reflects the saved values.
+
+Every Insider Panel block left on "Use global settings" (the default) and every
+plain `[insider_panel]` shortcode will show these values. To make ONE placement
+different, edit that block and switch **Content source → Use global settings**
+off, then set its own fields.
+
+== Tightening the spacing / moving the panel ==
+
+In the dashboard under **Position & spacing** (or in the block's "Position &
+spacing" sidebar panel):
+
+* **Horizontal position** — Left / Center / Right. Pick **Left** to sit the
+  panel right next to the widget on its left.
+* **Left gutter (px)** — lower it, or use a **negative** number, to pull the
+  panel further left, closer to the next widget. Default 20.
+* **Vertical offset (px)** — use a **negative** number to pull the panel up and
+  close the gap to the widget above it. Default 0.
+* **Fixed height** — turn off to let the card size to its content.
+
+Shortcode equivalents: `hpos="left"`, `pad_left="-20"`, `offset_top="-40"`,
+`fixed_height="false"`.
 
 == Usage: the block ==
 
@@ -148,6 +189,14 @@ inline per instance, so they never collide.
 Yes. Add an Elementor "Shortcode" widget and paste `[insider_panel ...]`.
 
 == Changelog ==
+
+= 1.1.0 =
+* Added a central "Insider Panel" admin dashboard for editing all content,
+  items, colours and spacing in one place; block & shortcode now use these
+  saved values by default ("Use global settings" toggle on the block).
+* Added position & spacing controls: horizontal position (left/center/right),
+  negative-capable left gutter, and a vertical offset to close the gap to
+  surrounding widgets.
 
 = 1.0.0 =
 * Initial release: Insider Panel block + [insider_panel] shortcode, shared

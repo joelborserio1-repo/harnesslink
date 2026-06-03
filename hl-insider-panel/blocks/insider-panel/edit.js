@@ -27,6 +27,7 @@
 	var SelectControl = cmp.SelectControl;
 	var RangeControl = cmp.RangeControl;
 	var Button = cmp.Button;
+	var Notice = cmp.Notice;
 
 	var iconOptions = ( HLInsiderData && HLInsiderData.iconOptions ) || [
 		{ value: 'lines', label: 'Lines / Article' },
@@ -49,7 +50,10 @@
 		show_schedule: { type: 'boolean', default: true },
 		proof_text: { type: 'string', default: 'Join 7,000+ harness racing readers every Thursday.' },
 		show_proof: { type: 'boolean', default: true },
+		use_global: { type: 'boolean', default: true },
 		pad_left: { type: 'number', default: 20 },
+		offset_top: { type: 'number', default: 0 },
+		hpos: { type: 'string', default: 'center' },
 		fixed_height: { type: 'boolean', default: true },
 		color_navy: { type: 'string', default: '#0e2455' },
 		color_accent: { type: 'string', default: '#244287' },
@@ -235,13 +239,32 @@
 
 		var layoutPanel = el(
 			PanelBody,
-			{ title: __( 'Layout', 'hl-insider' ), initialOpen: false },
+			{ title: __( 'Position & spacing', 'hl-insider' ), initialOpen: false },
+			el( SelectControl, {
+				label: __( 'Horizontal position', 'hl-insider' ),
+				value: a.hpos || 'center',
+				options: [
+					{ value: 'left', label: __( 'Left (hug the left edge)', 'hl-insider' ) },
+					{ value: 'center', label: __( 'Center', 'hl-insider' ) },
+					{ value: 'right', label: __( 'Right', 'hl-insider' ) },
+				],
+				onChange: set( 'hpos' ),
+			} ),
 			el( RangeControl, {
 				label: __( 'Left gutter (px)', 'hl-insider' ),
+				help: __( 'Lower or go negative to pull the panel left, closer to the next widget.', 'hl-insider' ),
 				value: a.pad_left,
 				onChange: set( 'pad_left' ),
-				min: 0,
-				max: 120,
+				min: -100,
+				max: 200,
+			} ),
+			el( RangeControl, {
+				label: __( 'Vertical offset (px)', 'hl-insider' ),
+				help: __( 'Negative pulls the panel up to close the gap above it.', 'hl-insider' ),
+				value: a.offset_top,
+				onChange: set( 'offset_top' ),
+				min: -200,
+				max: 200,
 			} ),
 			el( ToggleControl, {
 				label: __( 'Fixed height (desktop)', 'hl-insider' ),
@@ -265,21 +288,38 @@
 		} );
 
 		var blockProps = useBlockProps ? useBlockProps() : {};
+		var useGlobal = a.use_global !== false;
+
+		// Top panel: choose between dashboard-driven content and per-block overrides.
+		var sourcePanel = el(
+			PanelBody,
+			{ title: __( 'Content source', 'hl-insider' ), initialOpen: true },
+			el( ToggleControl, {
+				label: __( 'Use global settings (dashboard)', 'hl-insider' ),
+				help: useGlobal
+					? __( 'On: this panel shows the content from the Insider Panel dashboard. Turn off to customise just this one.', 'hl-insider' )
+					: __( 'Off: this panel uses the custom fields below instead of the dashboard.', 'hl-insider' ),
+				checked: useGlobal,
+				onChange: set( 'use_global' ),
+			} ),
+			useGlobal
+				? el(
+						Notice,
+						{ status: 'info', isDismissible: false },
+						__( 'Edit the shared content under the "Insider Panel" menu in the admin sidebar.', 'hl-insider' )
+				  )
+				: null
+		);
+
+		// When using global settings, only show the source panel.
+		var panels = useGlobal
+			? [ sourcePanel ]
+			: [ sourcePanel, contentPanel, badgePanel, ctaPanel, itemsPanel, footerPanel, layoutPanel, colorPanel ];
 
 		return el(
 			Fragment,
 			null,
-			el(
-				InspectorControls,
-				null,
-				contentPanel,
-				badgePanel,
-				ctaPanel,
-				itemsPanel,
-				footerPanel,
-				layoutPanel,
-				colorPanel
-			),
+			el.apply( null, [ InspectorControls, null ].concat( panels ) ),
 			el(
 				'div',
 				blockProps,

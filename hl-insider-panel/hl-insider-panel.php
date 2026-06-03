@@ -3,7 +3,7 @@
  * Plugin Name:       HarnessLink Insider Panel
  * Plugin URI:        https://harnesslink.com/the-insider/
  * Description:        A "The Insider" subscribe panel as an editable Gutenberg block and a [insider_panel] shortcode. Non-technical friendly, dependency-free.
- * Version:           1.0.0
+ * Version:           1.1.0
  * Requires at least: 6.0
  * Requires PHP:      7.2
  * Author:            HarnessLink
@@ -21,10 +21,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 /* -------------------------------------------------------------------------
  * Constants
  * ---------------------------------------------------------------------- */
-define( 'HL_INSIDER_VERSION', '1.0.0' );
+define( 'HL_INSIDER_VERSION', '1.1.0' );
 define( 'HL_INSIDER_FILE', __FILE__ );
 define( 'HL_INSIDER_DIR', plugin_dir_path( __FILE__ ) );
 define( 'HL_INSIDER_URL', plugin_dir_url( __FILE__ ) );
+
+/* -------------------------------------------------------------------------
+ * Includes
+ * ---------------------------------------------------------------------- */
+require_once HL_INSIDER_DIR . 'includes/admin-settings.php';
 
 /**
  * Whether to load Google Fonts. Themes that already load Playfair Display +
@@ -43,12 +48,12 @@ function hl_insider_load_fonts() {
  * Defaults
  * ---------------------------------------------------------------------- */
 /**
- * Default attribute values. Single source of truth shared by the block,
- * the shortcode and the render function.
+ * Hard-coded base defaults (the original reference values). These are the
+ * ultimate fallback used when nothing has been saved in the dashboard.
  *
  * @return array
  */
-function hl_insider_defaults() {
+function hl_insider_base_defaults() {
 	return array(
 		'eyebrow'       => __( 'THE INSIDER', 'hl-insider' ),
 		'headline'      => "Exclusive insights.\nEvery Thursday.",
@@ -64,7 +69,10 @@ function hl_insider_defaults() {
 		'show_schedule' => true,
 		'proof_text'    => __( 'Join 7,000+ harness racing readers every Thursday.', 'hl-insider' ),
 		'show_proof'    => true,
-		'pad_left'      => 20,
+		// Layout / position.
+		'pad_left'      => 20,    // Horizontal gutter (px). May be negative to pull left.
+		'offset_top'    => 0,     // Vertical nudge (px). Negative pulls it up toward the widget above.
+		'hpos'          => 'center', // Horizontal position within its column: left | center | right.
 		'fixed_height'  => true,
 		// Colours.
 		'color_navy'    => '#0e2455',
@@ -74,6 +82,30 @@ function hl_insider_defaults() {
 		'color_muted'   => '#5b6478',
 		'color_line'    => '#e4e6ec',
 	);
+}
+
+/**
+ * Effective default attribute values: the base defaults with any values saved
+ * in the dashboard (Insider Panel admin page) layered on top. Shared by the
+ * block, the shortcode and the render function, so editing the dashboard
+ * updates every panel that hasn't been individually overridden.
+ *
+ * @return array
+ */
+function hl_insider_defaults() {
+	$base  = hl_insider_base_defaults();
+	$saved = get_option( 'hl_insider_settings', array() );
+	if ( ! is_array( $saved ) ) {
+		$saved = array();
+	}
+	// Only merge known scalar keys; items are handled separately.
+	$scalars = array();
+	foreach ( $base as $key => $val ) {
+		if ( array_key_exists( $key, $saved ) && '' !== $saved[ $key ] && null !== $saved[ $key ] ) {
+			$scalars[ $key ] = $saved[ $key ];
+		}
+	}
+	return wp_parse_args( $scalars, $base );
 }
 
 /**
@@ -100,6 +132,36 @@ function hl_insider_default_items() {
 			'icon' => 'eye',
 		),
 	);
+}
+
+/**
+ * The "This week" items to fall back to at render time: items saved in the
+ * dashboard if present, otherwise the four hard-coded defaults.
+ *
+ * @return array
+ */
+function hl_insider_resolved_items() {
+	$saved = get_option( 'hl_insider_settings', array() );
+	if ( is_array( $saved ) && ! empty( $saved['items'] ) && is_array( $saved['items'] ) ) {
+		$items = array();
+		foreach ( $saved['items'] as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			$text = isset( $row['text'] ) ? trim( (string) $row['text'] ) : '';
+			if ( '' === $text ) {
+				continue;
+			}
+			$items[] = array(
+				'text' => $text,
+				'icon' => isset( $row['icon'] ) ? sanitize_key( $row['icon'] ) : 'lines',
+			);
+		}
+		if ( ! empty( $items ) ) {
+			return $items;
+		}
+	}
+	return hl_insider_default_items();
 }
 
 /* -------------------------------------------------------------------------
@@ -235,9 +297,9 @@ function hl_insider_render( $atts = array(), $items = array() ) {
 	$d    = hl_insider_defaults();
 	$atts = wp_parse_args( is_array( $atts ) ? $atts : array(), $d );
 
-	// Items fallback.
+	// Items fallback (dashboard items, then hard-coded defaults).
 	if ( empty( $items ) || ! is_array( $items ) ) {
-		$items = hl_insider_default_items();
+		$items = hl_insider_resolved_items();
 	}
 
 	// Normalise booleans.
@@ -255,8 +317,18 @@ function hl_insider_render( $atts = array(), $items = array() ) {
 	$muted  = hl_insider_sanitize_color( $atts['color_muted'], $d['color_muted'] );
 	$line   = hl_insider_sanitize_color( $atts['color_line'], $d['color_line'] );
 
-	// Numeric.
-	$pad_left = is_numeric( $atts['pad_left'] ) ? (float) $atts['pad_left'] : (float) $d['pad_left'];
+	// Numeric position values.
+	$pad_left   = is_numeric( $atts['pad_left'] ) ? (float) $atts['pad_left'] : (float) $d['pad_left'];
+	$offset_top = is_numeric( $atts['offset_top'] ) ? (float) $atts['offset_top'] : (float) $d['offset_top'];
+
+	// Horizontal position within the column -> flex justification.
+	$hpos_map = array(
+		'left'   => 'flex-start',
+		'center' => 'center',
+		'right'  => 'flex-end',
+	);
+	$hpos_key = isset( $atts['hpos'] ) ? strtolower( (string) $atts['hpos'] ) : 'center';
+	$justify  = isset( $hpos_map[ $hpos_key ] ) ? $hpos_map[ $hpos_key ] : 'center';
 
 	// Per-instance CSS custom properties on the card (keeps the stylesheet static).
 	$card_vars = sprintf(
@@ -269,8 +341,13 @@ function hl_insider_render( $atts = array(), $items = array() ) {
 		esc_attr( $line )
 	);
 
-	// The wrapper carries the left gutter so multiple instances are independent.
-	$wrap_style = '--hl-pad-left:' . esc_attr( $pad_left ) . 'px;';
+	// The wrapper carries the position values so multiple instances stay independent.
+	$wrap_style = sprintf(
+		'--hl-pad-left:%1$spx;--hl-offset-top:%2$spx;--hl-justify:%3$s;',
+		esc_attr( $pad_left ),
+		esc_attr( $offset_top ),
+		esc_attr( $justify )
+	);
 
 	$card_classes = 'hl-insider';
 	if ( ! $fixed_height ) {
@@ -425,6 +502,15 @@ add_shortcode( 'insider_panel', 'hl_insider_shortcode' );
  */
 function hl_insider_render_block( $attributes ) {
 	$attributes = is_array( $attributes ) ? $attributes : array();
+
+	// When "use global settings" is on (the default), ignore this block's own
+	// fields entirely and render from the dashboard values. This makes the
+	// dashboard the single source of truth across the whole site.
+	$use_global = ! array_key_exists( 'use_global', $attributes )
+		|| filter_var( $attributes['use_global'], FILTER_VALIDATE_BOOLEAN );
+	if ( $use_global ) {
+		return hl_insider_render( array(), array() );
+	}
 
 	// Items come through as an array of { text, icon }.
 	$items = array();
