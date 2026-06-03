@@ -1,0 +1,52 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "hl-insider/panel",
+	"title": "Insider Panel",
+	"category": "widgets",
+	"icon": "megaphone",
+	"description": "The Insider subscribe panel with editable text, items, icons and colours.",
+	"keywords": [ "insider", "subscribe", "harnesslink", "newsletter", "panel" ],
+	"textdomain": "hl-insider",
+	"supports": {
+		"html": false,
+		"align": [ "left", "center", "right", "wide", "full" ]
+	},
+	"attributes": {
+		"eyebrow":       { "type": "string", "default": "THE INSIDER" },
+		"headline":      { "type": "string", "default": "Exclusive insights.\nEvery Thursday." },
+		"subhead":       { "type": "string", "default": "In-depth stories, industry whispers and international coverage you won't find anywhere else." },
+		"badge_top":     { "type": "string", "default": "SUBSCRIBE" },
+		"badge_bottom":  { "type": "string", "default": "FREE" },
+		"show_badge":    { "type": "boolean", "default": true },
+		"cta_text":      { "type": "string", "default": "Subscribe Now" },
+		"cta_url":       { "type": "string", "default": "https://harnesslink.com/the-insider/editions/" },
+		"cta_new_tab":   { "type": "boolean", "default": false },
+		"week_label":    { "type": "string", "default": "THIS WEEK ON THE INSIDER" },
+		"schedule_text": { "type": "string", "default": "Every Thursday 3PM" },
+		"show_schedule": { "type": "boolean", "default": true },
+		"proof_text":    { "type": "string", "default": "Join 7,000+ harness racing readers every Thursday." },
+		"show_proof":    { "type": "boolean", "default": true },
+		"pad_left":      { "type": "number", "default": 20 },
+		"fixed_height":  { "type": "boolean", "default": true },
+		"color_navy":    { "type": "string", "default": "#0e2455" },
+		"color_accent":  { "type": "string", "default": "#244287" },
+		"color_gold":    { "type": "string", "default": "#c9a24b" },
+		"color_ink":     { "type": "string", "default": "#16213f" },
+		"color_muted":   { "type": "string", "default": "#5b6478" },
+		"color_line":    { "type": "string", "default": "#e4e6ec" },
+		"items": {
+			"type": "array",
+			"default": [
+				{ "text": "Why one major stable is suddenly changing drivers…", "icon": "lines" },
+				{ "text": "The sales trends quietly reshaping the breeding market", "icon": "trend" },
+				{ "text": "US racing controversy insiders are talking about", "icon": "alert" },
+				{ "text": "3 horses flying under the radar this week", "icon": "eye" }
+			],
+			"items": {
+				"type": "object"
+			}
+		}
+	},
+	"style": "hl-insider"
+}
