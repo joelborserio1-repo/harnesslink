@@ -195,3 +195,157 @@ body .leaky_paywall_message_wrap .leaky-paywall-form-login-toggle {
 	body .leaky_paywall_message_wrap { margin-top: -2em !important; }
 	body #leaky_paywall_message { padding: 1.5em 1.25em 1.75em !important; }
 }
+
+/* ================================================================== *
+ * PART B — LEAKY PAYWALL "LIST BUILDER" OVERLAY
+ *
+ * This is the wall actually shown on harnesslink.com: a full-screen
+ * slide-up overlay (NOT the classic #leaky_paywall_message nag above).
+ * Confirmed selectors from include/list-builder/class-lp-list-builder.php:
+ *   #lplb-mask                 - full-viewport backdrop (frost this)
+ *   #lplb-portal               - the overlay layer
+ *   #lplb-subscribe-panel      - the signup panel (-> our card)
+ *   .Slider__ExpandedHeader    - heading (the dark-on-dark one)  [h1]
+ *   .Slider__ExpandedSubHeader - sub-heading / body copy
+ *   .Slider__EmailAddressField input - the email field
+ *   .Slider__ExpandedButton    - the Continue / Upgrade button (was orange)
+ *   .Slider__Policy            - the opt-in / terms line
+ *
+ * The plugin themes this overlay via CSS variables it prints on :root
+ * (--lplb-bg-color #000, --lplb-button-color #E45637, etc.). We re-point
+ * those variables on #lplb-portal (ID beats :root) for a clean recolour,
+ * then add a centred card + frosted backdrop on top.
+ * ================================================================== */
+
+/* Re-point the plugin's theme variables: light card, dark text, navy button */
+body #lplb-portal {
+	--lplb-bg-color: #FFFFFF;
+	--lplb-text-color: #0F172A;
+	--lplb-button-color: #0A2A66;
+	--lplb-button-text-color: #FFFFFF;
+}
+
+/* Frosted "there's more below" backdrop (blurs the page behind the modal) */
+body #lplb-mask {
+	background: rgba(10, 42, 102, 0.55) !important;
+	-webkit-backdrop-filter: blur(6px) !important;
+	        backdrop-filter: blur(6px) !important;
+}
+body #lplb-mask.is-active { opacity: 1 !important; }
+
+/* Neutralise the slide-up transform/positioning so we can reliably centre
+   the card. (A transformed ancestor otherwise traps fixed/absolute children.)
+   Show/hide still works via the .is-visible / .is-active classes. */
+body #lplb-portal {
+	position: fixed !important;
+	inset: 0 !important;
+	top: 0 !important;
+	width: 100% !important;
+	height: 100% !important;
+	min-height: 0 !important;
+	transform: none !important;
+}
+body #lplb-portal.is-active { transform: none !important; }
+
+body #lplb-portal .Slider__Container,
+body #lplb-portal .Slider,
+body #lplb-portal .Slider--scrolled {
+	position: absolute !important;
+	inset: 0 !important;
+	top: 0 !important;
+	width: 100% !important;
+	height: 100% !important;
+}
+
+/* The signup panel -> a clean, centred white card */
+body #lplb-portal .Slider__InnerContainer {
+	position: absolute !important;
+	top: 50% !important;
+	left: 50% !important;
+	bottom: auto !important;
+	transform: translate(-50%, -50%) !important;
+	width: min(92vw, 520px) !important;
+	height: auto !important;
+	max-height: 88vh !important;
+	overflow-y: auto !important;
+	background: #FFFFFF !important;
+	background-color: #FFFFFF !important;
+	color: var(--hlpw-text) !important;
+	border-radius: 16px !important;
+	box-shadow: 0 30px 80px rgba(10, 42, 102, 0.35) !important;
+	padding: 40px 32px !important;
+	gap: 14px !important;
+}
+
+/* The order-summary form box inside the panel: drop its black bg */
+body #lplb-portal .Slider .Form__Container {
+	background: transparent !important;
+	width: 100% !important;
+	max-width: 100% !important;
+	padding: 0 !important;
+}
+
+/* Heading — fixes the dark-on-dark bug (navy on the white card) */
+body #lplb-portal .Slider__ExpandedHeader {
+	color: var(--hlpw-heading) !important;
+	font-size: 26px !important;
+	line-height: 1.25 !important;
+	font-weight: 800 !important;
+	margin: 0 0 4px !important;
+}
+
+/* Sub-heading / body copy — readable dark, no fixed 523px width */
+body #lplb-portal .Slider__ExpandedSubHeader {
+	color: var(--hlpw-text) !important;
+	width: auto !important;
+	max-width: 100% !important;
+}
+
+body #lplb-portal .Slider,
+body #lplb-portal .Slider__InputRow label {
+	color: var(--hlpw-text) !important;
+}
+
+/* Email field */
+body #lplb-portal .TextField input {
+	background: #F8FAFC !important;
+	color: var(--hlpw-text) !important;
+	border: 1px solid var(--hlpw-card-border) !important;
+	border-radius: 10px !important;
+}
+body #lplb-portal .TextField input:focus {
+	border-color: var(--hlpw-navy-accent) !important;
+	box-shadow: 0 0 0 4px rgba(31, 95, 191, 0.15) !important;
+}
+
+/* Continue / Upgrade button — HarnessLink navy, darker on hover */
+body #lplb-portal .Slider__ExpandedButton {
+	background: var(--hlpw-navy) !important;
+	background-color: var(--hlpw-navy) !important;
+	color: #FFFFFF !important;
+	border: 1px solid var(--hlpw-navy) !important;
+	border-radius: 10px !important;
+	font-weight: 700 !important;
+	box-shadow: 0 6px 18px rgba(10, 42, 102, 0.25) !important;
+}
+body #lplb-portal .Slider__ExpandedButton:hover {
+	background: var(--hlpw-navy-hover) !important;
+	background-color: var(--hlpw-navy-hover) !important;
+	opacity: 1 !important;
+	box-shadow: 0 8px 22px rgba(10, 42, 102, 0.32) !important;
+}
+
+/* Opt-in / terms line — muted but legible on the white card */
+body #lplb-portal .Slider__Policy p,
+body #lplb-portal .Slider__Policy p a {
+	color: var(--hlpw-muted) !important;
+	opacity: 1 !important;
+}
+body #lplb-portal .Slider a:not(.Slider__ExpandedButton) {
+	color: var(--hlpw-navy-accent) !important;
+}
+
+@media (max-width: 600px) {
+	body #lplb-portal .Slider__InnerContainer { padding: 28px 20px !important; }
+	body #lplb-portal .Slider__ExpandedHeader { font-size: 22px !important; }
+}
