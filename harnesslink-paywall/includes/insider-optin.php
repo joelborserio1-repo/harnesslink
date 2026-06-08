@@ -166,7 +166,7 @@ add_action( 'admin_post_hlpw_export_insider', function () {
 	header( 'Content-Disposition: attachment; filename=insider-optins-' . gmdate( 'Y-m-d' ) . '.csv' );
 
 	$out = fopen( 'php://output', 'w' );
-	fputcsv( $out, array( 'Email Address', 'First Name', 'Last Name', 'Opted In Date' ) );
+	fputcsv( $out, array( 'Email Address', 'First Name', 'Last Name', 'Phone', 'Opted In Date' ) );
 
 	foreach ( $users as $user ) {
 		$date = get_user_meta( $user->ID, HLPW_INSIDER_DATE_META, true );
@@ -176,6 +176,7 @@ add_action( 'admin_post_hlpw_export_insider', function () {
 				$user->user_email,
 				get_user_meta( $user->ID, 'first_name', true ),
 				get_user_meta( $user->ID, 'last_name', true ),
+				get_user_meta( $user->ID, '_hlpw_phone', true ),
 				$date ? $date : $user->user_registered,
 			)
 		);

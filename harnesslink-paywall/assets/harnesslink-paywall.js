@@ -61,6 +61,27 @@
 		panel.insertBefore(badge, panel.firstChild);
 	}
 
+	// Move the First/Last/Mobile rows above the password field for a natural
+	// signup order (LP renders our hook fields after the password).
+	function reorderSignupFields() {
+		var form = document.querySelector('form[data-step="signup"]');
+		if (!form) {
+			return;
+		}
+		var pwField = form.querySelector('.Slider__PasswordField');
+		var pwRow = pwField ? pwField.closest('.Slider__InputRow') : null;
+		if (!pwRow) {
+			return;
+		}
+		form.querySelectorAll('.hlpw-field').forEach(function (row) {
+			if (row.dataset.hlpwMoved) {
+				return;
+			}
+			pwRow.parentNode.insertBefore(row, pwRow);
+			row.dataset.hlpwMoved = '1';
+		});
+	}
+
 	function enhance() {
 		if (dismissed) {
 			return false;
@@ -71,6 +92,7 @@
 		}
 		injectCloseButton(portal);
 		injectFreeBadge();
+		reorderSignupFields();
 		return true;
 	}
 
