@@ -103,6 +103,60 @@ class HLD_DB {
             self::ensure_columns();
             self::dedupe_stallions();
         }
+
+        // One-time repair of names/fields corrupted by historic over-escaping
+        // (e.g. "Bettor\'s Delight"). Runs once per fix version.
+        if ( get_option( 'hld_slash_fix' ) !== '2' ) {
+            self::repair_escaped_slashes();
+            update_option( 'hld_slash_fix', '2' );
+        }
+    }
+
+    /**
+     * Strip stray backslashes that accumulated in text columns from the
+     * pre-1.3.2 save path (which stored slash-escaped $_POST data). Collapses
+     * runs of backslashes before an apostrophe/quote, and removes a lone
+     * backslash directly before ' or ".
+     */
+    public static function repair_escaped_slashes() {
+        global $wpdb;
+        $table   = $wpdb->prefix . 'hld_stallions';
+        $columns = array(
+            'name', 'stud_name', 'stud_master', 'status_note', 'region',
+            'country', 'suburb', 'industry', 'profile_bio', 'progeny_note',
+            'contact_address', 'coverage',
+        );
+
+        // Only touch rows that actually contain a backslash, for efficiency.
+        $like = '%' . $wpdb->esc_like( '\\' ) . '%';
+        $or   = array();
+        foreach ( $columns as $c ) {
+            $or[] = "{$c} LIKE %s";
+        }
+        $sql  = "SELECT * FROM {$table} WHERE " . implode( ' OR ', $or );
+        $rows = $wpdb->get_results( $wpdb->prepare( $sql, array_fill( 0, count( $columns ), $like ) ) );
+
+        if ( empty( $rows ) ) return;
+
+        foreach ( $rows as $row ) {
+            $update = array();
+            foreach ( $columns as $c ) {
+                if ( ! isset( $row->$c ) || $row->$c === '' ) continue;
+                $clean = self::strip_stray_slashes( $row->$c );
+                if ( $clean !== $row->$c ) {
+                    $update[ $c ] = $clean;
+                }
+            }
+            if ( $update ) {
+                $wpdb->update( $table, $update, array( 'id' => (int) $row->id ) );
+            }
+        }
+    }
+
+    /** Remove backslashes used only to escape quotes/apostrophes. */
+    private static function strip_stray_slashes( $value ) {
+        // Collapse one or more backslashes immediately before ' " or \ .
+        return preg_replace( '/\\\\+([\'"\\\\])/', '$1', (string) $value );
     }
 
     public static function ensure_columns() {

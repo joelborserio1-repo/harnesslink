@@ -68,7 +68,9 @@ class HLD_Ajax {
         HLD_DB::ensure_columns();
 
         $id   = absint( $_POST['id'] ?? 0 );
-        $data = $_POST; // sanitized inside HLD_DB::sanitize()
+        // WordPress slash-escapes all superglobals; strip that before saving
+        // so apostrophes (e.g. "Bettor's Delight") don't accumulate backslashes.
+        $data = wp_unslash( $_POST ); // sanitized inside HLD_DB::sanitize()
         $data['is_paying'] = ! empty( $_POST['is_paying'] ) && in_array( (string) $_POST['is_paying'], array( '1', 'true', 'yes', 'on' ), true ) ? 1 : 0;
         $data['is_featured'] = ! empty( $_POST['is_featured'] ) && in_array( (string) $_POST['is_featured'], array( '1', 'true', 'yes', 'on' ), true ) ? 1 : 0;
         if ( $data['is_featured'] ) {
@@ -280,15 +282,15 @@ class HLD_Ajax {
     public static function submit_enquiry() {
         check_ajax_referer( 'hld_nonce', 'nonce' );
 
-        $name  = sanitize_text_field( $_POST['contact_name']  ?? '' );
-        $email = sanitize_email(      $_POST['contact_email'] ?? '' );
-        $type  = sanitize_text_field( $_POST['listing_type']  ?? '' );
+        $name  = sanitize_text_field( wp_unslash( $_POST['contact_name']  ?? '' ) );
+        $email = sanitize_email(      wp_unslash( $_POST['contact_email'] ?? '' ) );
+        $type  = sanitize_text_field( wp_unslash( $_POST['listing_type']  ?? '' ) );
 
         if ( ! $name )               wp_send_json_error( 'Please enter your name.' );
         if ( ! is_email( $email ) )  wp_send_json_error( 'Please enter a valid email address.' );
         if ( ! $type )               wp_send_json_error( 'Please select a listing type.' );
 
-        $id = HLD_DB::insert_enquiry( $_POST );
+        $id = HLD_DB::insert_enquiry( wp_unslash( $_POST ) );
 
         if ( ! $id ) {
             wp_send_json_error( 'Sorry, there was a problem saving your enquiry. Please try again.' );
@@ -300,12 +302,12 @@ class HLD_Ajax {
         $body        = "A new listing enquiry was submitted on HarnessLink.\n\n"
                      . "Name:         {$name}\n"
                      . "Email:        {$email}\n"
-                     . "Phone:        " . sanitize_text_field( $_POST['contact_phone'] ?? '—' ) . "\n"
+                     . "Phone:        " . sanitize_text_field( wp_unslash( $_POST['contact_phone'] ?? '—' ) ) . "\n"
                      . "Listing Type: {$type}\n"
-                     . "Stud / Name:  " . sanitize_text_field( $_POST['stud_name'] ?? '—' ) . "\n"
-                     . "Country:      " . sanitize_text_field( $_POST['country'] ?? '—' ) . "\n"
-                     . "Region:       " . sanitize_text_field( $_POST['region'] ?? '—' ) . "\n\n"
-                     . "Message:\n" . sanitize_textarea_field( $_POST['message'] ?? '—' ) . "\n\n"
+                     . "Stud / Name:  " . sanitize_text_field( wp_unslash( $_POST['stud_name'] ?? '—' ) ) . "\n"
+                     . "Country:      " . sanitize_text_field( wp_unslash( $_POST['country'] ?? '—' ) ) . "\n"
+                     . "Region:       " . sanitize_text_field( wp_unslash( $_POST['region'] ?? '—' ) ) . "\n\n"
+                     . "Message:\n" . sanitize_textarea_field( wp_unslash( $_POST['message'] ?? '—' ) ) . "\n\n"
                      . "View in admin: " . admin_url( 'admin.php?page=hld-enquiries' );
 
         wp_mail( $admin_email, $subject, $body );
@@ -331,8 +333,8 @@ class HLD_Ajax {
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
         check_ajax_referer( 'hld_admin_nonce', 'nonce' );
         $id     = absint( $_POST['id'] ?? 0 );
-        $status = sanitize_text_field( $_POST['status'] ?? '' );
-        $notes  = sanitize_textarea_field( $_POST['admin_notes'] ?? '' );
+        $status = sanitize_text_field( wp_unslash( $_POST['status'] ?? '' ) );
+        $notes  = sanitize_textarea_field( wp_unslash( $_POST['admin_notes'] ?? '' ) );
         HLD_DB::update_enquiry_status( $id, $status, $notes );
         wp_send_json_success( array( 'message' => 'Enquiry updated.' ) );
     }
@@ -366,9 +368,9 @@ class HLD_Ajax {
 
         $stallion_id   = absint( $_POST['stallion_id'] ?? 0 );
         $attachment_id = absint( $_POST['attachment_id'] ?? 0 );
-        $url           = sanitize_text_field( $_POST['url'] ?? '' );
-        $media_type    = sanitize_text_field( $_POST['media_type'] ?? 'image' );
-        $caption       = sanitize_text_field( $_POST['caption'] ?? '' );
+        $url           = sanitize_text_field( wp_unslash( $_POST['url'] ?? '' ) );
+        $media_type    = sanitize_text_field( wp_unslash( $_POST['media_type'] ?? 'image' ) );
+        $caption       = sanitize_text_field( wp_unslash( $_POST['caption'] ?? '' ) );
 
         if ( ! $stallion_id ) wp_send_json_error( 'Missing stallion ID.' );
 
@@ -414,7 +416,7 @@ class HLD_Ajax {
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
         check_ajax_referer( 'hld_admin_nonce', 'nonce' );
         $id      = absint( $_POST['id'] ?? 0 );
-        $caption = sanitize_text_field( $_POST['caption'] ?? '' );
+        $caption = sanitize_text_field( wp_unslash( $_POST['caption'] ?? '' ) );
         HLD_DB::update_gallery_item( $id, array( 'caption' => $caption ) );
         wp_send_json_success( array( 'message' => 'Caption saved.' ) );
     }
