@@ -19,6 +19,9 @@
 	// ----------------------------------------------------------------
 	var FREE_BADGE_TEXT = '100% FREE — NO PAYMENT REQUIRED';
 
+	// Reassurance line shown under the button (addresses "will this cost me?").
+	var REASSURE_TEXT = 'No payment · No credit card · Sign up in 10 seconds';
+
 	var EMAIL_KEY = 'hlpw_email';
 	var dismissed = false;
 
@@ -120,6 +123,23 @@
 		});
 	}
 
+	// Reassurance microcopy under the free signup button (subscribe panel only,
+	// never the paid upgrade panel).
+	function injectReassurance() {
+		var panel = document.getElementById('lplb-subscribe-panel');
+		if (!panel || panel.querySelector('.hlpw-free-reassure')) {
+			return;
+		}
+		var btn = panel.querySelector('.Slider__ExpandedButton');
+		if (!btn) {
+			return;
+		}
+		var el = document.createElement('div');
+		el.className = 'hlpw-free-reassure';
+		el.textContent = REASSURE_TEXT;
+		btn.insertAdjacentElement('afterend', el);
+	}
+
 	function enhance() {
 		if (dismissed) {
 			return false;
@@ -130,6 +150,7 @@
 		}
 		injectCloseButton(portal);
 		injectFreeBadge();
+		injectReassurance();
 		reorderSignupFields();
 		prefillEmail();
 		return true;

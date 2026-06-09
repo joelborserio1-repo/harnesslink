@@ -375,20 +375,41 @@ body #lplb-portal .hlpw-wall-close:focus-visible {
 	outline-offset: 2px !important;
 }
 
-/* "FREE" badge — bold, capitalised, unmistakable */
+/* "FREE" badge — bold, capitalised, unmistakable, gently pulsing */
 body #lplb-portal .hlpw-free-badge {
 	display: inline-block !important;
 	align-self: center !important;
-	margin: 0 auto 8px !important;
-	padding: 6px 14px !important;
+	margin: 0 auto 10px !important;
+	padding: 8px 18px !important;
 	background: #0D7A4F !important;   /* HarnessLink green = "free / go" */
 	color: #FFFFFF !important;
-	font-size: 12px !important;
+	font-size: 14px !important;
 	font-weight: 800 !important;
 	letter-spacing: 0.08em !important;
 	text-transform: uppercase !important;
 	line-height: 1.2 !important;
 	border-radius: 999px !important;
+	animation: hlpw-pulse 2.2s ease-in-out infinite !important;
+}
+
+@keyframes hlpw-pulse {
+	0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(13, 122, 79, 0); }
+	50%      { transform: scale(1.04); box-shadow: 0 0 0 7px rgba(13, 122, 79, 0.14); }
+}
+
+/* Reassurance line under the button — kills "will this cost me?" doubt */
+body #lplb-portal .hlpw-free-reassure {
+	margin: 10px auto 0 !important;
+	text-align: center !important;
+	font-size: 13px !important;
+	font-weight: 600 !important;
+	line-height: 1.4 !important;
+	color: #0D7A4F !important;
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+	body #lplb-portal .hlpw-free-badge { animation: none !important; }
 }
 
 /* When the visitor closes the wall, keep it hidden for this pageview
