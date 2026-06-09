@@ -19,7 +19,45 @@
 	// ----------------------------------------------------------------
 	var FREE_BADGE_TEXT = '100% FREE — NO PAYMENT REQUIRED';
 
+	var EMAIL_KEY = 'hlpw_email';
 	var dismissed = false;
+
+	function getStoredEmail() {
+		try {
+			return localStorage.getItem(EMAIL_KEY) || '';
+		} catch (e) {
+			return '';
+		}
+	}
+
+	function storeEmail(value) {
+		try {
+			if (value && value.indexOf('@') > 0) {
+				localStorage.setItem(EMAIL_KEY, value);
+			}
+		} catch (e) {}
+	}
+
+	// Pre-fill the wall's email box for returning visitors so they land
+	// straight on the "Welcome back" password step without retyping.
+	function prefillEmail() {
+		var stored = getStoredEmail();
+		if (!stored) {
+			return;
+		}
+		var input = document.querySelector('#lplb-portal form[data-step="email"] input[name="email"]');
+		if (input && !input.value) {
+			input.value = stored;
+		}
+	}
+
+	// Remember the email as they type it.
+	document.addEventListener('input', function (e) {
+		var t = e.target;
+		if (t && t.name === 'email' && t.closest && t.closest('#lplb-portal')) {
+			storeEmail(t.value.trim());
+		}
+	});
 
 	function wallIsVisible() {
 		var portal = document.getElementById('lplb-portal');
@@ -93,6 +131,7 @@
 		injectCloseButton(portal);
 		injectFreeBadge();
 		reorderSignupFields();
+		prefillEmail();
 		return true;
 	}
 
