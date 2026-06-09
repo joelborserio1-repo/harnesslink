@@ -102,27 +102,6 @@
 		panel.insertBefore(badge, panel.firstChild);
 	}
 
-	// Move the First/Last/Mobile rows above the password field for a natural
-	// signup order (LP renders our hook fields after the password).
-	function reorderSignupFields() {
-		var form = document.querySelector('form[data-step="signup"]');
-		if (!form) {
-			return;
-		}
-		var pwField = form.querySelector('.Slider__PasswordField');
-		var pwRow = pwField ? pwField.closest('.Slider__InputRow') : null;
-		if (!pwRow) {
-			return;
-		}
-		form.querySelectorAll('.hlpw-field').forEach(function (row) {
-			if (row.dataset.hlpwMoved) {
-				return;
-			}
-			pwRow.parentNode.insertBefore(row, pwRow);
-			row.dataset.hlpwMoved = '1';
-		});
-	}
-
 	// Reassurance microcopy under the free signup button (subscribe panel only,
 	// never the paid upgrade panel).
 	function injectReassurance() {
@@ -151,9 +130,78 @@
 		injectCloseButton(portal);
 		injectFreeBadge();
 		injectReassurance();
-		reorderSignupFields();
 		prefillEmail();
 		return true;
+	}
+
+	// Post-signup "complete your profile" prompt (name / mobile / opt-in).
+	function initProfilePrompt() {
+		var prompt = document.getElementById('hlpw-profile-prompt');
+		if (!prompt || prompt.dataset.hlpwInit) {
+			return;
+		}
+		prompt.dataset.hlpwInit = '1';
+
+		var laterFlag = false;
+		try {
+			laterFlag = !!sessionStorage.getItem('hlpw_pp_later');
+		} catch (e) {}
+		if (laterFlag) {
+			prompt.style.display = 'none';
+			return;
+		}
+
+		var form = prompt.querySelector('#hlpw-profile-form');
+		var msg = prompt.querySelector('.hlpw-pp-msg');
+
+		function dismiss() {
+			try {
+				sessionStorage.setItem('hlpw_pp_later', '1');
+			} catch (e) {}
+			prompt.style.display = 'none';
+		}
+
+		prompt.querySelectorAll('.hlpw-pp-close, .hlpw-pp-skip').forEach(function (b) {
+			b.addEventListener('click', dismiss);
+		});
+
+		form.addEventListener('submit', function (e) {
+			e.preventDefault();
+			var cfg = window.HLPW || {};
+			var data = new URLSearchParams(new FormData(form));
+			data.append('action', 'hlpw_save_profile');
+			data.append('nonce', cfg.nonce || '');
+
+			var saveBtn = form.querySelector('.hlpw-pp-save');
+			if (saveBtn) {
+				saveBtn.disabled = true;
+			}
+
+			fetch(cfg.ajaxUrl || '/wp-admin/admin-ajax.php', {
+				method: 'POST',
+				credentials: 'same-origin',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+				body: data.toString()
+			})
+				.then(function (r) { return r.json(); })
+				.then(function (res) {
+					if (res && res.success) {
+						if (msg) {
+							msg.textContent = (res.data && res.data.message) || 'Saved!';
+						}
+						setTimeout(function () { prompt.style.display = 'none'; }, 1300);
+					} else {
+						if (msg) {
+							msg.textContent = (res && res.data && res.data.message) || 'Something went wrong.';
+						}
+						if (saveBtn) { saveBtn.disabled = false; }
+					}
+				})
+				.catch(function () {
+					if (msg) { msg.textContent = 'Something went wrong.'; }
+					if (saveBtn) { saveBtn.disabled = false; }
+				});
+		});
 	}
 
 	document.addEventListener('keydown', function (e) {
@@ -164,6 +212,7 @@
 
 	document.addEventListener('DOMContentLoaded', function () {
 		enhance();
+		initProfilePrompt();
 
 		// The overlay markup is usually present at load, but guard against it
 		// (or its panel) being injected/replaced later.
