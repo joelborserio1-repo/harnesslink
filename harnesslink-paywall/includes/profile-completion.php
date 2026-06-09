@@ -73,6 +73,16 @@ add_action( 'wp_footer', function () {
 				<span><?php echo esc_html( $insider_label ); ?></span>
 			</label>
 
+			<?php
+			$privacy_url = function_exists( 'get_privacy_policy_url' ) ? get_privacy_policy_url() : '';
+			?>
+			<p class="hlpw-pp-fineprint">
+				<?php esc_html_e( 'You can unsubscribe anytime.', 'harnesslink-paywall' ); ?>
+				<?php if ( $privacy_url ) : ?>
+					<a href="<?php echo esc_url( $privacy_url ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Privacy Policy', 'harnesslink-paywall' ); ?></a>.
+				<?php endif; ?>
+			</p>
+
 			<div class="hlpw-pp-actions">
 				<button type="submit" class="hlpw-pp-save"><?php esc_html_e( 'Save', 'harnesslink-paywall' ); ?></button>
 				<button type="button" class="hlpw-pp-skip"><?php esc_html_e( 'Maybe later', 'harnesslink-paywall' ); ?></button>

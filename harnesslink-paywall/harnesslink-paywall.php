@@ -3,7 +3,7 @@
  * Plugin Name: HarnessLink PayWall
  * Plugin URI:  https://harnesslink.com
  * Description: HarnessLink companion for Leaky Paywall. Restyles the registration wall (frosted lead-in teaser + clean navy signup card) and rebrands the Leaky Paywall admin experience as "HarnessLink PayWall". Cosmetic only — does not change metering, restriction counts, access levels or any server-side gating.
- * Version:     1.0.8
+ * Version:     1.0.9
  * Author:      HarnessLink
  * Text Domain: harnesslink-paywall
  *
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'HLPW_VERSION',    '1.0.8' );
+define( 'HLPW_VERSION',    '1.0.9' );
 define( 'HLPW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'HLPW_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
@@ -95,6 +95,16 @@ add_filter( 'leaky_paywall_nag_excerpt', function ( $excerpt ) {
 	}
 
 	return '<span class="hl-paywall-teaser">' . $excerpt . '&hellip;</span>';
+}, 20 );
+
+/* ------------------------------------------------------------------ *
+ * 2b. Drop a short-lived cookie on signup so the JS can fire a GA4/GTM
+ *     "sign_up" event on the next page load (LP reloads after signup).
+ * ------------------------------------------------------------------ */
+add_action( 'leaky_paywall_after_process_registration', function () {
+	if ( ! headers_sent() ) {
+		setcookie( 'hlpw_signup', '1', time() + 300, '/' );
+	}
 }, 20 );
 
 /* ------------------------------------------------------------------ *

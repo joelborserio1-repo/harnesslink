@@ -514,6 +514,16 @@ body.hlpw-wall-dismissed #lplb-portal {
 	margin: 1px 0 0 !important;
 	accent-color: var(--hlpw-navy) !important;
 }
+.hlpw-profile-prompt .hlpw-pp-fineprint {
+	margin: 0 0 12px !important;
+	font-size: 11px !important;
+	line-height: 1.4 !important;
+	color: var(--hlpw-muted) !important;
+}
+.hlpw-profile-prompt .hlpw-pp-fineprint a {
+	color: var(--hlpw-navy-accent) !important;
+	text-decoration: underline !important;
+}
 .hlpw-profile-prompt .hlpw-pp-actions {
 	display: flex !important;
 	align-items: center !important;

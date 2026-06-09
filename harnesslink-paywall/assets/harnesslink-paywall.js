@@ -24,6 +24,52 @@
 
 	var EMAIL_KEY = 'hlpw_email';
 	var dismissed = false;
+	var impressionFired = false;
+
+	// --- Conversion analytics (GTM dataLayer + GA4 gtag if present) ---------
+	function track(name, params) {
+		try {
+			window.dataLayer = window.dataLayer || [];
+			window.dataLayer.push(Object.assign({ event: name }, params || {}));
+			if (typeof window.gtag === 'function') {
+				window.gtag('event', name, params || {});
+			}
+		} catch (e) {}
+	}
+
+	function maybeTrackImpression() {
+		if (impressionFired) {
+			return;
+		}
+		var portal = document.getElementById('lplb-portal');
+		if (portal && portal.classList.contains('is-visible')) {
+			impressionFired = true;
+			track('paywall_view', { paywall: 'harnesslink' });
+		}
+	}
+
+	// Watch the overlay for the visibility class (LP toggles it after load).
+	function watchPortalVisibility() {
+		var portal = document.getElementById('lplb-portal');
+		if (!portal || portal.dataset.hlpwVisWatch) {
+			return;
+		}
+		portal.dataset.hlpwVisWatch = '1';
+		new MutationObserver(maybeTrackImpression).observe(portal, {
+			attributes: true,
+			attributeFilter: ['class']
+		});
+		maybeTrackImpression();
+	}
+
+	// Fire a sign_up event on the page load right after registration
+	// (the server drops a short-lived cookie during signup).
+	function trackSignupFromCookie() {
+		if (document.cookie.indexOf('hlpw_signup=1') !== -1) {
+			track('sign_up', { method: 'paywall' });
+			document.cookie = 'hlpw_signup=; max-age=0; path=/';
+		}
+	}
 
 	function getStoredEmail() {
 		try {
@@ -131,6 +177,7 @@
 		injectFreeBadge();
 		injectReassurance();
 		prefillEmail();
+		watchPortalVisibility();
 		return true;
 	}
 
@@ -186,6 +233,7 @@
 				.then(function (r) { return r.json(); })
 				.then(function (res) {
 					if (res && res.success) {
+						track('profile_complete', { source: 'profile_prompt' });
 						if (msg) {
 							msg.textContent = (res.data && res.data.message) || 'Saved!';
 						}
@@ -213,6 +261,7 @@
 	document.addEventListener('DOMContentLoaded', function () {
 		enhance();
 		initProfilePrompt();
+		trackSignupFromCookie();
 
 		// The overlay markup is usually present at load, but guard against it
 		// (or its panel) being injected/replaced later.

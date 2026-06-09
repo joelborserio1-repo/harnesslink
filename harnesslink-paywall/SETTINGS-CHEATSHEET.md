@@ -37,6 +37,23 @@ device). Full-page caching/CDNs can make it fire inconsistently.
 2. Open a 4th (any section) → the wall should appear.
 3. This confirms the count is global, not per-section.
 
+## Conversion analytics (GA4 / Google Tag Manager)
+
+The plugin pushes events to the `dataLayer` (and calls `gtag` if present) so you
+can measure the funnel:
+
+| Event | Fires when |
+| --- | --- |
+| `paywall_view` | the wall is shown to a visitor |
+| `sign_up` | a new account is created at the wall |
+| `profile_complete` | the "complete your profile" card is saved |
+
+- **GTM:** create triggers on these Custom Events and forward to GA4.
+- **GA4 (gtag):** they arrive as events automatically; mark `sign_up` /
+  `profile_complete` as conversions in GA4 → Admin → Events.
+
+This lets you track real conversion instead of estimating from raw counts.
+
 ## Notes
 
 - **Logged-in subscribers never see the wall** — the meter only applies to
