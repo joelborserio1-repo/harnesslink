@@ -101,13 +101,18 @@ class AD_Importer {
         }
 
         // ── Assign guest author / byline ─────────────────────────────
-        // The scraped source byline wins; otherwise credit the selected
-        // author (guest author term or WP user).
-        $guest_author_name = $this->resolve_guest_author_name( $article_data['author'] ?? '' );
-        $selected_term_id  = 0;
-        if ( '' === $guest_author_name ) {
-            $guest_author_name = $selection['name'] ?: $this->author_display_name( $author_id );
+        // A selected author (per-import or Default Author setting) always
+        // wins the visible byline. The scraped source byline is kept in
+        // _ad_original_author meta and only shown when no author has been
+        // selected anywhere.
+        $scraped_byline   = $this->resolve_guest_author_name( $article_data['author'] ?? '' );
+        $selected_term_id = 0;
+
+        if ( '' !== $selection['name'] ) {
+            $guest_author_name = $selection['name'];
             $selected_term_id  = $selection['term_id'];
+        } else {
+            $guest_author_name = $scraped_byline ?: $this->author_display_name( $author_id );
         }
         $this->assign_guest_author( $post_id, $guest_author_name, $selected_term_id );
 
@@ -350,7 +355,6 @@ class AD_Importer {
         }
 
         update_post_meta( $post_id, '_ad_guest_author', $author_name );
-        update_post_meta( $post_id, '_ad_original_author', $author_name );
         update_post_meta( $post_id, 'guest_author', $author_name );
 
         // Editor-selected guest author term: assign it as-is and leave its
