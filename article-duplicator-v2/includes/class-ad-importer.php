@@ -23,10 +23,11 @@ class AD_Importer {
      *   thumbnail  – featured image URL
      *   images     – array of inline image URLs
      *
-     * $author_override – optional WP user ID to credit as post author for
-     *                    this import only (falls back to the saved default).
+     * $author_override – optional author for this import only: a WP user ID
+     *                    or 'term-{id}' for a guest author term in the
+     *                    'author' taxonomy (falls back to the saved default).
      */
-    public function import( array $article_data, $author_override = 0 ) {
+    public function import( array $article_data, $author_override = '' ) {
 
         // Normalise: both 'url' and 'source' keys should exist
         if ( empty( $article_data['source'] ) && ! empty( $article_data['url'] ) ) {
@@ -81,7 +82,8 @@ class AD_Importer {
             ],
         ];
 
-        $author_id = $this->resolve_post_author_id( $author_override );
+        $selection = $this->resolve_author_selection( $author_override );
+        $author_id = $selection['user_id'];
         if ( $author_id ) {
             $post_args['post_author'] = $author_id;
         }
@@ -99,11 +101,15 @@ class AD_Importer {
         }
 
         // ── Assign guest author / byline ─────────────────────────────
+        // The scraped source byline wins; otherwise credit the selected
+        // author (guest author term or WP user).
         $guest_author_name = $this->resolve_guest_author_name( $article_data['author'] ?? '' );
+        $selected_term_id  = 0;
         if ( '' === $guest_author_name ) {
-            $guest_author_name = $this->author_display_name( $author_id );
+            $guest_author_name = $selection['name'] ?: $this->author_display_name( $author_id );
+            $selected_term_id  = $selection['term_id'];
         }
-        $this->assign_guest_author( $post_id, $guest_author_name );
+        $this->assign_guest_author( $post_id, $guest_author_name, $selected_term_id );
 
         // ── Attach race replay when track + race can be detected ──────
         AD_Replays::maybe_attach_to_import( $post_id, $article_data );
@@ -226,23 +232,57 @@ class AD_Importer {
     }
 
     /**
-     * Resolve the WP user credited as post author.
+     * Resolve who imported articles are credited to.
      *
-     * Priority: per-import override → 'ad_default_author' setting →
-     * legacy shared 'harnesslink' account.
+     * Accepts a WP user ID or 'term-{id}' referencing a guest author term
+     * in the 'author' taxonomy. Priority: per-import override →
+     * 'ad_default_author' setting → legacy shared 'harnesslink' account.
+     *
+     * Returns [ 'user_id' => int, 'term_id' => int, 'name' => string ].
+     * Guest author terms without a linked WP user fall back to the legacy
+     * account for post ownership while keeping the term as the byline.
      */
-    private function resolve_post_author_id( $override = 0 ) {
-        $override = absint( $override );
-        if ( $override && get_user_by( 'ID', $override ) ) {
-            return $override;
+    private function resolve_author_selection( $override = '' ) {
+        foreach ( [ $override, get_option( 'ad_default_author', '' ) ] as $value ) {
+            $parsed = $this->parse_author_value( $value );
+            if ( $parsed ) {
+                if ( empty( $parsed['user_id'] ) ) {
+                    $parsed['user_id'] = $this->get_harnesslink_author_id();
+                }
+                return $parsed;
+            }
         }
 
-        $default = absint( get_option( 'ad_default_author', 0 ) );
-        if ( $default && get_user_by( 'ID', $default ) ) {
-            return $default;
+        return [ 'user_id' => $this->get_harnesslink_author_id(), 'term_id' => 0, 'name' => '' ];
+    }
+
+    /**
+     * Parse a single author selection value (user ID or 'term-{id}').
+     */
+    private function parse_author_value( $value ) {
+        $value = trim( (string) $value );
+
+        if ( preg_match( '/^term-(\d+)$/', $value, $m ) && taxonomy_exists( 'author' ) ) {
+            $term = get_term( (int) $m[1], 'author' );
+            if ( $term && ! is_wp_error( $term ) ) {
+                return [
+                    'user_id' => absint( get_term_meta( $term->term_id, 'user_id', true ) ),
+                    'term_id' => (int) $term->term_id,
+                    'name'    => $term->name,
+                ];
+            }
+            return null;
         }
 
-        return $this->get_harnesslink_author_id();
+        $user_id = absint( $value );
+        if ( $user_id ) {
+            $user = get_user_by( 'ID', $user_id );
+            if ( $user ) {
+                return [ 'user_id' => $user_id, 'term_id' => 0, 'name' => $user->display_name ];
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -303,14 +343,21 @@ class AD_Importer {
      * Supports the common "author" taxonomy used by guest-author plugins while
      * retaining meta fallbacks for themes or plugins that read imported bylines.
      */
-    private function assign_guest_author( $post_id, $author_name ) {
+    private function assign_guest_author( $post_id, $author_name, $selected_term_id = 0 ) {
         if ( empty( $author_name ) ) {
-            $author_name = $this->author_display_name( absint( get_option( 'ad_default_author', 0 ) ) );
+            $parsed      = $this->parse_author_value( get_option( 'ad_default_author', '' ) );
+            $author_name = ( $parsed['name'] ?? '' ) ?: 'Harnesslink';
         }
 
         update_post_meta( $post_id, '_ad_guest_author', $author_name );
         update_post_meta( $post_id, '_ad_original_author', $author_name );
         update_post_meta( $post_id, 'guest_author', $author_name );
+
+        // Editor-selected guest author term: assign it as-is and leave its
+        // existing term meta untouched.
+        if ( $selected_term_id && taxonomy_exists( 'author' ) ) {
+            wp_set_post_terms( $post_id, [ (int) $selected_term_id ], 'author', false );
+        }
 
         $assigned_molongui_author = $this->assign_molongui_guest_author( $post_id, $author_name );
         $this->assign_molongui_post_contributor( $post_id, $author_name );
@@ -319,7 +366,9 @@ class AD_Importer {
             return;
         }
 
-        $this->assign_guest_author_taxonomy_terms( $post_id, $author_name );
+        if ( ! $selected_term_id ) {
+            $this->assign_guest_author_taxonomy_terms( $post_id, $author_name );
+        }
         $this->assign_coauthors_plus_guest_author( $post_id, $author_name );
     }
 

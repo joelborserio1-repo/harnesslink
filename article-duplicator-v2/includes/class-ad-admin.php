@@ -93,6 +93,43 @@ class AD_Admin {
     }
 
     /* =========================================================
+       AUTHOR DROPDOWN
+       Site users plus guest authors from the 'author' taxonomy
+       (wp-admin → Posts → Authors). Values are a WP user ID or
+       'term-{id}' for a guest author term.
+    ========================================================= */
+
+    private function author_dropdown( $name, $id, $selected, $none_label ) {
+        $selected = (string) $selected;
+
+        $users = get_users( [ 'orderby' => 'display_name', 'fields' => [ 'ID', 'display_name', 'user_login' ] ] );
+        $terms = [];
+        if ( taxonomy_exists( 'author' ) ) {
+            $terms = get_terms( [ 'taxonomy' => 'author', 'hide_empty' => false ] );
+            if ( is_wp_error( $terms ) ) {
+                $terms = [];
+            }
+        }
+        ?>
+        <select name="<?php echo esc_attr( $name ); ?>" id="<?php echo esc_attr( $id ); ?>">
+            <option value=""><?php echo esc_html( $none_label ); ?></option>
+            <?php if ( ! empty( $terms ) ) : ?>
+            <optgroup label="<?php esc_attr_e( 'Authors', 'article-duplicator' ); ?>">
+                <?php foreach ( $terms as $term ) : $val = 'term-' . $term->term_id; ?>
+                <option value="<?php echo esc_attr( $val ); ?>" <?php selected( $selected, $val ); ?>><?php echo esc_html( $term->name ); ?></option>
+                <?php endforeach; ?>
+            </optgroup>
+            <?php endif; ?>
+            <optgroup label="<?php esc_attr_e( 'Site Users', 'article-duplicator' ); ?>">
+                <?php foreach ( $users as $user ) : ?>
+                <option value="<?php echo esc_attr( $user->ID ); ?>" <?php selected( $selected, (string) $user->ID ); ?>><?php echo esc_html( $user->display_name . ' (' . $user->user_login . ')' ); ?></option>
+                <?php endforeach; ?>
+            </optgroup>
+        </select>
+        <?php
+    }
+
+    /* =========================================================
        ASSETS
     ========================================================= */
 
@@ -231,18 +268,11 @@ class AD_Admin {
             <div class="artdup-panel">
                 <h2><?php _e( 'Published By', 'article-duplicator' ); ?></h2>
                 <div class="artdup-row">
-                    <?php wp_dropdown_users( [
-                        'name'              => 'artdup_author',
-                        'id'                => 'artdup-author',
-                        'selected'          => absint( get_option( 'ad_default_author', 0 ) ),
-                        'show_option_none'  => __( '— Default author —', 'article-duplicator' ),
-                        'option_none_value' => 0,
-                        'show'              => 'display_name_with_login',
-                    ] ); ?>
+                    <?php $this->author_dropdown( 'artdup_author', 'artdup-author', get_option( 'ad_default_author', '' ), __( '— Default author —', 'article-duplicator' ) ); ?>
                 </div>
                 <p class="description">
                     <?php printf(
-                        __( 'Imported articles below will be credited to this user. Leave on <em>Default author</em> to use the default set in <a href="%s">Settings</a>.', 'article-duplicator' ),
+                        __( 'Imported articles below will be credited to this user or guest author. Leave on <em>Default author</em> to use the default set in <a href="%s">Settings</a>.', 'article-duplicator' ),
                         admin_url( 'admin.php?page=artdup-settings' )
                     ); ?>
                 </p>
@@ -402,14 +432,8 @@ class AD_Admin {
                         <tr>
                             <th><?php _e( 'Default Author', 'article-duplicator' ); ?></th>
                             <td>
-                                <?php wp_dropdown_users( [
-                                    'name'              => 'ad_default_author',
-                                    'selected'          => absint( get_option( 'ad_default_author', 0 ) ),
-                                    'show_option_none'  => __( '— Harnesslink account (legacy) —', 'article-duplicator' ),
-                                    'option_none_value' => 0,
-                                    'show'              => 'display_name_with_login',
-                                ] ); ?>
-                                <p class="description"><?php _e( 'User credited as the author of imported articles (including scheduled auto-imports). Can be overridden per import on the Import page. When the source article has no byline, this user\'s display name is also used as the byline.', 'article-duplicator' ); ?></p>
+                                <?php $this->author_dropdown( 'ad_default_author', 'ad-default-author', get_option( 'ad_default_author', '' ), __( '— Harnesslink account (legacy) —', 'article-duplicator' ) ); ?>
+                                <p class="description"><?php _e( 'Who is credited as the author of imported articles (including scheduled auto-imports) — a site user or a guest author from the Authors taxonomy. Can be overridden per import on the Import page. When the source article has no byline, this name is also used as the byline.', 'article-duplicator' ); ?></p>
                             </td>
                         </tr>
                         <tr>
@@ -669,7 +693,7 @@ class AD_Admin {
             'ad_post_status'       => 'sanitize_text_field',
             'ad_post_type'         => 'sanitize_text_field',
             'ad_default_category'  => 'absint',
-            'ad_default_author'    => 'absint',
+            'ad_default_author'    => 'sanitize_text_field',
             'ad_max_articles'      => 'absint',
             'ad_prefix_title'      => 'sanitize_text_field',
             'ad_schedule_interval' => 'sanitize_text_field',

@@ -43,7 +43,7 @@ class AD_Ajax {
 
         $scraper   = new AD_Scraper();
         $importer  = new AD_Importer();
-        $author_id = absint( $_POST['author_id'] ?? 0 );
+        $author_id = sanitize_text_field( wp_unslash( $_POST['author_id'] ?? '' ) );
 
         $articles = $scraper->fetch_article_list();
         if ( is_wp_error( $articles ) ) {
@@ -140,7 +140,7 @@ class AD_Ajax {
 
         $scraper   = new AD_Scraper();
         $importer  = new AD_Importer();
-        $author_id = absint( $_POST['author_id'] ?? 0 );
+        $author_id = sanitize_text_field( wp_unslash( $_POST['author_id'] ?? '' ) );
 
         $data = $scraper->fetch_article_content( $url );
         if ( is_wp_error( $data ) ) {
