@@ -94,15 +94,27 @@ class AD_Admin {
 
     /* =========================================================
        AUTHOR DROPDOWN
-       Site users plus guest authors from the 'author' taxonomy
-       (wp-admin → Posts → Authors). Values are a WP user ID or
-       'term-{id}' for a guest author term.
+       Site users, Molongui guest authors (the guest_author post
+       type) and guest author terms from the 'author' taxonomy.
+       Values: WP user ID, 'guest-{post_id}' or 'term-{term_id}'.
     ========================================================= */
 
     private function author_dropdown( $name, $id, $selected, $none_label ) {
         $selected = (string) $selected;
 
         $users = get_users( [ 'orderby' => 'display_name', 'fields' => [ 'ID', 'display_name', 'user_login' ] ] );
+
+        $guests = [];
+        if ( post_type_exists( 'guest_author' ) ) {
+            $guests = get_posts( [
+                'post_type'      => 'guest_author',
+                'post_status'    => [ 'publish', 'draft', 'pending', 'private' ],
+                'posts_per_page' => -1,
+                'orderby'        => 'title',
+                'order'          => 'ASC',
+            ] );
+        }
+
         $terms = [];
         if ( taxonomy_exists( 'author' ) ) {
             $terms = get_terms( [ 'taxonomy' => 'author', 'hide_empty' => false ] );
@@ -113,6 +125,13 @@ class AD_Admin {
         ?>
         <select name="<?php echo esc_attr( $name ); ?>" id="<?php echo esc_attr( $id ); ?>">
             <option value=""><?php echo esc_html( $none_label ); ?></option>
+            <?php if ( ! empty( $guests ) ) : ?>
+            <optgroup label="<?php esc_attr_e( 'Guest Authors', 'article-duplicator' ); ?>">
+                <?php foreach ( $guests as $guest ) : $val = 'guest-' . $guest->ID; ?>
+                <option value="<?php echo esc_attr( $val ); ?>" <?php selected( $selected, $val ); ?>><?php echo esc_html( get_the_title( $guest ) ); ?></option>
+                <?php endforeach; ?>
+            </optgroup>
+            <?php endif; ?>
             <?php if ( ! empty( $terms ) ) : ?>
             <optgroup label="<?php esc_attr_e( 'Authors', 'article-duplicator' ); ?>">
                 <?php foreach ( $terms as $term ) : $val = 'term-' . $term->term_id; ?>
