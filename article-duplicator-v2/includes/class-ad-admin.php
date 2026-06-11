@@ -79,7 +79,9 @@ class AD_Admin {
             'ad_default_category', 'ad_default_author', 'ad_import_images', 'ad_import_featured',
             'ad_duplicate_check', 'ad_auto_schedule', 'ad_schedule_interval',
             'ad_schedule_mode', 'ad_max_articles', 'ad_prefix_title', 'ad_log_enabled',
+            'ad_replay_cust', 'ad_replay_auto',
         ];
+        register_setting( 'ad_settings_group', 'ad_replay_tracks', [ 'sanitize_callback' => 'sanitize_textarea_field' ] );
         // Register per-source schedule options
         foreach ( array_keys( AD_Sources::get_all() ) as $slug ) {
             register_setting( 'ad_settings_group', 'ad_schedule_' . $slug,
@@ -457,6 +459,36 @@ class AD_Admin {
                     </table>
                 </div>
 
+                <!-- RACE REPLAYS -->
+                <div class="artdup-panel">
+                    <h2><?php _e( 'Race Replays', 'article-duplicator' ); ?></h2>
+                    <table class="form-table artdup-form-table">
+                        <tr>
+                            <th><?php _e( 'Customer Code', 'article-duplicator' ); ?></th>
+                            <td>
+                                <input type="text" name="ad_replay_cust" value="<?php echo esc_attr( get_option('ad_replay_cust','HarnessLink') ); ?>" class="regular-text" />
+                                <p class="description"><?php _e( 'The <code>cust</code> parameter in the Roberts Stream replay URL. Usually <strong>HarnessLink</strong>.', 'article-duplicator' ); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><?php _e( 'Track Codes', 'article-duplicator' ); ?></th>
+                            <td>
+                                <textarea name="ad_replay_tracks" rows="6" class="large-text code" placeholder="PRD|Track Name&#10;CODE|Another Track"><?php echo esc_textarea( get_option('ad_replay_tracks','') ); ?></textarea>
+                                <p class="description"><?php _e( 'One track per line in the format <code>CODE|Track Name</code> (e.g. <code>PRD|…</code>). Codes appear as suggestions in the Race Replay box on the post editor, and the track name is used to auto-detect replays during import.', 'article-duplicator' ); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><?php _e( 'Auto-Attach on Import', 'article-duplicator' ); ?></th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="ad_replay_auto" value="1" <?php checked( get_option('ad_replay_auto','1'), '1' ); ?> />
+                                    <?php _e( 'Try to detect the track and race number in scraped articles and attach the replay player automatically (uses the track list above).', 'article-duplicator' ); ?>
+                                </label>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
                 <!-- DEDUPLICATION -->
                 <div class="artdup-panel">
                     <h2><?php _e( 'Deduplication & Logging', 'article-duplicator' ); ?></h2>
@@ -642,11 +674,13 @@ class AD_Admin {
             'ad_prefix_title'      => 'sanitize_text_field',
             'ad_schedule_interval' => 'sanitize_text_field',
             'ad_schedule_mode'     => 'sanitize_text_field',
+            'ad_replay_cust'       => 'sanitize_text_field',
+            'ad_replay_tracks'     => 'sanitize_textarea_field',
         ];
         foreach ($fields as $key => $fn) {
             update_option( $key, $fn( $_POST[$key] ?? '' ) );
         }
-        foreach (['ad_import_images','ad_import_featured','ad_duplicate_check','ad_auto_schedule','ad_log_enabled'] as $chk) {
+        foreach (['ad_import_images','ad_import_featured','ad_duplicate_check','ad_auto_schedule','ad_log_enabled','ad_replay_auto'] as $chk) {
             update_option( $chk, isset( $_POST[$chk] ) ? '1' : '0' );
         }
         // Per-source independent intervals

@@ -105,6 +105,9 @@ class AD_Importer {
         }
         $this->assign_guest_author( $post_id, $guest_author_name );
 
+        // ── Attach race replay when track + race can be detected ──────
+        AD_Replays::maybe_attach_to_import( $post_id, $article_data );
+
         // ── Assign selected standard WordPress category ──────────────
         $default_cat = get_option( 'ad_default_category', '' );
         if ( ! empty( $default_cat ) && taxonomy_exists( 'category' ) ) {

@@ -3,7 +3,7 @@
  * Plugin Name: Article Duplicator
  * Plugin URI:  https://yoursite.com/article-duplicator
  * Description: Scrape and duplicate horse racing news/articles into your WordPress site.
- * Version:     1.2.0
+ * Version:     1.3.0
  * Author:      Your Name
  * License:     GPL-2.0+
  * Text Domain: article-duplicator
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'AD_VERSION',     '1.2.0' );
+define( 'AD_VERSION',     '1.3.0' );
 define( 'AD_PLUGIN_DIR',  plugin_dir_path( __FILE__ ) );
 define( 'AD_PLUGIN_URL',  plugin_dir_url( __FILE__ ) );
 define( 'AD_PLUGIN_FILE', __FILE__ );
@@ -22,6 +22,7 @@ require_once AD_PLUGIN_DIR . 'includes/class-ad-sources.php';
 require_once AD_PLUGIN_DIR . 'includes/class-ad-cpt.php';
 require_once AD_PLUGIN_DIR . 'includes/class-ad-scraper.php';
 require_once AD_PLUGIN_DIR . 'includes/class-ad-importer.php';
+require_once AD_PLUGIN_DIR . 'includes/class-ad-replays.php';
 require_once AD_PLUGIN_DIR . 'includes/class-ad-scheduler.php';
 require_once AD_PLUGIN_DIR . 'includes/class-ad-admin.php';
 require_once AD_PLUGIN_DIR . 'includes/class-ad-ajax.php';
@@ -36,6 +37,9 @@ function ad_activate() {
         'ad_post_type'         => 'ad_article',
         'ad_default_category'  => '',
         'ad_default_author'    => '',
+        'ad_replay_cust'       => 'HarnessLink',
+        'ad_replay_tracks'     => '',
+        'ad_replay_auto'       => '1',
         'ad_import_images'     => '1',
         'ad_import_featured'   => '1',
         'ad_duplicate_check'   => '1',
@@ -91,6 +95,7 @@ function ad_init() {
     new AD_Admin();
     new AD_Ajax();
     new AD_Scheduler();
+    new AD_Replays();
 
     add_filter( 'molongui_contributors/pre_get_contributor_by', 'ad_molongui_contributors_get_guest_author', 10, 3 );
     add_action( 'init', 'ad_maybe_flush_rewrite_rules', 99 );
