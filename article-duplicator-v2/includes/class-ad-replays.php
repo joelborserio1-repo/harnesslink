@@ -88,13 +88,26 @@ class AD_Replays {
     }
 
     /* =========================================================
-       TRACK LIST (configured in Settings)
-       One per line: CODE|Track Name  e.g.  PRD|Prairie Downs
+       TRACK LIST
+       Built-in defaults (verified against the replay player only —
+       Roberts Stream codes are NOT USTA abbreviations) merged with
+       the editable list in Settings. One per line: CODE|Track Name.
     ========================================================= */
+
+    /**
+     * Codes verified by playing an actual replay. Add here only after
+     * the preview confirms the code works.
+     */
+    public static function default_tracks() {
+        return [
+            'MEE' => 'The Meadows',
+            'PRD' => 'PRD',
+        ];
+    }
 
     public static function get_tracks() {
         $raw    = (string) get_option( 'ad_replay_tracks', '' );
-        $tracks = [];
+        $tracks = self::default_tracks();
 
         foreach ( preg_split( '/\r\n|\r|\n/', $raw ) as $line ) {
             $line = trim( $line );
@@ -158,23 +171,58 @@ class AD_Replays {
         <p class="description"><?php _e( 'Fill in all three fields and the replay player is added automatically at the end of the article. Leave the race number empty to remove it.', 'article-duplicator' ); ?></p>
 
         <div id="ad-replay-preview" style="margin-top:8px;"></div>
-        <button type="button" class="button" id="ad-replay-preview-btn"><?php _e( 'Preview replay', 'article-duplicator' ); ?></button>
+        <p>
+            <button type="button" class="button" id="ad-replay-preview-btn"><?php _e( 'Preview replay', 'article-duplicator' ); ?></button>
+            <button type="button" class="button" id="ad-replay-embed-btn"><?php _e( 'Embed', 'article-duplicator' ); ?></button>
+        </p>
+        <p class="description"><?php _e( '<strong>Embed</strong> copies the replay shortcode to your clipboard — paste it anywhere in the article to place the player there instead of at the end.', 'article-duplicator' ); ?></p>
 
         <script>
         (function(){
-            var btn = document.getElementById('ad-replay-preview-btn');
-            if (!btn) return;
-            btn.addEventListener('click', function(){
-                var d = document.getElementById('ad-replay-date').value,
-                    t = document.getElementById('ad-replay-track').value.toUpperCase(),
-                    r = document.getElementById('ad-replay-race').value,
-                    box = document.getElementById('ad-replay-preview');
-                if (!d || !t || !r) { box.innerHTML = '<em><?php echo esc_js( __( 'Enter date, track and race first.', 'article-duplicator' ) ); ?></em>'; return; }
+            function val(id){ var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+            function fields(){
+                return {
+                    d: val('ad-replay-date'),
+                    t: val('ad-replay-track').toUpperCase(),
+                    r: val('ad-replay-race')
+                };
+            }
+            function adCopy(text, btn){
+                var done = function(){
+                    var old = btn.textContent;
+                    btn.textContent = '<?php echo esc_js( __( 'Copied!', 'article-duplicator' ) ); ?>';
+                    setTimeout(function(){ btn.textContent = old; }, 1500);
+                };
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(done);
+                } else {
+                    var ta = document.createElement('textarea');
+                    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                    document.body.appendChild(ta); ta.select();
+                    try { document.execCommand('copy'); done(); } catch (e) {}
+                    document.body.removeChild(ta);
+                }
+            }
+
+            var previewBtn = document.getElementById('ad-replay-preview-btn');
+            if (previewBtn) previewBtn.addEventListener('click', function(){
+                var v = fields(), box = document.getElementById('ad-replay-preview');
+                if (!v.d || !v.t || !v.r) { box.innerHTML = '<em><?php echo esc_js( __( 'Enter date, track and race first.', 'article-duplicator' ) ); ?></em>'; return; }
                 var src = 'https://replays.robertsstream.com/racereplays/echoplay/replay.php'
-                        + '?d=' + encodeURIComponent(d) + '&r=' + encodeURIComponent(r)
-                        + '&tc=' + encodeURIComponent(t)
+                        + '?d=' + encodeURIComponent(v.d) + '&r=' + encodeURIComponent(v.r)
+                        + '&tc=' + encodeURIComponent(v.t)
                         + '&cust=<?php echo esc_js( rawurlencode( get_option( 'ad_replay_cust', 'HarnessLink' ) ?: 'HarnessLink' ) ); ?>&width=800';
-                box.innerHTML = '<iframe src="' + src + '" style="width:100%;height:220px;border:0;" scrolling="no" allowfullscreen></iframe>';
+                // 4:3 letterbox container so the whole frame is visible, never cropped.
+                box.innerHTML = '<div style="position:relative;padding-bottom:75%;height:0;background:#000;overflow:hidden;">'
+                              + '<iframe src="' + src + '" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" scrolling="no" allowfullscreen></iframe>'
+                              + '</div>';
+            });
+
+            var embedBtn = document.getElementById('ad-replay-embed-btn');
+            if (embedBtn) embedBtn.addEventListener('click', function(){
+                var v = fields();
+                if (!v.d || !v.t || !v.r) { alert('<?php echo esc_js( __( 'Enter date, track and race first.', 'article-duplicator' ) ); ?>'); return; }
+                adCopy('[race_replay date="' + v.d + '" track="' + v.t + '" race="' + v.r + '"]', this);
             });
         })();
         </script>

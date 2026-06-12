@@ -88,7 +88,18 @@ class AD_Byline {
         foreach ( get_users( [ 'orderby' => 'display_name', 'fields' => [ 'display_name' ] ] ) as $user ) {
             $suggestions[] = $user->display_name;
         }
-        $suggestions = array_values( array_unique( array_filter( $suggestions ) ) );
+
+        // De-duplicate case-insensitively and ignoring stray whitespace.
+        $unique = [];
+        foreach ( $suggestions as $name ) {
+            $name = trim( preg_replace( '/\s+/', ' ', (string) $name ) );
+            if ( '' === $name ) continue;
+            $key = mb_strtolower( $name );
+            if ( ! isset( $unique[ $key ] ) ) {
+                $unique[ $key ] = $name;
+            }
+        }
+        $suggestions = array_values( $unique );
         ?>
         <p>
             <input type="text" name="ad_byline" value="<?php echo esc_attr( $byline ); ?>"
