@@ -3,7 +3,7 @@
  * Plugin Name: Article Duplicator
  * Plugin URI:  https://yoursite.com/article-duplicator
  * Description: Scrape and duplicate horse racing news/articles into your WordPress site.
- * Version:     1.7.0
+ * Version:     1.8.0
  * Author:      Your Name
  * License:     GPL-2.0+
  * Text Domain: article-duplicator
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'AD_VERSION',     '1.7.0' );
+define( 'AD_VERSION',     '1.8.0' );
 define( 'AD_PLUGIN_DIR',  plugin_dir_path( __FILE__ ) );
 define( 'AD_PLUGIN_URL',  plugin_dir_url( __FILE__ ) );
 define( 'AD_PLUGIN_FILE', __FILE__ );
@@ -23,6 +23,7 @@ require_once AD_PLUGIN_DIR . 'includes/class-ad-cpt.php';
 require_once AD_PLUGIN_DIR . 'includes/class-ad-scraper.php';
 require_once AD_PLUGIN_DIR . 'includes/class-ad-importer.php';
 require_once AD_PLUGIN_DIR . 'includes/class-ad-replays.php';
+require_once AD_PLUGIN_DIR . 'includes/class-ad-results.php';
 require_once AD_PLUGIN_DIR . 'includes/class-ad-byline.php';
 require_once AD_PLUGIN_DIR . 'includes/class-ad-author-cleanup.php';
 require_once AD_PLUGIN_DIR . 'includes/class-ad-scheduler.php';
@@ -98,6 +99,7 @@ function ad_init() {
     new AD_Ajax();
     new AD_Scheduler();
     new AD_Replays();
+    new AD_Results();
     new AD_Byline();
     if ( is_admin() ) {
         new AD_Author_Cleanup();

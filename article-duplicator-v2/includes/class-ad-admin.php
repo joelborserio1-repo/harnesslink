@@ -516,8 +516,8 @@ class AD_Admin {
                         <tr>
                             <th><?php _e( 'Track Codes', 'article-duplicator' ); ?></th>
                             <td>
-                                <textarea name="ad_replay_tracks" rows="6" class="large-text code" placeholder="PRD|Track Name&#10;CODE|Another Track"><?php echo esc_textarea( get_option('ad_replay_tracks','') ); ?></textarea>
-                                <p class="description"><?php _e( 'One track per line in the format <code>CODE|Track Name</code> (e.g. <code>PRD|…</code>). Codes appear as suggestions in the Race Replay box on the post editor, and the track name is used to auto-detect replays during import.', 'article-duplicator' ); ?></p>
+                                <textarea name="ad_replay_tracks" rows="6" class="large-text code" placeholder="MEE|The Meadows|Mea&#10;REPLAY|Track Name|USTA"><?php echo esc_textarea( get_option('ad_replay_tracks','') ); ?></textarea>
+                                <p class="description"><?php _e( 'One track per line: <code>REPLAY|Track Name|USTA</code> — the Roberts Stream replay code, the track name, and the USTA code used for results links. Leave the replay code blank (<code>|Name|USTA</code>) when unverified. A built-in list of USTA codes ships with the plugin; lines here add to or override it. Track names are used to auto-detect replays during import.', 'article-duplicator' ); ?></p>
                             </td>
                         </tr>
                         <tr>

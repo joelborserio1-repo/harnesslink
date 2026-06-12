@@ -88,38 +88,129 @@ class AD_Replays {
     }
 
     /* =========================================================
-       TRACK LIST
-       Built-in defaults (verified against the replay player only —
-       Roberts Stream codes are NOT USTA abbreviations) merged with
-       the editable list in Settings. One per line: CODE|Track Name.
+       TRACK REGISTRY
+       Each track has up to two codes:
+         - replay code: Roberts Stream's tc= value (verified by playing
+           a replay — NOT the same code system as USTA)
+         - USTA code: used by m.ustrotting.com entries & results pages
+       Built-in defaults merged with the editable Settings list, one
+       per line: REPLAY|Track Name|USTA (replay may be left blank).
     ========================================================= */
 
     /**
-     * Codes verified by playing an actual replay. Add here only after
-     * the preview confirms the code works.
+     * USTA codes sourced from the live track dropdown on
+     * m.ustrotting.com/entriesandresults. Replay codes are filled in
+     * only once verified with the preview player.
      */
-    public static function default_tracks() {
-        return [
-            'MEE' => 'The Meadows',
-            'PRD' => 'PRD',
+    public static function default_registry() {
+        $rows = [
+            // [ label, usta_code, replay_code ]
+            [ 'The Meadows',            'Mea',   'MEE' ],
+            [ 'PRD',                    '',      'PRD' ],
+            [ 'Meadowlands',            'M',     '' ],
+            [ 'Yonkers Raceway',        'YR',    '' ],
+            [ 'Northfield Park',        'Nfld',  '' ],
+            [ 'Hoosier Park',           'HoP',   '' ],
+            [ "Harrah's Philadelphia",  'Phl',   '' ],
+            [ 'Harrington Raceway',     'Har',   '' ],
+            [ 'Monticello Raceway',     'MR',    '' ],
+            [ 'Ocean Downs',            'OD',    '' ],
+            [ 'Plainridge Park',        'PRc',   '' ],
+            [ 'Pocono Downs',           'PcD',   '' ],
+            [ 'Running Aces',           'Aces',  '' ],
+            [ 'Saratoga Harness',       'Stga',  '' ],
+            [ 'Scioto Downs',           'ScD',   '' ],
+            [ 'Tioga Downs',            'TgDn',  '' ],
+            [ 'Vernon Downs',           'VD',    '' ],
+            [ 'Buffalo Raceway',        'BR',    '' ],
+            [ 'Bangor Raceway',         'Bang',  '' ],
+            [ 'Cumberland Raceway',     'CUMB',  '' ],
+            [ 'Gaitway Farm',           'Gty',   '' ],
+            [ 'Oak Grove',              'OakGr', '' ],
+            [ 'Springfield',            'Spr',   '' ],
+            [ 'Converse',               'Cnvr',  '' ],
+            [ 'Croswell',               'Crswl', '' ],
+            [ 'LaCenter',               'Lcnt',  '' ],
+            [ 'Nashua',                 'Nash',  '' ],
+            [ 'Paulding',               'Pauld', '' ],
+            [ 'West Liberty',           'WstLb', '' ],
         ];
+
+        $entries = [];
+        foreach ( $rows as $row ) {
+            $entries[] = [ 'label' => $row[0], 'usta' => $row[1], 'replay' => strtoupper( $row[2] ) ];
+        }
+        return $entries;
     }
 
-    public static function get_tracks() {
-        $raw    = (string) get_option( 'ad_replay_tracks', '' );
-        $tracks = self::default_tracks();
+    public static function track_registry() {
+        $entries = self::default_registry();
 
-        foreach ( preg_split( '/\r\n|\r|\n/', $raw ) as $line ) {
+        foreach ( preg_split( '/\r\n|\r|\n/', (string) get_option( 'ad_replay_tracks', '' ) ) as $line ) {
             $line = trim( $line );
             if ( '' === $line ) continue;
 
-            $parts = array_map( 'trim', explode( '|', $line, 2 ) );
-            $code  = strtoupper( $parts[0] );
-            if ( '' === $code ) continue;
+            $parts  = array_map( 'trim', explode( '|', $line, 3 ) );
+            $replay = strtoupper( $parts[0] );
+            $label  = $parts[1] ?? '';
+            $usta   = $parts[2] ?? '';
 
-            $tracks[ $code ] = $parts[1] ?? $code;
+            // Legacy two-field format CODE|Name.
+            if ( '' === $label && '' !== $replay ) {
+                $label = $replay;
+            }
+            if ( '' === $replay && '' === $label ) continue;
+
+            // Merge into an existing entry (by replay code or name) or append.
+            $matched = false;
+            foreach ( $entries as &$entry ) {
+                $same_replay = '' !== $replay && $entry['replay'] === $replay;
+                $same_label  = '' !== $label && 0 === strcasecmp( $entry['label'], $label );
+                if ( $same_replay || $same_label ) {
+                    if ( '' !== $replay ) $entry['replay'] = $replay;
+                    if ( '' !== $label )  $entry['label']  = $label;
+                    if ( '' !== $usta )   $entry['usta']   = $usta;
+                    $matched = true;
+                    break;
+                }
+            }
+            unset( $entry );
+
+            if ( ! $matched ) {
+                $entries[] = [ 'label' => $label, 'usta' => $usta, 'replay' => $replay ];
+            }
         }
 
+        return $entries;
+    }
+
+    /**
+     * Find a track entry by replay code, USTA code or name.
+     */
+    public static function find_track( $input ) {
+        $needle = mb_strtolower( trim( (string) $input ) );
+        if ( '' === $needle ) return null;
+
+        foreach ( self::track_registry() as $entry ) {
+            if ( mb_strtolower( $entry['replay'] ) === $needle
+              || mb_strtolower( $entry['usta'] ) === $needle
+              || mb_strtolower( $entry['label'] ) === $needle ) {
+                return $entry;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Back-compat map of replay code => label (replay-capable tracks only).
+     */
+    public static function get_tracks() {
+        $tracks = [];
+        foreach ( self::track_registry() as $entry ) {
+            if ( '' !== $entry['replay'] ) {
+                $tracks[ $entry['replay'] ] = $entry['label'];
+            }
+        }
         return $tracks;
     }
 
@@ -147,7 +238,20 @@ class AD_Replays {
         $date  = get_post_meta( $post->ID, self::META_DATE,  true ) ?: get_the_date( 'Y-m-d', $post );
         $track = get_post_meta( $post->ID, self::META_TRACK, true );
         $race  = get_post_meta( $post->ID, self::META_RACE,  true );
-        $tracks = self::get_tracks();
+
+        // Replay-capable tracks first (their code works in the player);
+        // USTA-only tracks listed after for results links.
+        $suggestions = [];
+        foreach ( self::track_registry() as $entry ) {
+            if ( '' !== $entry['replay'] ) {
+                $suggestions[ $entry['replay'] ] = $entry['label'];
+            }
+        }
+        foreach ( self::track_registry() as $entry ) {
+            if ( '' === $entry['replay'] && '' !== $entry['usta'] ) {
+                $suggestions[ $entry['usta'] ] = $entry['label'] . ' ' . __( '(results only — replay code unverified)', 'article-duplicator' );
+            }
+        }
         ?>
         <p>
             <label for="ad-replay-date"><strong><?php _e( 'Race date', 'article-duplicator' ); ?></strong></label><br>
@@ -159,7 +263,7 @@ class AD_Replays {
                    list="ad-replay-track-list" placeholder="<?php esc_attr_e( 'e.g. PRD', 'article-duplicator' ); ?>"
                    style="width:100%;text-transform:uppercase;">
             <datalist id="ad-replay-track-list">
-                <?php foreach ( $tracks as $code => $label ) : ?>
+                <?php foreach ( $suggestions as $code => $label ) : ?>
                 <option value="<?php echo esc_attr( $code ); ?>"><?php echo esc_html( $label ); ?></option>
                 <?php endforeach; ?>
             </datalist>
@@ -174,8 +278,9 @@ class AD_Replays {
         <p>
             <button type="button" class="button" id="ad-replay-preview-btn"><?php _e( 'Preview replay', 'article-duplicator' ); ?></button>
             <button type="button" class="button" id="ad-replay-embed-btn"><?php _e( 'Embed', 'article-duplicator' ); ?></button>
+            <button type="button" class="button" id="ad-replay-results-btn"><?php _e( 'Results link', 'article-duplicator' ); ?></button>
         </p>
-        <p class="description"><?php _e( '<strong>Embed</strong> copies the replay shortcode to your clipboard — paste it anywhere in the article to place the player there instead of at the end.', 'article-duplicator' ); ?></p>
+        <p class="description"><?php _e( '<strong>Embed</strong> copies the replay shortcode to your clipboard — paste it anywhere in the article to place the player there instead of at the end. <strong>Results link</strong> copies a shortcode that renders a permanent link to the day\'s USTA results for this track.', 'article-duplicator' ); ?></p>
 
         <script>
         (function(){
@@ -223,6 +328,13 @@ class AD_Replays {
                 var v = fields();
                 if (!v.d || !v.t || !v.r) { alert('<?php echo esc_js( __( 'Enter date, track and race first.', 'article-duplicator' ) ); ?>'); return; }
                 adCopy('[race_replay date="' + v.d + '" track="' + v.t + '" race="' + v.r + '"]', this);
+            });
+
+            var resultsBtn = document.getElementById('ad-replay-results-btn');
+            if (resultsBtn) resultsBtn.addEventListener('click', function(){
+                var v = fields();
+                if (!v.d || !v.t) { alert('<?php echo esc_js( __( 'Enter date and track first.', 'article-duplicator' ) ); ?>'); return; }
+                adCopy('[race_results date="' + v.d + '" track="' + v.t + '"' + (v.r ? ' race="' + v.r + '"' : '') + ']', this);
             });
         })();
         </script>
