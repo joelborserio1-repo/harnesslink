@@ -9,6 +9,40 @@ class AD_Ajax {
         add_action( 'wp_ajax_ad_import_single',     [ $this, 'import_single' ] );
         add_action( 'wp_ajax_ad_clear_logs',        [ $this, 'clear_logs' ] );
         add_action( 'wp_ajax_ad_test_connection',   [ $this, 'test_connection' ] );
+        add_action( 'wp_ajax_ad_find_races',        [ $this, 'find_races' ] );
+    }
+
+    /**
+     * List a day's races (with winners) for the Race Replay box.
+     * Editors use this from the post editor, so it only needs edit_posts.
+     */
+    public function find_races() {
+        if ( ! current_user_can( 'edit_posts' ) ) {
+            wp_send_json_error( [ 'message' => __( 'Permission denied.', 'article-duplicator' ) ] );
+        }
+        check_ajax_referer( 'ad_nonce', 'nonce' );
+
+        $date  = sanitize_text_field( wp_unslash( $_POST['date'] ?? '' ) );
+        $track = sanitize_text_field( wp_unslash( $_POST['track'] ?? '' ) );
+        $entry = AD_Replays::find_track( $track );
+
+        if ( ! $entry || empty( $date ) ) {
+            wp_send_json_error( [ 'message' => __( 'Unknown track code or missing date.', 'article-duplicator' ) ] );
+        }
+        if ( empty( $entry['usta'] ) ) {
+            wp_send_json_error( [ 'message' => __( 'No USTA code configured for this track (Settings → Race Replays).', 'article-duplicator' ) ] );
+        }
+
+        $races = AD_Results::get_card_races( $entry, $date );
+        if ( empty( $races ) ) {
+            wp_send_json_error( [ 'message' => __( 'No results found for that track and date — the card may not be posted yet.', 'article-duplicator' ) ] );
+        }
+
+        $out = [];
+        foreach ( $races as $no => $race ) {
+            $out[] = [ 'race' => $no, 'winner' => $race['winner'] ];
+        }
+        wp_send_json_success( [ 'races' => $out ] );
     }
 
     private function verify() {

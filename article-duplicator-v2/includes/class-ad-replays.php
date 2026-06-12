@@ -276,10 +276,12 @@ class AD_Replays {
 
         <div id="ad-replay-preview" style="margin-top:8px;"></div>
         <p>
+            <button type="button" class="button" id="ad-replay-find-btn"><?php _e( 'Find race', 'article-duplicator' ); ?></button>
             <button type="button" class="button" id="ad-replay-preview-btn"><?php _e( 'Preview replay', 'article-duplicator' ); ?></button>
             <button type="button" class="button" id="ad-replay-embed-btn"><?php _e( 'Embed', 'article-duplicator' ); ?></button>
             <button type="button" class="button" id="ad-replay-results-btn"><?php _e( 'Results link', 'article-duplicator' ); ?></button>
         </p>
+        <div id="ad-replay-races" style="margin:6px 0;"></div>
         <p class="description"><?php _e( '<strong>Embed</strong> copies the replay shortcode to your clipboard — paste it anywhere in the article to place the player there instead of at the end. <strong>Results link</strong> copies a shortcode that renders a permanent link to the day\'s USTA results for this track.', 'article-duplicator' ); ?></p>
 
         <script>
@@ -335,6 +337,45 @@ class AD_Replays {
                 var v = fields();
                 if (!v.d || !v.t) { alert('<?php echo esc_js( __( 'Enter date and track first.', 'article-duplicator' ) ); ?>'); return; }
                 adCopy('[race_results date="' + v.d + '" track="' + v.t + '"' + (v.r ? ' race="' + v.r + '"' : '') + ']', this);
+            });
+
+            var findBtn = document.getElementById('ad-replay-find-btn');
+            if (findBtn) findBtn.addEventListener('click', function(){
+                var v = fields(), box = document.getElementById('ad-replay-races');
+                if (!v.d || !v.t) { alert('<?php echo esc_js( __( 'Enter date and track first.', 'article-duplicator' ) ); ?>'); return; }
+                findBtn.disabled = true;
+                box.textContent = '<?php echo esc_js( __( 'Looking up the day\'s card…', 'article-duplicator' ) ); ?>';
+                var body = new URLSearchParams({
+                    action: 'ad_find_races',
+                    nonce:  '<?php echo esc_js( wp_create_nonce( 'ad_nonce' ) ); ?>',
+                    date:   v.d,
+                    track:  v.t
+                });
+                fetch('<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    credentials: 'same-origin',
+                    body: body.toString()
+                }).then(function(r){ return r.json(); }).then(function(res){
+                    findBtn.disabled = false;
+                    if (!res.success) { box.textContent = (res.data && res.data.message) || '<?php echo esc_js( __( 'Lookup failed.', 'article-duplicator' ) ); ?>'; return; }
+                    box.innerHTML = '';
+                    res.data.races.forEach(function(rc){
+                        var b = document.createElement('button');
+                        b.type = 'button';
+                        b.className = 'button';
+                        b.style.cssText = 'display:block;width:100%;margin:2px 0;text-align:left;white-space:normal;';
+                        b.textContent = '<?php echo esc_js( __( 'Race', 'article-duplicator' ) ); ?> ' + rc.race + ' — ' + rc.winner;
+                        b.addEventListener('click', function(){
+                            document.getElementById('ad-replay-race').value = rc.race;
+                            box.innerHTML = '';
+                        });
+                        box.appendChild(b);
+                    });
+                }).catch(function(){
+                    findBtn.disabled = false;
+                    box.textContent = '<?php echo esc_js( __( 'Request failed.', 'article-duplicator' ) ); ?>';
+                });
             });
         })();
         </script>
@@ -396,8 +437,10 @@ class AD_Replays {
 
     /**
      * Try to detect track + race number from scraped text and attach the
-     * replay meta. The article date is used as race date. Only fires when
-     * a configured track name or code matches, so it never guesses.
+     * replay meta. The article date is used as race date. The race number
+     * comes from explicit "Race N" text, or failing that, from matching
+     * the horses the article mentions against the USTA day card. Only
+     * fires when a configured track matches — it never guesses.
      */
     public static function maybe_attach_to_import( $post_id, array $article_data ) {
         if ( ! get_option( 'ad_replay_auto', '1' ) ) {
@@ -410,33 +453,40 @@ class AD_Replays {
             ( $article_data['content'] ?? '' )
         );
 
-        $track_code = '';
-        foreach ( self::get_tracks() as $code => $label ) {
-            if ( $label !== $code && false !== stripos( $haystack, $label ) ) {
-                $track_code = $code;
+        $track = null;
+        foreach ( self::track_registry() as $entry ) {
+            if ( '' === $entry['replay'] ) continue; // replay needs a verified player code
+            if ( $entry['label'] !== $entry['replay'] && false !== stripos( $haystack, $entry['label'] ) ) {
+                $track = $entry;
                 break;
             }
-            if ( preg_match( '/\b' . preg_quote( $code, '/' ) . '\b/', $haystack ) ) {
-                $track_code = $code;
+            if ( strlen( $entry['replay'] ) >= 2 && preg_match( '/\b' . preg_quote( $entry['replay'], '/' ) . '\b/', $haystack ) ) {
+                $track = $entry;
                 break;
             }
         }
-        if ( '' === $track_code ) {
+        if ( ! $track ) {
             return false;
         }
-
-        if ( ! preg_match( '/\brace\s*(?:no\.?|number|#)?\s*(\d{1,2})\b/i', $haystack, $m ) ) {
-            return false;
-        }
-        $race = absint( $m[1] );
 
         $date = get_the_date( 'Y-m-d', $post_id );
         if ( ! $date ) {
             return false;
         }
 
+        $race = 0;
+        if ( preg_match( '/\brace\s*(?:no\.?|number|#)?\s*(\d{1,2})\b/i', $haystack, $m ) ) {
+            $race = absint( $m[1] );
+        }
+        if ( ! $race && class_exists( 'AD_Results' ) ) {
+            $race = AD_Results::find_race_by_horses( $track, $date, $haystack );
+        }
+        if ( ! $race ) {
+            return false;
+        }
+
         update_post_meta( $post_id, self::META_DATE,  $date );
-        update_post_meta( $post_id, self::META_TRACK, $track_code );
+        update_post_meta( $post_id, self::META_TRACK, $track['replay'] );
         update_post_meta( $post_id, self::META_RACE,  $race );
 
         return true;

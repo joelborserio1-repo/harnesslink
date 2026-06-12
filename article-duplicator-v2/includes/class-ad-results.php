@@ -132,4 +132,111 @@ class AD_Results {
 
         return $best;
     }
+
+    /* =========================================================
+       RACE-LEVEL DATA
+       The day card embeds every race as a hidden
+       <div class="race-chart race-no-N"> block listing its horses
+       (winner first), which lets us map horse names to race numbers.
+    ========================================================= */
+
+    /**
+     * Parse the day card into [ race_no => [ 'horses' => [...], 'winner' => name ] ].
+     */
+    public static function get_card_races( $entry, $date ) {
+        $card_url = self::resolve_card_url( $entry, $date );
+        if ( '' === $card_url ) {
+            return [];
+        }
+
+        $cache_key = 'ad_card_' . md5( $card_url );
+        $cached    = get_transient( $cache_key );
+        if ( is_array( $cached ) ) {
+            return $cached;
+        }
+
+        $response = wp_remote_get( $card_url, [
+            'timeout'    => 20,
+            'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        ] );
+        if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+            return [];
+        }
+
+        $races  = [];
+        $blocks = preg_split( '/class="race-chart race-no-(\d+)/', wp_remote_retrieve_body( $response ), -1, PREG_SPLIT_DELIM_CAPTURE );
+
+        for ( $i = 1; $i + 1 < count( $blocks ) + 1; $i += 2 ) {
+            $no   = (int) $blocks[ $i ];
+            $html = $blocks[ $i + 1 ] ?? '';
+            if ( ! $no || '' === $html ) continue;
+
+            // Only the wagering/finish tables — the breeding details further
+            // down ("card-body") also link sires/dams via name_search.cfm.
+            $cut = strpos( $html, 'card-body' );
+            if ( false !== $cut ) {
+                $html = substr( $html, 0, $cut );
+            }
+
+            if ( ! preg_match_all( '#name_search\.cfm\?horse_id=\d+"\s*>\s*([^<]+?)\s*</a>#i', $html, $hm ) ) {
+                continue;
+            }
+
+            $names = [];
+            foreach ( $hm[1] as $name ) {
+                $name = html_entity_decode( trim( preg_replace( '/\s+/', ' ', $name ) ), ENT_QUOTES );
+                if ( '' !== $name && ! in_array( $name, $names, true ) ) {
+                    $names[] = $name;
+                }
+            }
+
+            if ( $names ) {
+                $races[ $no ] = [ 'horses' => $names, 'winner' => $names[0] ];
+            }
+        }
+
+        if ( $races ) {
+            set_transient( $cache_key, $races, 30 * DAY_IN_SECONDS );
+        }
+        return $races;
+    }
+
+    /**
+     * Work out which race an article is about by matching the horses it
+     * mentions against the day card. Returns the race number only when one
+     * race clearly matches best, 0 otherwise.
+     */
+    public static function find_race_by_horses( $entry, $date, $text ) {
+        $races = self::get_card_races( $entry, $date );
+        if ( empty( $races ) ) {
+            return 0;
+        }
+
+        $text = mb_strtolower( (string) $text );
+        $hits = [];
+        foreach ( $races as $no => $race ) {
+            $count = 0;
+            foreach ( $race['horses'] as $horse ) {
+                if ( mb_strlen( $horse ) < 4 ) continue;
+                if ( false !== mb_strpos( $text, mb_strtolower( $horse ) ) ) {
+                    $count++;
+                }
+            }
+            $hits[ $no ] = $count;
+        }
+
+        arsort( $hits );
+        $nos  = array_keys( $hits );
+        $best = $nos[0] ?? 0;
+
+        if ( ! $best || $hits[ $best ] < 1 ) {
+            return 0;
+        }
+        // Ambiguous when another race matches just as many horses.
+        if ( isset( $nos[1] ) && $hits[ $nos[1] ] === $hits[ $best ] ) {
+            return 0;
+        }
+
+        return $best;
+    }
 }
