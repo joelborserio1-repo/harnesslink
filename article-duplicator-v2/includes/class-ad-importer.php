@@ -410,7 +410,7 @@ class AD_Importer {
         }
 
         if ( ! $guest_id || 'guest_author' !== get_post_type( $guest_id ) ) {
-            $guest_id = $this->get_or_create_molongui_guest_author( $author_name );
+            $guest_id = $this->find_molongui_guest_author( $author_name );
         }
         if ( ! $guest_id ) {
             return false;
@@ -426,11 +426,17 @@ class AD_Importer {
     }
 
     /**
-     * Find or create a Molongui guest_author CPT entry.
+     * Find an existing Molongui guest_author CPT entry by name.
+     *
+     * Lookup only — entries are deliberately never created from scraped
+     * bylines, which used to flood the Guest Authors screen with junk.
      */
-    private function get_or_create_molongui_guest_author( $author_name ) {
-        $author_name = trim( $author_name ?: 'Harnesslink' );
-        $slug        = sanitize_title( $author_name );
+    private function find_molongui_guest_author( $author_name ) {
+        $author_name = trim( (string) $author_name );
+        if ( '' === $author_name ) {
+            return 0;
+        }
+        $slug = sanitize_title( $author_name );
 
         $existing = get_posts( [
             'post_type'      => 'guest_author',
@@ -451,28 +457,7 @@ class AD_Importer {
             ] );
         }
 
-        if ( ! empty( $existing ) ) {
-            $guest_id = (int) $existing[0];
-        } else {
-            $guest_id = wp_insert_post( [
-                'post_type'   => 'guest_author',
-                'post_status' => 'publish',
-                'post_title'  => $author_name,
-                'post_name'   => $slug,
-            ], true );
-
-            if ( is_wp_error( $guest_id ) ) {
-                return 0;
-            }
-            $guest_id = (int) $guest_id;
-        }
-
-        $name_parts = preg_split( '/\s+/', $author_name, 2 );
-        update_post_meta( $guest_id, '_molongui_guest_author_display_name', $author_name );
-        update_post_meta( $guest_id, '_molongui_guest_author_first_name', $name_parts[0] ?? $author_name );
-        update_post_meta( $guest_id, '_molongui_guest_author_last_name', $name_parts[1] ?? '' );
-
-        return $guest_id;
+        return ! empty( $existing ) ? (int) $existing[0] : 0;
     }
 
     /**
@@ -502,7 +487,7 @@ class AD_Importer {
             register_taxonomy_for_object_type( $taxonomy, get_post_type( $post_id ) ?: 'post' );
         }
 
-        $guest_id   = post_type_exists( 'guest_author' ) ? $this->get_or_create_molongui_guest_author( $author_name ) : 0;
+        $guest_id   = post_type_exists( 'guest_author' ) ? $this->find_molongui_guest_author( $author_name ) : 0;
         $guest_slug = $guest_id ? get_post_field( 'post_name', $guest_id ) : sanitize_title( $author_name );
         $term_slug  = 'mpcu-' . $guest_slug;
         $term       = get_term_by( 'slug', $term_slug, $taxonomy );
