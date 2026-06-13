@@ -27,7 +27,7 @@
 
 	var EMAIL_KEY = 'hlpw_email';
 	var dismissed = false;
-	var impressionFired = false;
+	var wallHandled = false;
 
 	// --- Conversion analytics (GTM dataLayer + GA4 gtag if present) ---------
 	function track(name, params) {
@@ -40,15 +40,34 @@
 		} catch (e) {}
 	}
 
-	function maybeTrackImpression() {
-		if (impressionFired) {
+	// When the wall becomes visible, verify the REAL (uncached) login state.
+	// If a page cache served a stale logged-out copy to a member who is
+	// actually logged in, hide the wall. Otherwise count a genuine impression.
+	function onWallVisible() {
+		if (wallHandled) {
 			return;
 		}
 		var portal = document.getElementById('lplb-portal');
-		if (portal && portal.classList.contains('is-visible')) {
-			impressionFired = true;
-			track('paywall_view', { paywall: 'harnesslink' });
+		if (!portal || !portal.classList.contains('is-visible')) {
+			return;
 		}
+		wallHandled = true;
+
+		var cfg = window.HLPW || {};
+		var url = (cfg.ajaxUrl || '/wp-admin/admin-ajax.php') + '?action=hlpw_auth_check&_=' + Date.now();
+
+		fetch(url, { credentials: 'same-origin' })
+			.then(function (r) { return r.json(); })
+			.then(function (res) {
+				if (res && res.logged_in) {
+					closeWall(); // stale cached page — they're really logged in
+				} else {
+					track('paywall_view', { paywall: 'harnesslink' });
+				}
+			})
+			.catch(function () {
+				track('paywall_view', { paywall: 'harnesslink' });
+			});
 	}
 
 	// Watch the overlay for the visibility class (LP toggles it after load).
@@ -58,11 +77,11 @@
 			return;
 		}
 		portal.dataset.hlpwVisWatch = '1';
-		new MutationObserver(maybeTrackImpression).observe(portal, {
+		new MutationObserver(onWallVisible).observe(portal, {
 			attributes: true,
 			attributeFilter: ['class']
 		});
-		maybeTrackImpression();
+		onWallVisible();
 	}
 
 	// Fire a sign_up event on the page load right after registration

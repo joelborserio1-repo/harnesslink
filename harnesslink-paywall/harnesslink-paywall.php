@@ -3,7 +3,7 @@
  * Plugin Name: HarnessLink PayWall
  * Plugin URI:  https://harnesslink.com
  * Description: HarnessLink companion for Leaky Paywall. Restyles the registration wall (frosted lead-in teaser + clean navy signup card) and rebrands the Leaky Paywall admin experience as "HarnessLink PayWall". Cosmetic only — does not change metering, restriction counts, access levels or any server-side gating.
- * Version:     1.1.0
+ * Version:     1.1.1
  * Author:      HarnessLink
  * Text Domain: harnesslink-paywall
  *
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'HLPW_VERSION',    '1.1.0' );
+define( 'HLPW_VERSION',    '1.1.1' );
 define( 'HLPW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'HLPW_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
@@ -121,6 +121,23 @@ add_filter( 'auth_cookie_expiration', function ( $length, $user_id, $remember ) 
 	}
 	return $length;
 }, 10, 3 );
+
+/* ------------------------------------------------------------------ *
+ * 2d. Uncached login-state check.
+ *
+ *     If a full-page cache/CDN serves a stale logged-OUT copy to a member
+ *     who is actually logged in, they wrongly see the wall (and report
+ *     "it logged me out / I have to log in again"). admin-ajax is dynamic
+ *     and not page-cached, and the browser sends the (HttpOnly) auth
+ *     cookie with it — so this reflects the REAL session. The JS hides the
+ *     wall when this returns logged_in = true.
+ * ------------------------------------------------------------------ */
+function hlpw_auth_check() {
+	nocache_headers();
+	wp_send_json( array( 'logged_in' => is_user_logged_in() ) );
+}
+add_action( 'wp_ajax_hlpw_auth_check', 'hlpw_auth_check' );
+add_action( 'wp_ajax_nopriv_hlpw_auth_check', 'hlpw_auth_check' );
 
 /* ------------------------------------------------------------------ *
  * 3. Rebrand "Leaky Paywall" -> "HarnessLink PayWall"
