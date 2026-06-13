@@ -22,6 +22,9 @@
 	// Reassurance line shown under the button (addresses "will this cost me?").
 	var REASSURE_TEXT = 'No payment · No credit card · Sign up in 10 seconds';
 
+	// Clear, worded escape for less tech-confident visitors.
+	var KEEP_READING_TEXT = 'Maybe later — keep reading';
+
 	var EMAIL_KEY = 'hlpw_email';
 	var dismissed = false;
 	var impressionFired = false;
@@ -132,9 +135,34 @@
 		btn.type = 'button';
 		btn.className = 'hlpw-wall-close';
 		btn.setAttribute('aria-label', 'Close');
-		btn.innerHTML = '&times;';
+		btn.setAttribute('title', 'Close');
+		btn.innerHTML = '<span aria-hidden="true">&times;</span> Close';
 		btn.addEventListener('click', closeWall);
 		portal.appendChild(btn);
+	}
+
+	// Clear worded escape inside the card (older/less tech-confident users
+	// often don't recognise an X or know to press Esc).
+	function injectKeepReading() {
+		var panel = document.getElementById('lplb-subscribe-panel');
+		if (!panel || panel.querySelector('.hlpw-keep-reading')) {
+			return;
+		}
+		var link = document.createElement('button');
+		link.type = 'button';
+		link.className = 'hlpw-keep-reading';
+		link.textContent = KEEP_READING_TEXT;
+		link.addEventListener('click', closeWall);
+		panel.appendChild(link);
+	}
+
+	// Click the dark backdrop to close (intuitive, especially on mobile).
+	function bindBackdropClose() {
+		var mask = document.getElementById('lplb-mask');
+		if (mask && !mask.dataset.hlpwClose) {
+			mask.dataset.hlpwClose = '1';
+			mask.addEventListener('click', closeWall);
+		}
 	}
 
 	function injectFreeBadge() {
@@ -174,6 +202,8 @@
 			return false;
 		}
 		injectCloseButton(portal);
+		injectKeepReading();
+		bindBackdropClose();
 		injectFreeBadge();
 		injectReassurance();
 		prefillEmail();

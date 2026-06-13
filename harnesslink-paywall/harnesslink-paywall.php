@@ -3,7 +3,7 @@
  * Plugin Name: HarnessLink PayWall
  * Plugin URI:  https://harnesslink.com
  * Description: HarnessLink companion for Leaky Paywall. Restyles the registration wall (frosted lead-in teaser + clean navy signup card) and rebrands the Leaky Paywall admin experience as "HarnessLink PayWall". Cosmetic only — does not change metering, restriction counts, access levels or any server-side gating.
- * Version:     1.0.9
+ * Version:     1.1.0
  * Author:      HarnessLink
  * Text Domain: harnesslink-paywall
  *
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'HLPW_VERSION',    '1.0.9' );
+define( 'HLPW_VERSION',    '1.1.0' );
 define( 'HLPW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'HLPW_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
@@ -106,6 +106,21 @@ add_action( 'leaky_paywall_after_process_registration', function () {
 		setcookie( 'hlpw_signup', '1', time() + 300, '/' );
 	}
 }, 20 );
+
+/* ------------------------------------------------------------------ *
+ * 2c. Keep members logged in for 30 days so they aren't repeatedly
+ *     re-walled. WordPress otherwise expires the login after ~2 days
+ *     (or ~14 with "remember me"), which is why returning readers say
+ *     it "doesn't remember them". Scoped to non-staff (subscribers) so
+ *     privileged accounts keep their normal, shorter session.
+ * ------------------------------------------------------------------ */
+add_filter( 'auth_cookie_expiration', function ( $length, $user_id, $remember ) {
+	$user = get_userdata( $user_id );
+	if ( $user && ! user_can( $user, 'edit_posts' ) ) {
+		return 30 * DAY_IN_SECONDS;
+	}
+	return $length;
+}, 10, 3 );
 
 /* ------------------------------------------------------------------ *
  * 3. Rebrand "Leaky Paywall" -> "HarnessLink PayWall"
