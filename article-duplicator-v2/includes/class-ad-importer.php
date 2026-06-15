@@ -314,6 +314,40 @@ class AD_Importer {
     }
 
     /**
+     * Public: apply an author selection to an existing post (used by the
+     * editor "Published By" box). Accepts a WP user ID, 'guest-{id}',
+     * 'term-{id}', or '' to clear. Writes the byline meta AND the real
+     * Molongui pointer so the selected author actually displays, and sets
+     * the post's WP owner to the linked/fallback user. Returns the resolved
+     * display name ('' when cleared).
+     */
+    public function apply_author_selection( $post_id, $value ) {
+        $value = trim( (string) $value );
+
+        if ( '' === $value ) {
+            delete_post_meta( $post_id, '_ad_guest_author' );
+            delete_post_meta( $post_id, 'guest_author' );
+            delete_post_meta( $post_id, '_molongui_main_author' );
+            delete_post_meta( $post_id, '_molongui_author' );
+            return '';
+        }
+
+        $parsed = $this->parse_author_value( $value );
+        if ( ! $parsed ) {
+            return '';
+        }
+
+        // Clear any stale Molongui pointer so a re-selection fully replaces
+        // the previous author rather than layering on top of it.
+        delete_post_meta( $post_id, '_molongui_main_author' );
+        delete_post_meta( $post_id, '_molongui_author' );
+
+        $this->assign_guest_author( $post_id, $parsed['name'], $parsed['term_id'], $parsed['guest_id'] );
+
+        return $parsed['name'];
+    }
+
+    /**
      * Display name of a user, used as the byline fallback.
      */
     private function author_display_name( $author_id ) {

@@ -13,13 +13,15 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  */
 class AD_Byline {
 
-    const META_KEY = '_ad_guest_author';
+    const META_KEY   = '_ad_guest_author'; // display name (front-end byline)
+    const SELECT_KEY = '_ad_author_select'; // selection value: 'guest-{id}' | user id
 
     public function __construct() {
         add_filter( 'the_author', [ $this, 'filter_the_author' ] );
         add_filter( 'get_the_author_display_name', [ $this, 'filter_display_name' ], 10, 2 );
 
-        add_action( 'add_meta_boxes', [ $this, 'register_meta_box' ] );
+        // Priority 20 so the core "Author" box is registered first, then removed.
+        add_action( 'add_meta_boxes', [ $this, 'register_meta_box' ], 20 );
         add_action( 'save_post',      [ $this, 'save_meta_box' ] );
     }
 
@@ -55,9 +57,14 @@ class AD_Byline {
     public function register_meta_box() {
         $screens = array_unique( [ 'post', AD_CPT::POST_TYPE, get_option( 'ad_post_type', AD_CPT::POST_TYPE ) ] );
         foreach ( $screens as $screen ) {
+            // Remove the core "Author" box — its WP-user list is the old
+            // feature that kept Harnesslink assigned. The guest author list
+            // below is now the single author selector.
+            remove_meta_box( 'authordiv', $screen, 'normal' );
+
             add_meta_box(
                 'ad-byline-box',
-                __( 'Published By', 'article-duplicator' ),
+                __( 'Author', 'article-duplicator' ),
                 [ $this, 'render_meta_box' ],
                 $screen,
                 'side',
@@ -66,13 +73,49 @@ class AD_Byline {
         }
     }
 
+    /**
+     * Best-effort: resolve the currently-stored selection value for the
+     * dropdown. Prefers the saved selection key; otherwise matches the
+     * stored byline name against a guest author so existing posts show
+     * their author pre-selected.
+     */
+    private function current_selection( $post_id ) {
+        $sel = (string) get_post_meta( $post_id, self::SELECT_KEY, true );
+        if ( '' !== $sel ) {
+            return $sel;
+        }
+
+        // Legacy: a Molongui pointer already on the post.
+        $main = (string) get_post_meta( $post_id, '_molongui_main_author', true );
+        if ( preg_match( '/^guest-(\d+)$/', $main ) ) {
+            return $main;
+        }
+
+        // Fall back to matching the stored byline name to a guest author.
+        $name = (string) get_post_meta( $post_id, self::META_KEY, true );
+        if ( '' !== $name && post_type_exists( 'guest_author' ) ) {
+            $hit = get_posts( [
+                'post_type'      => 'guest_author',
+                'post_status'    => [ 'publish', 'draft', 'pending', 'private' ],
+                'title'          => $name,
+                'posts_per_page' => 1,
+                'fields'         => 'ids',
+            ] );
+            if ( ! empty( $hit ) ) {
+                return 'guest-' . (int) $hit[0];
+            }
+        }
+
+        return '';
+    }
+
     public function render_meta_box( $post ) {
         wp_nonce_field( 'ad_byline_meta', 'ad_byline_nonce' );
 
-        $byline = get_post_meta( $post->ID, self::META_KEY, true );
+        $selected = $this->current_selection( $post->ID );
+        $byline   = get_post_meta( $post->ID, self::META_KEY, true );
 
-        // Suggestions: guest author entries first, then site users.
-        $suggestions = [];
+        $guests = [];
         if ( post_type_exists( 'guest_author' ) ) {
             $guests = get_posts( [
                 'post_type'      => 'guest_author',
@@ -81,37 +124,39 @@ class AD_Byline {
                 'orderby'        => 'title',
                 'order'          => 'ASC',
             ] );
-            foreach ( $guests as $guest ) {
-                $suggestions[] = get_the_title( $guest );
-            }
         }
-        foreach ( get_users( [ 'orderby' => 'display_name', 'fields' => [ 'display_name' ] ] ) as $user ) {
-            $suggestions[] = $user->display_name;
-        }
-
-        // De-duplicate case-insensitively and ignoring stray whitespace.
-        $unique = [];
-        foreach ( $suggestions as $name ) {
-            $name = trim( preg_replace( '/\s+/', ' ', (string) $name ) );
-            if ( '' === $name ) continue;
-            $key = mb_strtolower( $name );
-            if ( ! isset( $unique[ $key ] ) ) {
-                $unique[ $key ] = $name;
-            }
-        }
-        $suggestions = array_values( $unique );
+        $users = get_users( [ 'orderby' => 'display_name', 'fields' => [ 'ID', 'display_name', 'user_login' ] ] );
         ?>
         <p>
-            <input type="text" name="ad_byline" value="<?php echo esc_attr( $byline ); ?>"
-                   list="ad-byline-suggestions" style="width:100%;"
-                   placeholder="<?php esc_attr_e( 'e.g. Jeff Porchak', 'article-duplicator' ); ?>">
-            <datalist id="ad-byline-suggestions">
-                <?php foreach ( $suggestions as $name ) : ?>
-                <option value="<?php echo esc_attr( $name ); ?>"></option>
-                <?php endforeach; ?>
-            </datalist>
+            <select name="ad_author" style="width:100%;">
+                <option value=""><?php esc_html_e( '— Select author —', 'article-duplicator' ); ?></option>
+                <?php if ( $guests ) : ?>
+                <optgroup label="<?php esc_attr_e( 'Authors', 'article-duplicator' ); ?>">
+                    <?php foreach ( $guests as $guest ) : $val = 'guest-' . $guest->ID; ?>
+                    <option value="<?php echo esc_attr( $val ); ?>" <?php selected( $selected, $val ); ?>><?php echo esc_html( get_the_title( $guest ) ); ?></option>
+                    <?php endforeach; ?>
+                </optgroup>
+                <?php endif; ?>
+                <optgroup label="<?php esc_attr_e( 'Site Users', 'article-duplicator' ); ?>">
+                    <?php foreach ( $users as $user ) : ?>
+                    <option value="<?php echo esc_attr( $user->ID ); ?>" <?php selected( $selected, (string) $user->ID ); ?>><?php echo esc_html( $user->display_name . ' (' . $user->user_login . ')' ); ?></option>
+                    <?php endforeach; ?>
+                </optgroup>
+            </select>
         </p>
-        <p class="description"><?php _e( 'The author name shown on the article. Type any name or pick a suggestion. Leave empty to show the WordPress account owner.', 'article-duplicator' ); ?></p>
+        <p class="description">
+            <?php
+            if ( '' !== $byline ) {
+                printf(
+                    /* translators: current byline */
+                    esc_html__( 'Currently shown: %s. Pick an author from the list to change it.', 'article-duplicator' ),
+                    '<strong>' . esc_html( $byline ) . '</strong>'
+                );
+            } else {
+                esc_html_e( 'Choose who this article is published by. This is the author shown on the live site.', 'article-duplicator' );
+            }
+            ?>
+        </p>
 
         <hr style="margin:12px 0;">
         <p>
@@ -151,15 +196,15 @@ class AD_Byline {
         if ( ! isset( $_POST['ad_byline_nonce'] ) || ! wp_verify_nonce( $_POST['ad_byline_nonce'], 'ad_byline_meta' ) ) return;
         if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
         if ( ! current_user_can( 'edit_post', $post_id ) ) return;
+        if ( ! isset( $_POST['ad_author'] ) ) return;
 
-        $byline = sanitize_text_field( wp_unslash( $_POST['ad_byline'] ?? '' ) );
+        $value = sanitize_text_field( wp_unslash( $_POST['ad_author'] ) );
 
-        if ( '' !== $byline ) {
-            update_post_meta( $post_id, self::META_KEY, $byline );
-            update_post_meta( $post_id, 'guest_author', $byline );
-        } else {
-            delete_post_meta( $post_id, self::META_KEY );
-            delete_post_meta( $post_id, 'guest_author' );
-        }
+        update_post_meta( $post_id, self::SELECT_KEY, $value );
+
+        // Apply byline meta + the real Molongui pointer so the chosen author
+        // actually displays (the importer owns this logic).
+        $importer = new AD_Importer();
+        $importer->apply_author_selection( $post_id, $value );
     }
 }
