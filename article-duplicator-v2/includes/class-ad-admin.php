@@ -79,7 +79,7 @@ class AD_Admin {
             'ad_default_category', 'ad_default_author', 'ad_import_images', 'ad_import_featured',
             'ad_duplicate_check', 'ad_auto_schedule', 'ad_schedule_interval',
             'ad_schedule_mode', 'ad_max_articles', 'ad_prefix_title', 'ad_log_enabled',
-            'ad_replay_cust', 'ad_replay_auto',
+            'ad_replay_cust', 'ad_replay_auto', 'ad_post_date_mode',
         ];
         register_setting( 'ad_settings_group', 'ad_replay_tracks', [ 'sanitize_callback' => 'sanitize_textarea_field' ] );
         // Register per-source schedule options
@@ -435,6 +435,17 @@ class AD_Admin {
                             </td>
                         </tr>
                         <tr>
+                            <th><?php _e( 'Post Date', 'article-duplicator' ); ?></th>
+                            <td>
+                                <?php $date_mode = get_option('ad_post_date_mode','current'); ?>
+                                <select name="ad_post_date_mode">
+                                    <option value="current" <?php selected( $date_mode, 'current' ); ?>><?php _e( 'Current time (when imported / published)', 'article-duplicator' ); ?></option>
+                                    <option value="original" <?php selected( $date_mode, 'original' ); ?>><?php _e( 'Original article date from the source', 'article-duplicator' ); ?></option>
+                                </select>
+                                <p class="description"><?php _e( '<strong>Current time</strong> (recommended) keeps imports at the top of the list — drafts pick up the real publish time when you publish them. <strong>Original date</strong> pins each post to the source article\'s date. Either way the source date is saved in the <code>_ad_original_date</code> field.', 'article-duplicator' ); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
                             <th><?php _e( 'Post Type', 'article-duplicator' ); ?></th>
                             <td>
                                 <select name="ad_post_type">
@@ -710,6 +721,7 @@ class AD_Admin {
 
         $fields = [
             'ad_post_status'       => 'sanitize_text_field',
+            'ad_post_date_mode'    => 'sanitize_text_field',
             'ad_post_type'         => 'sanitize_text_field',
             'ad_default_category'  => 'absint',
             'ad_default_author'    => 'sanitize_text_field',

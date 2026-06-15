@@ -63,8 +63,12 @@ class AD_Importer {
             $content = nl2br( sanitize_textarea_field( $article_data['excerpt'] ?? '' ) );
         }
 
+        // Post date: default to current time so imports surface at the top of
+        // the list (and pick up the real publish time when a draft is later
+        // published). Only pin to the scraped article date when explicitly
+        // chosen — the original date is always kept in _ad_original_date meta.
         $post_date = null;
-        if ( ! empty( $article_data['date'] ) ) {
+        if ( 'original' === get_option( 'ad_post_date_mode', 'current' ) && ! empty( $article_data['date'] ) ) {
             $ts = strtotime( $article_data['date'] );
             if ( $ts ) $post_date = date( 'Y-m-d H:i:s', $ts );
         }

@@ -3,7 +3,7 @@
  * Plugin Name: Article Duplicator
  * Plugin URI:  https://yoursite.com/article-duplicator
  * Description: Scrape and duplicate horse racing news/articles into your WordPress site.
- * Version:     1.9.0
+ * Version:     1.9.1
  * Author:      Your Name
  * License:     GPL-2.0+
  * Text Domain: article-duplicator
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'AD_VERSION',     '1.9.0' );
+define( 'AD_VERSION',     '1.9.1' );
 define( 'AD_PLUGIN_DIR',  plugin_dir_path( __FILE__ ) );
 define( 'AD_PLUGIN_URL',  plugin_dir_url( __FILE__ ) );
 define( 'AD_PLUGIN_FILE', __FILE__ );
@@ -37,6 +37,7 @@ function ad_activate() {
     $defaults = [
         'ad_source_url'        => 'https://www.letrot.com/actualites',
         'ad_post_status'       => 'draft',
+        'ad_post_date_mode'    => 'current',
         'ad_post_type'         => 'ad_article',
         'ad_default_category'  => '',
         'ad_default_author'    => '',
