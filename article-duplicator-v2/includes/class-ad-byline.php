@@ -112,6 +112,38 @@ class AD_Byline {
             </datalist>
         </p>
         <p class="description"><?php _e( 'The author name shown on the article. Type any name or pick a suggestion. Leave empty to show the WordPress account owner.', 'article-duplicator' ); ?></p>
+
+        <hr style="margin:12px 0;">
+        <p>
+            <button type="button" class="button" id="ad-reset-date-btn"><?php _e( 'Reset date to now', 'article-duplicator' ); ?></button>
+        </p>
+        <p class="description"><?php _e( 'Sets this post\'s date to the current time — useful for older imports pinned to the scrape date. Saves immediately and reloads the editor.', 'article-duplicator' ); ?></p>
+        <script>
+        (function(){
+            var btn = document.getElementById('ad-reset-date-btn');
+            if (!btn) return;
+            btn.addEventListener('click', function(){
+                if (!confirm('<?php echo esc_js( __( 'Set this post\'s date to now and reload? Unsaved changes in the editor will be lost.', 'article-duplicator' ) ); ?>')) return;
+                btn.disabled = true;
+                var body = new URLSearchParams({
+                    action:  'ad_reset_date',
+                    nonce:   '<?php echo esc_js( wp_create_nonce( 'ad_nonce' ) ); ?>',
+                    post_id: '<?php echo (int) $post->ID; ?>'
+                });
+                fetch('<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: body.toString()
+                }).then(function(r){ return r.json(); }).then(function(res){
+                    if (res.success) { location.reload(); }
+                    else { alert((res.data && res.data.message) || '<?php echo esc_js( __( 'Failed.', 'article-duplicator' ) ); ?>'); btn.disabled = false; }
+                }).catch(function(){
+                    alert('<?php echo esc_js( __( 'Request failed.', 'article-duplicator' ) ); ?>'); btn.disabled = false;
+                });
+            });
+        })();
+        </script>
         <?php
     }
 

@@ -10,6 +10,31 @@ class AD_Ajax {
         add_action( 'wp_ajax_ad_clear_logs',        [ $this, 'clear_logs' ] );
         add_action( 'wp_ajax_ad_test_connection',   [ $this, 'test_connection' ] );
         add_action( 'wp_ajax_ad_find_races',        [ $this, 'find_races' ] );
+        add_action( 'wp_ajax_ad_reset_date',        [ $this, 'reset_date' ] );
+    }
+
+    /**
+     * Reset a post's date to the current time. Used by the "Reset date to
+     * now" button to lift older imports off their pinned scrape date.
+     */
+    public function reset_date() {
+        check_ajax_referer( 'ad_nonce', 'nonce' );
+        $post_id = absint( $_POST['post_id'] ?? 0 );
+        if ( ! $post_id || ! current_user_can( 'edit_post', $post_id ) ) {
+            wp_send_json_error( [ 'message' => __( 'Permission denied.', 'article-duplicator' ) ] );
+        }
+
+        $result = wp_update_post( [
+            'ID'            => $post_id,
+            'post_date'     => current_time( 'mysql' ),
+            'post_date_gmt' => current_time( 'mysql', true ),
+            'edit_date'     => true,
+        ], true );
+
+        if ( is_wp_error( $result ) ) {
+            wp_send_json_error( [ 'message' => $result->get_error_message() ] );
+        }
+        wp_send_json_success( [ 'date' => current_time( 'mysql' ) ] );
     }
 
     /**
