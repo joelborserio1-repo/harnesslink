@@ -57,12 +57,22 @@ class AD_Byline {
        META BOX ("Published By" on the post editor)
     ========================================================= */
 
+    /**
+     * Post types this plugin manages — Scraped Articles plus whatever the
+     * import Post Type setting is. Deliberately does NOT include plain
+     * 'post' unless that is the configured import type, so normal posts and
+     * their core Author box are left completely untouched.
+     */
+    private function target_post_types() {
+        return array_values( array_unique( array_filter( [
+            AD_CPT::POST_TYPE,
+            get_option( 'ad_post_type', AD_CPT::POST_TYPE ),
+        ] ) ) );
+    }
+
     public function register_meta_box() {
-        $screens = array_unique( [ 'post', AD_CPT::POST_TYPE, get_option( 'ad_post_type', AD_CPT::POST_TYPE ) ] );
-        foreach ( $screens as $screen ) {
-            // Remove the core "Author" box — its WP-user list is the old
-            // feature that kept Harnesslink assigned. The guest author list
-            // below is now the single author selector.
+        foreach ( $this->target_post_types() as $screen ) {
+            // Remove the core "Author" box only on our managed post types.
             remove_meta_box( 'authordiv', $screen, 'normal' );
 
             add_meta_box(
@@ -196,6 +206,8 @@ class AD_Byline {
     }
 
     public function save_meta_box( $post_id ) {
+        // Only ever act on our managed post types — never normal posts.
+        if ( ! in_array( get_post_type( $post_id ), $this->target_post_types(), true ) ) return;
         if ( ! isset( $_POST['ad_byline_nonce'] ) || ! wp_verify_nonce( $_POST['ad_byline_nonce'], 'ad_byline_meta' ) ) return;
         if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
         if ( ! current_user_can( 'edit_post', $post_id ) ) return;
