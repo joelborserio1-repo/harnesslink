@@ -17,8 +17,11 @@ class AD_Byline {
     const SELECT_KEY = '_ad_author_select'; // selection value: 'guest-{id}' | user id
 
     public function __construct() {
-        add_filter( 'the_author', [ $this, 'filter_the_author' ] );
-        add_filter( 'get_the_author_display_name', [ $this, 'filter_display_name' ], 10, 2 );
+        // Priority PHP_INT_MAX so these run AFTER Molongui Authorship (and any
+        // custom snippets), ensuring the selected byline is what displays in
+        // Elementor's Post Info widget / theme author output.
+        add_filter( 'the_author', [ $this, 'filter_the_author' ], PHP_INT_MAX );
+        add_filter( 'get_the_author_display_name', [ $this, 'filter_display_name' ], PHP_INT_MAX, 2 );
 
         // Priority 20 so the core "Author" box is registered first, then removed.
         add_action( 'add_meta_boxes', [ $this, 'register_meta_box' ], 20 );
