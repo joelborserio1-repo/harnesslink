@@ -215,6 +215,14 @@ class AD_Byline {
 
         $value = sanitize_text_field( wp_unslash( $_POST['ad_author'] ) );
 
+        // Strictly additive: a blank selection means "leave the existing
+        // author alone". We never wipe a byline / Molongui pointer from here,
+        // so saving an article without touching this box can't clear or
+        // change its author.
+        if ( '' === $value ) {
+            return;
+        }
+
         update_post_meta( $post_id, self::SELECT_KEY, $value );
 
         // Apply byline meta + the real Molongui pointer so the chosen author

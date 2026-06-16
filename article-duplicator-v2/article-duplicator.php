@@ -3,7 +3,7 @@
  * Plugin Name: Article Duplicator
  * Plugin URI:  https://yoursite.com/article-duplicator
  * Description: Scrape and duplicate horse racing news/articles into your WordPress site.
- * Version:     2.0.2
+ * Version:     2.0.3
  * Author:      Your Name
  * License:     GPL-2.0+
  * Text Domain: article-duplicator
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'AD_VERSION',     '2.0.2' );
+define( 'AD_VERSION',     '2.0.3' );
 define( 'AD_PLUGIN_DIR',  plugin_dir_path( __FILE__ ) );
 define( 'AD_PLUGIN_URL',  plugin_dir_url( __FILE__ ) );
 define( 'AD_PLUGIN_FILE', __FILE__ );
