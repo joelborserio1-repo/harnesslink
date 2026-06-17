@@ -3,7 +3,7 @@
  * Plugin Name: Article Duplicator
  * Plugin URI:  https://yoursite.com/article-duplicator
  * Description: Scrape and duplicate horse racing news/articles into your WordPress site.
- * Version:     2.0.3
+ * Version:     2.1.0
  * Author:      Your Name
  * License:     GPL-2.0+
  * Text Domain: article-duplicator
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'AD_VERSION',     '2.0.3' );
+define( 'AD_VERSION',     '2.1.0' );
 define( 'AD_PLUGIN_DIR',  plugin_dir_path( __FILE__ ) );
 define( 'AD_PLUGIN_URL',  plugin_dir_url( __FILE__ ) );
 define( 'AD_PLUGIN_FILE', __FILE__ );
@@ -26,6 +26,7 @@ require_once AD_PLUGIN_DIR . 'includes/class-ad-replays.php';
 require_once AD_PLUGIN_DIR . 'includes/class-ad-results.php';
 require_once AD_PLUGIN_DIR . 'includes/class-ad-byline.php';
 require_once AD_PLUGIN_DIR . 'includes/class-ad-author-cleanup.php';
+require_once AD_PLUGIN_DIR . 'includes/class-ad-convert.php';
 require_once AD_PLUGIN_DIR . 'includes/class-ad-scheduler.php';
 require_once AD_PLUGIN_DIR . 'includes/class-ad-admin.php';
 require_once AD_PLUGIN_DIR . 'includes/class-ad-ajax.php';
@@ -104,6 +105,7 @@ function ad_init() {
     new AD_Byline();
     if ( is_admin() ) {
         new AD_Author_Cleanup();
+        new AD_Convert();
     }
 
     add_filter( 'molongui_contributors/pre_get_contributor_by', 'ad_molongui_contributors_get_guest_author', 10, 3 );
