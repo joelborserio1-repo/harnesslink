@@ -3,7 +3,7 @@
  * Plugin Name: Article Duplicator
  * Plugin URI:  https://yoursite.com/article-duplicator
  * Description: Scrape and duplicate horse racing news/articles into your WordPress site.
- * Version:     2.1.0
+ * Version:     2.1.1
  * Author:      Your Name
  * License:     GPL-2.0+
  * Text Domain: article-duplicator
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'AD_VERSION',     '2.1.0' );
+define( 'AD_VERSION',     '2.1.1' );
 define( 'AD_PLUGIN_DIR',  plugin_dir_path( __FILE__ ) );
 define( 'AD_PLUGIN_URL',  plugin_dir_url( __FILE__ ) );
 define( 'AD_PLUGIN_FILE', __FILE__ );
@@ -110,6 +110,34 @@ function ad_init() {
 
     add_filter( 'molongui_contributors/pre_get_contributor_by', 'ad_molongui_contributors_get_guest_author', 10, 3 );
     add_action( 'init', 'ad_maybe_flush_rewrite_rules', 99 );
+    add_action( 'template_redirect', 'ad_redirect_legacy_ad_article_urls' );
+}
+
+/**
+ * 301-redirect old /ad_article/{slug}/ URLs to the converted Post.
+ *
+ * After "Convert to Posts", the old custom-post-type URLs would 404.
+ * Converting keeps each article's slug, so when a /ad_article/ request
+ * 404s we look for a published Post with the same slug and redirect to it,
+ * preserving inbound links and SEO without manual redirect rules.
+ */
+function ad_redirect_legacy_ad_article_urls() {
+    if ( is_admin() || ! is_404() ) {
+        return;
+    }
+    $uri = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
+    if ( ! preg_match( '#/ad_article/([^/?\#]+)#', $uri, $m ) ) {
+        return;
+    }
+    $slug = sanitize_title( $m[1] );
+    if ( '' === $slug ) {
+        return;
+    }
+    $post = get_page_by_path( $slug, OBJECT, 'post' );
+    if ( $post instanceof WP_Post && 'publish' === $post->post_status ) {
+        wp_safe_redirect( get_permalink( $post->ID ), 301 );
+        exit;
+    }
 }
 add_action( 'plugins_loaded', 'ad_init' );
 
