@@ -3,7 +3,7 @@
  * Plugin Name: Article Duplicator
  * Plugin URI:  https://yoursite.com/article-duplicator
  * Description: Scrape and duplicate horse racing news/articles into your WordPress site.
- * Version:     2.1.1
+ * Version:     2.2.0
  * Author:      Your Name
  * License:     GPL-2.0+
  * Text Domain: article-duplicator
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'AD_VERSION',     '2.1.1' );
+define( 'AD_VERSION',     '2.2.0' );
 define( 'AD_PLUGIN_DIR',  plugin_dir_path( __FILE__ ) );
 define( 'AD_PLUGIN_URL',  plugin_dir_url( __FILE__ ) );
 define( 'AD_PLUGIN_FILE', __FILE__ );
@@ -111,6 +111,29 @@ function ad_init() {
     add_filter( 'molongui_contributors/pre_get_contributor_by', 'ad_molongui_contributors_get_guest_author', 10, 3 );
     add_action( 'init', 'ad_maybe_flush_rewrite_rules', 99 );
     add_action( 'template_redirect', 'ad_redirect_legacy_ad_article_urls' );
+    add_action( 'transition_post_status', 'ad_autoconvert_to_post_on_publish', 10, 3 );
+}
+
+/**
+ * Auto-convert a Scraped Article to a normal Post the moment it is published
+ * (or scheduled). Guest-author bylines (Molongui) and the JNews slider only
+ * work on the "post" type, so this guarantees every published article is a
+ * Post no matter how it was created — scraper import, story-duplicator clone,
+ * or hand-made — while drafts stay as Scraped Articles for review.
+ */
+function ad_autoconvert_to_post_on_publish( $new_status, $old_status, $post ) {
+    if ( ! $post instanceof WP_Post ) {
+        return;
+    }
+    if ( AD_CPT::POST_TYPE !== $post->post_type ) {
+        return;
+    }
+    if ( ! in_array( $new_status, [ 'publish', 'future' ], true ) ) {
+        return;
+    }
+    // set_post_type() only updates the type column + clears caches; it does
+    // not re-fire this hook, so no recursion guard is needed.
+    set_post_type( $post->ID, 'post' );
 }
 
 /**
