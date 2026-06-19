@@ -64,8 +64,8 @@ add_action( 'wp_footer', function () {
 				<input type="text" id="hlpw-pp-last" name="last_name" value="<?php echo esc_attr( $last ); ?>" autocomplete="family-name" />
 			</div>
 			<div class="hlpw-pp-row">
-				<label for="hlpw-pp-phone"><?php esc_html_e( 'Mobile (optional)', 'harnesslink-paywall' ); ?></label>
-				<input type="tel" id="hlpw-pp-phone" name="phone" value="<?php echo esc_attr( $phone ); ?>" autocomplete="tel" inputmode="tel" />
+				<label for="hlpw-pp-phone"><?php esc_html_e( 'Mobile number', 'harnesslink-paywall' ); ?> <span class="hlpw-req">*</span></label>
+				<input type="tel" id="hlpw-pp-phone" name="phone" value="<?php echo esc_attr( $phone ); ?>" autocomplete="tel" inputmode="tel" required />
 			</div>
 
 			<label class="hlpw-pp-check">
@@ -108,6 +108,13 @@ add_action( 'wp_ajax_hlpw_save_profile', function () {
 	$last  = isset( $_POST['last_name'] ) ? sanitize_text_field( wp_unslash( $_POST['last_name'] ) ) : '';
 	$phone = isset( $_POST['phone'] ) ? sanitize_text_field( wp_unslash( $_POST['phone'] ) ) : '';
 	$optin = isset( $_POST['insider_optin'] ) && 'yes' === $_POST['insider_optin'];
+
+	// Mobile is required. Reject (and don't mark the profile complete) if it's
+	// missing or clearly not a phone number, so the member keeps being asked.
+	$digits = preg_replace( '/\D+/', '', $phone );
+	if ( strlen( $digits ) < 6 ) {
+		wp_send_json_error( array( 'message' => __( 'Please enter a valid mobile number.', 'harnesslink-paywall' ) ) );
+	}
 
 	$update = array( 'ID' => $uid );
 	if ( '' !== $first ) {

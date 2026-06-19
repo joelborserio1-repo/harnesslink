@@ -495,6 +495,7 @@ body.hlpw-wall-dismissed #lplb-portal {
 	font-weight: 600 !important;
 	color: var(--hlpw-text) !important;
 }
+.hlpw-profile-prompt .hlpw-req { color: #C0392B !important; }
 .hlpw-profile-prompt input[type="text"],
 .hlpw-profile-prompt input[type="tel"] {
 	width: 100% !important;
