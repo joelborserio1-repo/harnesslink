@@ -14,6 +14,7 @@ class HLD_Ajax {
         add_action( 'wp_ajax_hld_save_stallion',          array( __CLASS__, 'save_stallion' ) );
         add_action( 'wp_ajax_hld_delete_stallion',        array( __CLASS__, 'delete_stallion' ) );
         add_action( 'wp_ajax_hld_import_csv',             array( __CLASS__, 'import_csv' ) );
+        add_action( 'admin_post_hld_export_csv',          array( __CLASS__, 'export_csv' ) );
         add_action( 'wp_ajax_hld_get_stallion',           array( __CLASS__, 'get_stallion' ) );
         add_action( 'wp_ajax_hld_update_enquiry_status',  array( __CLASS__, 'update_enquiry_status' ) );
         add_action( 'wp_ajax_hld_delete_enquiry',         array( __CLASS__, 'delete_enquiry' ) );
@@ -241,6 +242,87 @@ class HLD_Ajax {
             'duplicates_removed' => $duplicates_removed,
             'message'  => "Import complete. {$inserted} added, {$updated} updated, {$duplicates_removed} duplicate rows removed, {$errors} skipped." . ( $replace_all ? ' Existing stallions were cleared first.' : '' ),
         ) );
+    }
+
+    /* ── Admin: export listings to CSV (re-importable format) ── */
+    public static function export_csv() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Unauthorized', 'Unauthorized', array( 'response' => 403 ) );
+        }
+        check_admin_referer( 'hld_export_csv' );
+
+        global $wpdb;
+        $table          = $wpdb->prefix . 'hld_stallions';
+        $directory_type = isset( $_GET['dtype'] ) ? HLD_Types::resolve( $_GET['dtype'] ) : '';
+
+        if ( $directory_type !== '' && HLD_DB::has_column( 'directory_type' ) ) {
+            $rows = $wpdb->get_results( $wpdb->prepare(
+                "SELECT * FROM {$table} WHERE directory_type = %s ORDER BY name ASC",
+                $directory_type
+            ), ARRAY_A );
+        } else {
+            $rows = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY name ASC", ARRAY_A );
+        }
+
+        // Header row uses the human-friendly column names the importer accepts.
+        $columns = array(
+            'directory_type' => 'Directory Type',
+            'name'           => 'Stallion',
+            'stud_name'      => 'Stud',
+            'country'        => 'Country',
+            'region'         => 'Region',
+            'suburb'         => 'Suburb',
+            'stud_master'    => 'Stud Master',
+            'industry'       => 'Industry',
+            'type'           => 'Gait',
+            'status_note'    => 'Status Note',
+            'is_paying'      => 'Paid',
+            'is_featured'    => 'Featured Stud',
+            'contact_phone'  => 'Phone',
+            'contact_email'  => 'Email',
+            'contact_website'=> 'Stallion Page',
+            'stud_website'   => 'Stud Website',
+            'coverage'       => 'Coverage',
+            'contact_au'     => 'AU Contact',
+            'contact_nz'     => 'NZ Contact',
+            'contact_us'     => 'US Contact',
+            'contact_fr'     => 'FR Contact',
+            'contact_other'  => 'Other Contact',
+            'contact_address'=> 'Address',
+            'profile_image'  => 'Profile Picture',
+            'profile_bio'    => 'Bio',
+            'race_record'    => 'Race Record',
+            'progeny_note'   => 'Progeny',
+        );
+
+        $slug     = $directory_type ?: 'all';
+        $date     = gmdate( 'Y-m-d' );
+        $filename = "harnesslink-{$slug}-export-{$date}.csv";
+
+        nocache_headers();
+        header( 'Content-Type: text/csv; charset=utf-8' );
+        header( 'Content-Disposition: attachment; filename=' . $filename );
+
+        $out = fopen( 'php://output', 'w' );
+        // UTF-8 BOM so Excel opens accented characters correctly.
+        fwrite( $out, "\xEF\xBB\xBF" );
+
+        fputcsv( $out, array_values( $columns ) );
+
+        foreach ( (array) $rows as $row ) {
+            $line = array();
+            foreach ( array_keys( $columns ) as $key ) {
+                $val = $row[ $key ] ?? '';
+                if ( $key === 'is_paying' || $key === 'is_featured' ) {
+                    $val = ! empty( $val ) ? 'yes' : '';
+                }
+                $line[] = $val;
+            }
+            fputcsv( $out, $line );
+        }
+
+        fclose( $out );
+        exit;
     }
 
     private static function normalise_import_country( $country ) {

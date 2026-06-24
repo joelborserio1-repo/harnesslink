@@ -5,10 +5,29 @@
     <div class="hld-admin-header__brand">
       <span class="hld-logo">HL</span>
       <div>
-        <h1>Import Listings via CSV</h1>
-        <p>Bulk-upload listings from a CSV file into any directory category.</p>
+        <h1>Import / Export Listings via CSV</h1>
+        <p>Bulk-upload listings from a CSV file, or export the current data as CSV.</p>
       </div>
     </div>
+  </div>
+
+  <!-- Export current data -->
+  <div class="hld-import-card" style="margin-bottom:18px;">
+    <h2>Export Current Listings</h2>
+    <p class="hld-field-hint" style="margin-top:0;">Download what's currently in the database as a CSV (re-importable format). The original uploaded spreadsheet is not stored on the server — this is the way to retrieve your data.</p>
+    <form method="get" action="<?= esc_url( admin_url( 'admin-post.php' ) ) ?>" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+      <input type="hidden" name="action" value="hld_export_csv" />
+      <?php wp_nonce_field( 'hld_export_csv' ); ?>
+      <select name="dtype" class="hld-search-input" style="max-width:280px;">
+        <option value="">All directory types</option>
+        <?php foreach ( HLD_Types::get_all() as $slug => $t ): ?>
+          <option value="<?= esc_attr( $slug ) ?>" <?= $slug === 'stallion' ? 'selected' : '' ?>>
+            <?= esc_html( wp_strip_all_tags( $t['plural'] ) ) ?> (<?= esc_html( $slug ) ?>)
+          </option>
+        <?php endforeach; ?>
+      </select>
+      <button type="submit" class="hld-btn hld-btn--primary">⬇ Download CSV</button>
+    </form>
   </div>
 
   <div class="hld-import-layout">
