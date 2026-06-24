@@ -3,7 +3,7 @@
  * Plugin Name: HarnessLink PayWall
  * Plugin URI:  https://harnesslink.com
  * Description: HarnessLink companion for Leaky Paywall. Restyles the registration wall (frosted lead-in teaser + clean navy signup card) and rebrands the Leaky Paywall admin experience as "HarnessLink PayWall". Cosmetic only — does not change metering, restriction counts, access levels or any server-side gating.
- * Version:     1.1.2
+ * Version:     1.2.0
  * Author:      HarnessLink
  * Text Domain: harnesslink-paywall
  *
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'HLPW_VERSION',    '1.1.2' );
+define( 'HLPW_VERSION',    '1.2.0' );
 define( 'HLPW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'HLPW_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
@@ -24,6 +24,41 @@ require_once HLPW_PLUGIN_DIR . 'includes/insider-optin.php';
 
 /* Post-signup "complete your profile" prompt (name, mobile, opt-in). */
 require_once HLPW_PLUGIN_DIR . 'includes/profile-completion.php';
+
+/* ------------------------------------------------------------------ *
+ * EMERGENCY OPEN-ACCESS — temporary paywall bypass.
+ *
+ * A SAFE alternative to weakening login: when enabled, all content is
+ * shown free and the wall is hidden, so readers don't need to log in at
+ * all during an email/login outage. This does NOT weaken authentication,
+ * bypass passwords, or expose any account — it simply makes content open
+ * for everyone until you switch it back.
+ *
+ * Turn ON  : add this line to wp-config.php
+ *                define( 'HLPW_OPEN_ACCESS', true );
+ * Turn OFF : remove that line (paywall returns immediately).
+ * ------------------------------------------------------------------ */
+function hlpw_open_access_enabled() {
+	return defined( 'HLPW_OPEN_ACCESS' ) && HLPW_OPEN_ACCESS;
+}
+
+if ( hlpw_open_access_enabled() ) {
+
+	// Show the original full content instead of the subscribe/login nag.
+	add_filter( 'leaky_paywall_subscribe_or_login_message', function ( $new_content, $message, $content ) {
+		return $content;
+	}, 99, 3 );
+
+	// Hide the List Builder overlay so the modal never appears.
+	add_action( 'wp_head', function () {
+		echo "<style id='hlpw-open-access'>#lplb-mask,#lplb-portal{display:none !important;}</style>\n";
+	}, 201 );
+
+	// Persistent admin reminder so it can't be left on by accident.
+	add_action( 'admin_notices', function () {
+		echo '<div class="notice notice-warning"><p><strong>HarnessLink PayWall:</strong> Emergency <strong>open-access mode is ON</strong> — all content is free and the wall is hidden. Remove <code>define( \'HLPW_OPEN_ACCESS\', true );</code> from wp-config.php to restore the paywall.</p></div>';
+	} );
+}
 
 /* ------------------------------------------------------------------ *
  * 1. Front-end wall styling
