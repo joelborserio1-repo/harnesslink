@@ -387,7 +387,11 @@ class AD_Importer {
     private function resolve_guest_author_name( $raw_author ) {
         $author = html_entity_decode( wp_strip_all_tags( (string) $raw_author ), ENT_QUOTES, get_bloginfo( 'charset' ) );
         $author = preg_replace( '/\s+/', ' ', trim( $author ) );
-        $author = preg_replace( '/^(by|author|published by|written by)\s*[:\-]?\s*/i', '', $author );
+        // Strip common byline lead-ins. Longer phrases are listed first so
+        // they win the leftmost match before the short "by"/"from" tokens.
+        // "from" is included because source pages often render "from {Track}",
+        // which previously leaked through as a junk "from …" author name.
+        $author = preg_replace( '/^(written by|published by|reported by|story by|words by|posted by|by|author|from(?: the)?)\s*[:\-]?\s*/i', '', $author );
         $author = preg_replace( '/\s+(on|:)\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday|jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}).*$/i', '', $author );
         $author = preg_replace( '/\s+(on|:)\s*$/i', '', $author );
         $author = trim( $author, " \t\n\r\0\x0B:-" );
@@ -420,10 +424,18 @@ class AD_Importer {
             wp_set_post_terms( $post_id, [ (int) $selected_term_id ], 'author', false );
         }
 
+        // ONE byline only. Molongui ships two products that each render a
+        // "Written by …" line: Authorship (the _molongui_main_author pointer)
+        // and Post Contributors (the mpb-* role taxonomy). Assigning both
+        // produced a DUPLICATE byline on the front end — and the Post
+        // Contributors copy is also what surfaced stale "from …" junk names.
+        // We standardise on Authorship as the single byline and strip any
+        // Post Contributors terms so only one line ever renders.
+        $this->clear_molongui_post_contributors( $post_id );
+
         // Editor-selected Molongui guest author: link the exact entry rather
         // than matching by name.
         $assigned_molongui_author = $this->assign_molongui_guest_author( $post_id, $author_name, $selected_guest_id );
-        $this->assign_molongui_post_contributor( $post_id, $author_name );
 
         if ( $assigned_molongui_author ) {
             return;
@@ -499,77 +511,31 @@ class AD_Importer {
     }
 
     /**
-     * Native Molongui Post Contributors support.
+     * Remove any Molongui Post Contributors role terms (mpb-*) from a post.
      *
-     * Post Contributors stores selected contributors as terms in a private
-     * role taxonomy, e.g. mpb-author. The term slug points at the contributor.
+     * Post Contributors renders its own "Written by …" byline on top of the
+     * one Molongui Authorship already renders, so leaving these terms in place
+     * produces a duplicate byline (and is where older imports' "from …" junk
+     * names showed up). Authorship's main-author pointer is the single source
+     * of truth for the byline, so we strip the contributor terms here — both
+     * on fresh imports and whenever an author is (re)selected in the editor.
      */
-    private function assign_molongui_post_contributor( $post_id, $author_name ) {
-        if ( ! taxonomy_exists( 'contributor_role' ) ) {
-            return false;
-        }
-
-        $role_slug = $this->get_or_create_molongui_contributor_role();
-        $taxonomy  = 'mpb-' . $role_slug;
-
-        if ( ! taxonomy_exists( $taxonomy ) ) {
-            register_taxonomy( $taxonomy, [ get_post_type( $post_id ) ?: 'post', 'post' ], [
-                'public'            => false,
-                'hierarchical'      => false,
-                'show_ui'           => false,
-                'show_admin_column' => false,
-                'query_var'         => false,
-                'sort'              => true,
-            ] );
-        } else {
-            register_taxonomy_for_object_type( $taxonomy, get_post_type( $post_id ) ?: 'post' );
-        }
-
-        $guest_id   = post_type_exists( 'guest_author' ) ? $this->find_molongui_guest_author( $author_name ) : 0;
-        $guest_slug = $guest_id ? get_post_field( 'post_name', $guest_id ) : sanitize_title( $author_name );
-        $term_slug  = 'mpcu-' . $guest_slug;
-        $term       = get_term_by( 'slug', $term_slug, $taxonomy );
-
-        if ( ! $term ) {
-            $inserted = wp_insert_term( $author_name, $taxonomy, [
-                'slug'        => $term_slug,
-                'description' => implode( ' ', array_filter( [
-                    $author_name,
-                    $guest_id ? get_post_meta( $guest_id, '_molongui_guest_author_first_name', true ) : '',
-                    $guest_id ? get_post_meta( $guest_id, '_molongui_guest_author_last_name', true ) : '',
-                    $guest_slug,
-                    $guest_id ?: '',
-                    $guest_id ? get_post_meta( $guest_id, '_molongui_guest_author_mail', true ) : '',
-                ] ) ),
-            ] );
-
-            if ( is_wp_error( $inserted ) ) {
-                return false;
+    private function clear_molongui_post_contributors( $post_id ) {
+        foreach ( get_object_taxonomies( get_post_type( $post_id ) ?: 'post' ) as $taxonomy ) {
+            if ( strpos( $taxonomy, 'mpb-' ) !== 0 ) {
+                continue;
             }
-            $term_id = (int) $inserted['term_id'];
-        } else {
-            $term_id = (int) $term->term_id;
+            wp_set_post_terms( $post_id, [], $taxonomy, false );
         }
-
-        wp_set_post_terms( $post_id, [ $term_id ], $taxonomy, false );
+        // Also clear any mpb-* taxonomy not currently attached to this post
+        // type (Post Contributors registers them lazily), to be thorough.
+        foreach ( get_taxonomies() as $taxonomy ) {
+            if ( strpos( $taxonomy, 'mpb-' ) !== 0 ) {
+                continue;
+            }
+            wp_remove_object_terms( $post_id, wp_get_object_terms( $post_id, $taxonomy, [ 'fields' => 'ids' ] ), $taxonomy );
+        }
         clean_object_term_cache( $post_id, get_post_type( $post_id ) ?: 'post' );
-
-        return true;
-    }
-
-    /**
-     * Ensure an Author contributor role exists for imported source bylines.
-     */
-    private function get_or_create_molongui_contributor_role() {
-        $role = get_term_by( 'slug', 'author', 'contributor_role' );
-        if ( ! $role ) {
-            $inserted = wp_insert_term( 'Author', 'contributor_role', [ 'slug' => 'author' ] );
-            if ( ! is_wp_error( $inserted ) ) {
-                update_term_meta( (int) $inserted['term_id'], 'leading-phrase', 'Written by' );
-            }
-        }
-
-        return 'author';
     }
 
     /**

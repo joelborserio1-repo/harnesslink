@@ -97,6 +97,11 @@ class AD_Author_Cleanup {
             return sprintf( __( 'Merged %d duplicate guest author entries.', 'article-duplicator' ), $merged );
         }
 
+        if ( 'fix_bylines' === $action ) {
+            $fixed = $this->strip_duplicate_bylines();
+            return sprintf( __( 'Removed duplicate (Post Contributors) bylines from %d post(s).', 'article-duplicator' ), $fixed );
+        }
+
         if ( 'delete' === $action ) {
             $ids     = array_map( 'absint', (array) ( $_POST['guest_ids'] ?? [] ) );
             $deleted = 0;
@@ -147,6 +152,60 @@ class AD_Author_Cleanup {
         return $merged;
     }
 
+    /**
+     * Count posts that still carry a Molongui Post Contributors term
+     * (any mpb-* taxonomy). These render a second "Written by …" byline on
+     * top of Molongui Authorship — the duplicate the editor reported.
+     */
+    private function count_duplicate_bylines() {
+        global $wpdb;
+        return (int) $wpdb->get_var(
+            "SELECT COUNT(DISTINCT tr.object_id)
+             FROM {$wpdb->term_relationships} tr
+             INNER JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
+             WHERE tt.taxonomy LIKE 'mpb-%'"
+        );
+    }
+
+    /**
+     * Strip every Molongui Post Contributors term from every post that has
+     * one, leaving Molongui Authorship as the single byline. Returns the
+     * number of posts changed.
+     */
+    private function strip_duplicate_bylines() {
+        global $wpdb;
+
+        $object_ids = $wpdb->get_col(
+            "SELECT DISTINCT tr.object_id
+             FROM {$wpdb->term_relationships} tr
+             INNER JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
+             WHERE tt.taxonomy LIKE 'mpb-%'"
+        );
+
+        $taxonomies = $wpdb->get_col(
+            "SELECT DISTINCT taxonomy FROM {$wpdb->term_taxonomy} WHERE taxonomy LIKE 'mpb-%'"
+        );
+
+        $fixed = 0;
+        foreach ( $object_ids as $object_id ) {
+            $object_id = (int) $object_id;
+            $changed   = false;
+            foreach ( $taxonomies as $taxonomy ) {
+                $ids = wp_get_object_terms( $object_id, $taxonomy, [ 'fields' => 'ids' ] );
+                if ( ! is_wp_error( $ids ) && ! empty( $ids ) ) {
+                    wp_remove_object_terms( $object_id, $ids, $taxonomy );
+                    $changed = true;
+                }
+            }
+            if ( $changed ) {
+                clean_object_term_cache( $object_id, get_post_type( $object_id ) ?: 'post' );
+                $fixed++;
+            }
+        }
+
+        return $fixed;
+    }
+
     private function duplicate_groups() {
         $by_name = [];
         foreach ( $this->get_guests() as $guest ) {
@@ -164,9 +223,10 @@ class AD_Author_Cleanup {
     public function page() {
         $notice = $this->handle_actions();
 
-        $usage  = $this->get_usage_counts();
-        $groups = $this->duplicate_groups();
-        $junk   = array_filter( $this->get_guests(), function ( $g ) {
+        $usage     = $this->get_usage_counts();
+        $groups    = $this->duplicate_groups();
+        $dup_count = $this->count_duplicate_bylines();
+        $junk      = array_filter( $this->get_guests(), function ( $g ) {
             return $this->looks_like_junk( get_the_title( $g ) );
         } );
         ?>
@@ -180,6 +240,24 @@ class AD_Author_Cleanup {
             <p class="description" style="max-width:720px;">
                 <?php _e( 'This page only reports until you click an action button. "Articles" is how many posts are linked to the entry — merging repoints those posts to the kept entry first, and article bylines are stored on the articles themselves, so deleting entries never changes what is displayed.', 'article-duplicator' ); ?>
             </p>
+
+            <!-- DUPLICATE BYLINES -->
+            <div class="artdup-panel">
+                <h2><?php printf( __( 'Duplicate bylines (%d post(s))', 'article-duplicator' ), $dup_count ); ?></h2>
+                <p class="description" style="max-width:720px;">
+                    <?php _e( 'Posts that show <strong>two</strong> “Written by …” lines (one from Molongui Authorship, one from Molongui Post Contributors). This removes the Post Contributors copy from every affected post so only a single byline remains. The author you selected is kept — nothing else changes.', 'article-duplicator' ); ?>
+                </p>
+                <?php if ( $dup_count < 1 ) : ?>
+                    <p><span class="dashicons dashicons-yes" style="color:#057a55;"></span> <?php _e( 'No duplicate bylines found.', 'article-duplicator' ); ?></p>
+                <?php else : ?>
+                    <form method="post"
+                          onsubmit="return confirm('<?php echo esc_js( __( 'Remove the duplicate (Post Contributors) byline from all affected posts?', 'article-duplicator' ) ); ?>');">
+                        <?php wp_nonce_field( 'ad_author_cleanup' ); ?>
+                        <input type="hidden" name="ad_cleanup_action" value="fix_bylines" />
+                        <button type="submit" class="button button-primary"><?php printf( __( 'Fix %d duplicate byline(s)', 'article-duplicator' ), $dup_count ); ?></button>
+                    </form>
+                <?php endif; ?>
+            </div>
 
             <!-- DUPLICATES -->
             <div class="artdup-panel">
