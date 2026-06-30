@@ -10,9 +10,10 @@
   ══════════════════════════════════════════ */
   if ($('#hld-table-body').length) {
 
-    let page  = 1;
-    let pages = parseInt($('#hld-pager').text().match(/of (\d+)/)?.[1] || 1);
-    let timer = null;
+    let page   = 1;
+    let pages  = parseInt($('#hld-pager').text().match(/of (\d+)/)?.[1] || 1);
+    let timer  = null;
+    let letter = '';
 
     // Active directory type is declared on the directory wrapper.
     const directoryType = $('.hl-directory[data-directory-type]').data('directory-type') || '';
@@ -26,6 +27,8 @@
         country:        $('#hld-filter-country').val(),
         region:         '',
         type:           $('#hld-filter-type').val() || '',
+        letter:         letter,
+        per_page:       $('#hld-per-page').val() || 20,
         page:           page,
       };
     }
@@ -58,6 +61,17 @@
     });
 
     $('#hld-filter-country, #hld-filter-type').on('change', function () {
+      doSearch(true);
+    });
+
+    // Per-page view selector
+    $('#hld-per-page').on('change', function () { doSearch(true); });
+
+    // Alphabet index
+    $(document).on('click', '.hld-az-letter:not([disabled])', function () {
+      letter = $(this).data('letter') || '';
+      $('.hld-az-letter').removeClass('hld-az-letter--active');
+      $(this).addClass('hld-az-letter--active');
       doSearch(true);
     });
 

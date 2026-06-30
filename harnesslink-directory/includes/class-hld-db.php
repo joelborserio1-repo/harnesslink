@@ -256,12 +256,16 @@ class HLD_DB {
             'country' => '',
             'type'    => '',
             'region'  => '',
+            'letter'  => '',
             'page'    => 1,
             'per_page'=> 20,
             'orderby' => 'name',
             'order'   => 'ASC',
         );
         $a = wp_parse_args( $args, $defaults );
+
+        // Clamp per_page to the allowed view sizes (guards the SQL LIMIT).
+        $a['per_page'] = self::clamp_per_page( $a['per_page'] );
 
         $where  = array( '1=1' );
         $params = array();
@@ -304,6 +308,15 @@ class HLD_DB {
             $where[]  = 'region = %s';
             $params[] = $a['region'];
         }
+        if ( ! empty( $a['letter'] ) ) {
+            if ( $a['letter'] === '#' ) {
+                // Names that do not start with a letter A–Z (numbers/symbols).
+                $where[] = "LEFT(name,1) NOT REGEXP '[A-Za-z]'";
+            } else {
+                $where[]  = 'name LIKE %s';
+                $params[] = $wpdb->esc_like( $a['letter'] ) . '%';
+            }
+        }
 
         $allowed_order = array( 'name', 'stud_name', 'country', 'type', 'created_at' );
         $orderby = in_array( $a['orderby'], $allowed_order ) ? $a['orderby'] : 'name';
@@ -325,11 +338,53 @@ class HLD_DB {
         }
 
         return array(
-            'total' => $count,
-            'pages' => ceil( $count / $a['per_page'] ),
-            'page'  => absint( $a['page'] ),
-            'items' => $rows,
+            'total'    => $count,
+            'pages'    => ceil( $count / $a['per_page'] ),
+            'page'     => absint( $a['page'] ),
+            'per_page' => (int) $a['per_page'],
+            'items'    => $rows,
         );
+    }
+
+    /** Allowed "view N per page" sizes. */
+    public static function per_page_options() {
+        return array( 20, 50, 100, 500 );
+    }
+
+    public static function clamp_per_page( $value ) {
+        $value   = absint( $value );
+        $allowed = self::per_page_options();
+        return in_array( $value, $allowed, true ) ? $value : 20;
+    }
+
+    /**
+     * Which first-letters (A–Z, plus '#' for non-alpha) currently have at
+     * least one listing — used to enable/disable the alphabet index.
+     * Returns an associative array like array( 'A' => true, 'B' => true, … ).
+     */
+    public static function get_active_letters( $directory_type = '' ) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'hld_stallions';
+
+        if ( $directory_type !== '' && self::has_column( 'directory_type' ) ) {
+            $rows = $wpdb->get_col( $wpdb->prepare(
+                "SELECT DISTINCT UPPER(LEFT(name,1)) FROM {$table} WHERE name <> '' AND directory_type = %s",
+                HLD_Types::sanitize_slug( $directory_type )
+            ) );
+        } else {
+            $rows = $wpdb->get_col( "SELECT DISTINCT UPPER(LEFT(name,1)) FROM {$table} WHERE name <> ''" );
+        }
+
+        $active = array();
+        foreach ( (array) $rows as $ch ) {
+            if ( $ch === '' ) continue;
+            if ( preg_match( '/[A-Z]/', $ch ) ) {
+                $active[ $ch ] = true;
+            } else {
+                $active['#'] = true;
+            }
+        }
+        return $active;
     }
 
     public static function get_stallion( $id ) {

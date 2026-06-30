@@ -33,14 +33,20 @@ class HLD_Ajax {
 
         $directory_type = HLD_Types::resolve( $_POST['directory_type'] ?? '' );
 
+        $letter = strtoupper( sanitize_text_field( $_POST['letter'] ?? '' ) );
+        if ( $letter !== '' && $letter !== '#' && ! preg_match( '/^[A-Z]$/', $letter ) ) {
+            $letter = '';
+        }
+
         $args = array(
             'directory_type' => $directory_type,
             'search'   => sanitize_text_field( $_POST['search']  ?? '' ),
             'country'  => sanitize_text_field( $_POST['country'] ?? '' ),
             'type'     => sanitize_text_field( $_POST['type']    ?? '' ),
             'region'   => sanitize_text_field( $_POST['region']  ?? '' ),
+            'letter'   => $letter,
             'page'     => absint( $_POST['page'] ?? 1 ),
-            'per_page' => 20,
+            'per_page' => HLD_DB::clamp_per_page( $_POST['per_page'] ?? 20 ),
         );
 
         $result   = HLD_DB::get_listings( $args );
@@ -53,10 +59,11 @@ class HLD_Ajax {
         $rows_html = ob_get_clean();
 
         wp_send_json_success( array(
-            'html'  => $rows_html,
-            'total' => $result['total'],
-            'pages' => $result['pages'],
-            'page'  => $args['page'],
+            'html'     => $rows_html,
+            'total'    => $result['total'],
+            'pages'    => $result['pages'],
+            'page'     => $result['page'],
+            'per_page' => $result['per_page'],
         ) );
     }
 

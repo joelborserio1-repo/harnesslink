@@ -24,9 +24,12 @@ $total_for_type = isset( $nav_counts[ $active_slug ] ) ? (int) $nav_counts[ $act
 $supports_gait  = ! empty( $type['supports_gait'] );
 $layout         = HLD_Types::layout( $active_slug );
 
-$countries = HLD_DB::get_country_filter_options();
-$initial   = HLD_DB::get_listings( array( 'directory_type' => $active_slug, 'per_page' => 20 ) );
-$col_count = $layout === 'stallion' ? ( $supports_gait ? 6 : 5 ) : 4;
+$countries      = HLD_DB::get_country_filter_options();
+$per_page_opts  = HLD_DB::per_page_options();
+$default_pp     = $per_page_opts[0];
+$initial        = HLD_DB::get_listings( array( 'directory_type' => $active_slug, 'per_page' => $default_pp ) );
+$active_letters = HLD_DB::get_active_letters( $active_slug );
+$col_count      = $layout === 'stallion' ? ( $supports_gait ? 6 : 5 ) : 4;
 ?>
 
 <div class="hl-directory harnesslink-directory hld-dir-wrap" data-directory-type="<?= esc_attr( $active_slug ) ?>">
@@ -90,10 +93,36 @@ $col_count = $layout === 'stallion' ? ( $supports_gait ? 6 : 5 ) : 4;
     </div>
   </div>
 
+  <!-- ── Alphabet index ── -->
+  <nav class="hld-az-index" id="hld-az-index" aria-label="Filter by first letter">
+    <button type="button" class="hld-az-letter hld-az-letter--active" data-letter="">All</button>
+    <?php
+    foreach ( range( 'A', 'Z' ) as $L ):
+      $has = ! empty( $active_letters[ $L ] );
+    ?>
+      <button type="button"
+              class="hld-az-letter<?= $has ? '' : ' hld-az-letter--empty' ?>"
+              data-letter="<?= esc_attr( $L ) ?>"
+              <?= $has ? '' : 'disabled aria-disabled="true"' ?>><?= esc_html( $L ) ?></button>
+    <?php endforeach; ?>
+    <?php if ( ! empty( $active_letters['#'] ) ): ?>
+      <button type="button" class="hld-az-letter" data-letter="#" title="Names starting with a number or symbol">#</button>
+    <?php endif; ?>
+  </nav>
+
   <!-- ── Table ── -->
   <div class="hld-dir-table-card">
     <div class="hld-dir-table-header">
       <span class="hld-dir-count" id="hld-count">Showing <?= (int) $initial['total'] ?> <?= esc_html( strtolower( wp_strip_all_tags( $initial['total'] === 1 ? $type['singular'] : $type['plural'] ) ) ) ?></span>
+      <label class="hld-dir-perpage">
+        <span>View</span>
+        <select id="hld-per-page" class="hld-dir-select hld-dir-select--sm">
+          <?php foreach ( $per_page_opts as $opt ): ?>
+            <option value="<?= (int) $opt ?>"><?= (int) $opt ?></option>
+          <?php endforeach; ?>
+        </select>
+        <span>per page</span>
+      </label>
     </div>
     <div class="hld-dir-table-wrap">
       <table class="hld-dir-table">

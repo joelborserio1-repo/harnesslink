@@ -1102,3 +1102,51 @@
 @media (max-width: 520px) {
   .hld-auth-card { padding: 24px 20px; }
 }
+
+/* ──────────────────────────────────────────────
+   ALPHABET INDEX
+────────────────────────────────────────────── */
+.hld-az-index {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  margin-bottom: 16px;
+}
+.hl-directory .hld-az-letter {
+  min-width: 32px; height: 32px; padding: 0 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--hl-border); border-radius: 8px;
+  background: #fff; color: var(--hl-navy);
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  font-family: inherit; transition: background .15s, border-color .15s, color .15s;
+}
+.hl-directory .hld-az-letter:hover:not([disabled]) {
+  background: var(--hl-light-blue); border-color: #BFD3FF;
+}
+.hl-directory .hld-az-letter--active {
+  background: var(--hl-navy); border-color: var(--hl-navy); color: #fff;
+}
+.hl-directory .hld-az-letter--empty,
+.hl-directory .hld-az-letter[disabled] {
+  color: var(--hl-locked); background: #F8FAFC;
+  cursor: default; opacity: .6;
+}
+
+/* ──────────────────────────────────────────────
+   PER-PAGE (VIEW N) SELECTOR
+────────────────────────────────────────────── */
+.hld-dir-table-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+}
+.hld-dir-perpage {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; color: var(--hl-muted);
+}
+.hld-dir-select--sm {
+  height: 34px; padding: 0 30px 0 12px; font-size: 13px;
+  background-position: right 10px center;
+}
+
+@media (max-width: 560px) {
+  .hld-dir-table-header { align-items: flex-start; flex-direction: column; }
+  .hl-directory .hld-az-letter { min-width: 28px; height: 28px; font-size: 12px; }
+}
