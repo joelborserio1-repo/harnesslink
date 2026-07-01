@@ -134,10 +134,12 @@ class HLD_DB {
             update_option( 'hld_slash_fix', '2' );
         }
 
-        // One-time seed of Bettor's Delight progeny data.
-        if ( get_option( 'hld_progeny_seed' ) !== '1' ) {
-            self::seed_bettors_delight_progeny();
-            update_option( 'hld_progeny_seed', '1' );
+        // One-time seed of bundled progeny sheets (Bettors Delight + Colt
+        // Thirty One, Southern Hemisphere set). Bumped to '2' to re-run after
+        // the SH data update; only fills stallions that have no progeny yet.
+        if ( get_option( 'hld_progeny_seed' ) !== '2' ) {
+            self::seed_progeny_data();
+            update_option( 'hld_progeny_seed', '2' );
         }
     }
 
@@ -890,28 +892,53 @@ class HLD_DB {
     }
 
     /**
-     * One-time seed of Bettor's Delight progeny (from Brendan's AUS-registry
-     * export). Runs once; only fills if the stallion exists and has none yet.
+     * Map of stallion name (matched apostrophe/loose) => seed data file under
+     * /data. Add new stallions here as Brendan supplies their progeny sheets.
      */
-    public static function seed_bettors_delight_progeny() {
+    private static function progeny_seed_map() {
+        return array(
+            'bettors delight' => 'data/bettors-delight-progeny.php',
+            'colt thirty one' => 'data/colt-thirty-one-progeny.php',
+        );
+    }
+
+    /**
+     * One-time seed of bundled progeny sheets (Southern Hemisphere set from
+     * Brendan). Runs once; for each mapped stallion, only fills if the stallion
+     * exists and currently has no progeny (never clobbers manual edits).
+     */
+    public static function seed_progeny_data() {
         global $wpdb;
         if ( ! self::has_progeny_table() ) return;
-
         $table = $wpdb->prefix . 'hld_stallions';
-        $id = (int) $wpdb->get_var( $wpdb->prepare(
-            "SELECT id FROM {$table} WHERE directory_type = 'stallion'
-             AND REPLACE(REPLACE(LOWER(name),'\\'',''),'’','') LIKE %s
-             ORDER BY id ASC LIMIT 1",
-            '%bettors delight%'
-        ) );
-        if ( ! $id ) return;
-        if ( self::count_progeny( $id ) > 0 ) return;
 
-        $seed_file = HLD_PLUGIN_DIR . 'data/bettors-delight-progeny.php';
-        if ( ! is_readable( $seed_file ) ) return;
-        $rows = include $seed_file;
-        if ( ! is_array( $rows ) || empty( $rows ) ) return;
+        foreach ( self::progeny_seed_map() as $match => $rel_file ) {
+            $id = (int) $wpdb->get_var( $wpdb->prepare(
+                "SELECT id FROM {$table} WHERE directory_type = 'stallion'
+                 AND REPLACE(REPLACE(LOWER(name),'\\'',''),'’','') LIKE %s
+                 ORDER BY id ASC LIMIT 1",
+                '%' . $wpdb->esc_like( $match ) . '%'
+            ) );
+            if ( ! $id ) continue;
 
-        self::replace_progeny( $id, $rows );
+            // Never overwrite progeny an admin has managed by hand. Manual CSV
+            // import / Clear All set the provenance flag to 'manual'; anything
+            // else (empty, or a previous bundled seed) may be (re)seeded so the
+            // corrected Southern-Hemisphere data replaces the old bundled set.
+            if ( get_option( 'hld_progeny_src_' . $id, '' ) === 'manual' ) continue;
+
+            $seed_file = HLD_PLUGIN_DIR . $rel_file;
+            if ( ! is_readable( $seed_file ) ) continue;
+            $rows = include $seed_file;
+            if ( ! is_array( $rows ) || empty( $rows ) ) continue;
+
+            self::replace_progeny( $id, $rows );
+            update_option( 'hld_progeny_src_' . $id, $rel_file );
+        }
+    }
+
+    /** Back-compat alias. */
+    public static function seed_bettors_delight_progeny() {
+        self::seed_progeny_data();
     }
 }

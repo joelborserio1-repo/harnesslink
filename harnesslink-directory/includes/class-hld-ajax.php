@@ -352,6 +352,8 @@ class HLD_Ajax {
         check_ajax_referer( 'hld_admin_nonce', 'nonce' );
         $stallion_id = absint( $_POST['stallion_id'] ?? 0 );
         HLD_DB::delete_progeny( $stallion_id );
+        // Mark as manually managed so bundled seeds never re-populate it.
+        update_option( 'hld_progeny_src_' . $stallion_id, 'manual' );
         wp_send_json_success( array( 'message' => 'Progeny cleared.' ) );
     }
 
@@ -417,6 +419,8 @@ class HLD_Ajax {
         fclose( $handle );
 
         $count = HLD_DB::replace_progeny( $stallion_id, $rows );
+        // Manual/CSV import wins — bundled seeds must never overwrite it later.
+        update_option( 'hld_progeny_src_' . $stallion_id, 'manual' );
 
         wp_send_json_success( array(
             'count'   => $count,
