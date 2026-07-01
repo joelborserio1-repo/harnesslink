@@ -75,6 +75,7 @@
     applyTypeSchema(form.directory_type.val());
     // Reset gallery panel for new listing
     galleryReset();
+    progenyReset();
   }
 
   $(document).on('change', '#hld-directory_type', function () {
@@ -244,7 +245,127 @@
     $('#hld-tab-' + id).addClass('active');
   }
   $(document).on('click', '.hld-tab', function () {
-    switchTab($(this).data('tab'));
+    const tab = $(this).data('tab');
+    switchTab(tab);
+    if (tab === 'progeny') progenyOnOpen();
+  });
+
+  /* ══ PROGENY (per-stallion) ══ */
+  let progenyFile = null;
+
+  function progenyStallionId() { return parseInt($('#hld-id').val()) || 0; }
+
+  function progenyReset() {
+    progenyFile = null;
+    $('#hld-progeny-file').val('');
+    $('#hld-progeny-filename').text('');
+    $('#hld-progeny-import').prop('disabled', true);
+    $('#hld-progeny-result').hide().removeClass('error success');
+    $('#hld-progeny-tbody').html('<tr><td colspan="10" class="hld-empty">No progeny for this stallion.</td></tr>');
+    $('#hld-progeny-count').text('No progeny loaded yet.');
+  }
+
+  function progenyRenderRows(items) {
+    if (!items || !items.length) {
+      $('#hld-progeny-tbody').html('<tr><td colspan="10" class="hld-empty">No progeny for this stallion.</td></tr>');
+      $('#hld-progeny-count').text('No progeny for this stallion.');
+      return;
+    }
+    let html = '';
+    items.forEach(function (p) {
+      html += '<tr>' +
+        '<td><strong>' + esc(p.name) + '</strong></td>' +
+        '<td>' + esc(p.foaling_date) + '</td>' +
+        '<td>' + esc(p.country) + '</td>' +
+        '<td>' + esc(p.sex) + '</td>' +
+        '<td>' + esc(p.dam) + '</td>' +
+        '<td>' + esc(p.broodmare_sire) + '</td>' +
+        '<td>' + esc(p.prizemoney) + '</td>' +
+        '<td>' + esc(p.mile_rate) + '</td>' +
+        '<td>' + esc(p.starts) + '</td>' +
+        '<td>' + esc(p.wins) + '</td>' +
+      '</tr>';
+    });
+    $('#hld-progeny-tbody').html(html);
+    $('#hld-progeny-count').text(items.length + ' progeny loaded.');
+  }
+
+  function esc(v) {
+    return $('<div>').text(v == null ? '' : String(v)).html();
+  }
+
+  function progenyOnOpen() {
+    const id = progenyStallionId();
+    if (!id) {
+      $('#hld-progeny-needs-save').show();
+      $('#hld-progeny-import, #hld-progeny-clear').prop('disabled', true);
+      return;
+    }
+    $('#hld-progeny-needs-save').hide();
+    $('#hld-progeny-clear').prop('disabled', false);
+    $.post(ajax, { action: 'hld_get_progeny', nonce, stallion_id: id }, function (res) {
+      if (res.success) progenyRenderRows(res.data);
+    });
+  }
+
+  $('#hld-progeny-file').on('change', function () {
+    const f = this.files[0];
+    if (!f || !f.name.match(/\.csv$/i)) { alert('Please select a .csv file.'); return; }
+    progenyFile = f;
+    $('#hld-progeny-filename').text('✓ ' + f.name);
+    $('#hld-progeny-import').prop('disabled', !progenyStallionId());
+  });
+
+  $('#hld-progeny-import').on('click', function () {
+    const id = progenyStallionId();
+    if (!id || !progenyFile) return;
+    const fd = new FormData();
+    fd.append('action', 'hld_import_progeny');
+    fd.append('nonce', nonce);
+    fd.append('stallion_id', id);
+    fd.append('progeny_csv', progenyFile);
+
+    const $btn = $(this).prop('disabled', true).text('Importing…');
+    const $res = $('#hld-progeny-result').hide().removeClass('error success');
+    $.ajax({
+      url: ajax, type: 'POST', data: fd, processData: false, contentType: false,
+      success: function (res) {
+        $btn.prop('disabled', false).text('Import Progeny');
+        if (res.success) {
+          $res.addClass('success').text(res.data.message).show();
+          progenyRenderRows(res.data.items);
+          progenyFile = null;
+          $('#hld-progeny-file').val('');
+          $('#hld-progeny-filename').text('');
+        } else {
+          $res.addClass('error').text(res.data || 'Import failed.').show();
+        }
+      },
+      error: function () {
+        $btn.prop('disabled', false).text('Import Progeny');
+        $res.addClass('error').text('Server error during import.').show();
+      }
+    });
+  });
+
+  $('#hld-progeny-clear').on('click', function () {
+    const id = progenyStallionId();
+    if (!id) return;
+    if (!confirm('Remove all progeny for this stallion? This cannot be undone.')) return;
+    $.post(ajax, { action: 'hld_clear_progeny', nonce, stallion_id: id }, function (res) {
+      if (res.success) progenyRenderRows([]);
+    });
+  });
+
+  $('#hld-progeny-sample').on('click', function (e) {
+    e.preventDefault();
+    const headers = 'Name,Foaling Date,Country of Birth,Sex,Dam,Broodmare Sire,Lifetime Prizemoney,Best Mile Rate,Starts,Wins';
+    const sample  = 'LEAP TO FAME,05-Nov-2018,AU,Colt,LETTUCEREASON,ART MAJOR USA,"$6,335,863",1:48.3MS,89,70';
+    const blob = new Blob([headers + '\n' + sample], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'harnesslink-progeny-sample.csv';
+    a.click();
   });
 
   /* ══ CSV IMPORT ══ */

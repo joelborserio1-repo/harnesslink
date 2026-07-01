@@ -1150,3 +1150,57 @@
   .hld-dir-table-header { align-items: flex-start; flex-direction: column; }
   .hl-directory .hld-az-letter { min-width: 28px; height: 28px; font-size: 12px; }
 }
+
+/* ──────────────────────────────────────────────
+   PROGENY TABLE (stallion profile)
+────────────────────────────────────────────── */
+.hld-progeny-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+}
+.hld-progeny-head h2 { margin: 0; }
+.hld-progeny-count {
+  font-size: 12px; font-weight: 800; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--hl-muted);
+  background: #F1F5F9; border-radius: 999px; padding: 4px 10px;
+}
+.hld-progeny-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--hl-border); border-radius: 12px;
+}
+.hld-progeny-table {
+  width: 100%; border-collapse: collapse; min-width: 760px;
+  font-size: 13px;
+}
+.hld-progeny-table thead th {
+  background: var(--hl-navy); color: #fff;
+  font-size: 10px; text-transform: uppercase; letter-spacing: .05em;
+  text-align: left; padding: 11px 12px; white-space: nowrap; font-weight: 800;
+}
+.hld-progeny-table thead th.hld-num { text-align: right; }
+.hld-progeny-table tbody td {
+  padding: 11px 12px; border-bottom: 1px solid #EEF2F7;
+  color: var(--hl-text); vertical-align: middle; white-space: nowrap;
+}
+.hld-progeny-table tbody tr:last-child td { border-bottom: none; }
+.hld-progeny-table tbody tr:nth-child(even) td { background: #FAFCFF; }
+.hld-progeny-table tbody tr:hover td { background: var(--hl-light-blue); }
+.hld-progeny-table .hld-num { text-align: right; font-variant-numeric: tabular-nums; }
+.hld-progeny-name { font-weight: 800; color: var(--hl-navy); }
+.hld-progeny-money { font-weight: 700; }
+.hld-progeny-flag {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 30px; padding: 2px 7px; border-radius: 6px;
+  background: var(--hl-light-blue); color: var(--hl-blue);
+  font-size: 11px; font-weight: 800; letter-spacing: .03em;
+}
+.hld-progeny-note {
+  margin: 12px 2px 0; font-size: 12px; font-style: italic;
+  color: var(--hl-muted); line-height: 1.5;
+}
+
+@media (max-width: 600px) {
+  .hld-progeny-table { font-size: 12px; }
+  .hld-progeny-table thead th,
+  .hld-progeny-table tbody td { padding: 9px 10px; }
+}

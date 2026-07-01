@@ -435,3 +435,17 @@
   object-fit: cover;
   display: block;
 }
+
+/* ── Progeny admin (stallion modal) ── */
+.hld-progeny-admin__bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.hld-progeny-admin__count {
+  font-size: 13px; font-weight: 600; color: #667085; margin-top: 8px;
+}
+.hld-progeny-admin-table th,
+.hld-progeny-admin-table td {
+  font-size: 12px; padding: 8px 10px; white-space: nowrap;
+}
+.hld-progeny-admin-table { min-width: 820px; }

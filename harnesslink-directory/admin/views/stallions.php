@@ -175,6 +175,7 @@ $plural        = wp_strip_all_tags( $type_meta['plural'] );
         <button class="hld-tab active" data-tab="basic">Basic Info</button>
         <button class="hld-tab" data-tab="contact">Contact Details</button>
         <button class="hld-tab" data-tab="profile">Profile & Racing</button>
+        <button class="hld-tab" data-tab="progeny" data-stallion-only="1">Progeny</button>
       </div>
 
       <!-- TAB: Basic Info -->
@@ -328,8 +329,36 @@ $plural        = wp_strip_all_tags( $type_meta['plural'] );
             <input type="text" id="hld-race_record" placeholder="e.g. 1:46.4 | 3,4 (1:46)" />
           </div>
           <div class="hld-field hld-field--full" data-stallion-only="1">
-            <label>Progeny Note</label>
-            <textarea id="hld-progeny_note" rows="3" placeholder="Notable progeny..."></textarea>
+            <label>Progeny Note (fallback text)</label>
+            <textarea id="hld-progeny_note" rows="3" placeholder="Optional free-text progeny note. Shown only if no structured progeny table exists."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: Progeny -->
+      <div class="hld-tab-panel" id="hld-tab-progeny">
+        <p class="hld-tab-note">Upload a progeny CSV for this stallion (Brendan's export format). Importing <strong>replaces</strong> this stallion's current progeny table. Columns: <code>Name, Foaling Date, Country of Birth, Sex, Dam, Broodmare Sire, Lifetime Prizemoney, Best Mile Rate, Starts, Wins</code>.</p>
+        <div id="hld-progeny-needs-save" class="hld-tab-note" style="display:none;color:#B45309;">Save the stallion first, then return to this tab to import progeny.</div>
+        <div class="hld-progeny-admin">
+          <div class="hld-progeny-admin__bar">
+            <label for="hld-progeny-file" class="hld-btn hld-btn--secondary">Choose CSV</label>
+            <input type="file" id="hld-progeny-file" accept=".csv" style="display:none;" />
+            <span id="hld-progeny-filename" class="hld-file-name"></span>
+            <button type="button" class="hld-btn hld-btn--primary" id="hld-progeny-import" disabled>Import Progeny</button>
+            <button type="button" class="hld-btn hld-btn--danger" id="hld-progeny-clear">Clear All</button>
+            <a href="#" id="hld-progeny-sample" class="hld-btn hld-btn--ghost">Sample CSV</a>
+          </div>
+          <div id="hld-progeny-result" class="hld-import-result" style="display:none;"></div>
+          <div class="hld-progeny-admin__count" id="hld-progeny-count">No progeny loaded yet.</div>
+          <div class="hld-table-wrap" style="margin-top:10px;">
+            <table class="hld-table hld-progeny-admin-table">
+              <thead>
+                <tr><th>Name</th><th>Foaled</th><th>Cty</th><th>Sex</th><th>Dam</th><th>B/M Sire</th><th>Prizemoney</th><th>Mile</th><th>Sts</th><th>Wins</th></tr>
+              </thead>
+              <tbody id="hld-progeny-tbody">
+                <tr><td colspan="10" class="hld-empty">No progeny for this stallion.</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

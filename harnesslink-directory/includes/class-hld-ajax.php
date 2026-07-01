@@ -15,6 +15,10 @@ class HLD_Ajax {
         add_action( 'wp_ajax_hld_delete_stallion',        array( __CLASS__, 'delete_stallion' ) );
         add_action( 'wp_ajax_hld_import_csv',             array( __CLASS__, 'import_csv' ) );
         add_action( 'admin_post_hld_export_csv',          array( __CLASS__, 'export_csv' ) );
+        // Progeny
+        add_action( 'wp_ajax_hld_get_progeny',            array( __CLASS__, 'get_progeny' ) );
+        add_action( 'wp_ajax_hld_import_progeny',         array( __CLASS__, 'import_progeny' ) );
+        add_action( 'wp_ajax_hld_clear_progeny',          array( __CLASS__, 'clear_progeny' ) );
         add_action( 'wp_ajax_hld_get_stallion',           array( __CLASS__, 'get_stallion' ) );
         add_action( 'wp_ajax_hld_update_enquiry_status',  array( __CLASS__, 'update_enquiry_status' ) );
         add_action( 'wp_ajax_hld_delete_enquiry',         array( __CLASS__, 'delete_enquiry' ) );
@@ -330,6 +334,96 @@ class HLD_Ajax {
 
         fclose( $out );
         exit;
+    }
+
+    /* ════════════════════════════════════
+       PROGENY (per-stallion)
+    ════════════════════════════════════ */
+
+    public static function get_progeny() {
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
+        check_ajax_referer( 'hld_admin_nonce', 'nonce' );
+        $stallion_id = absint( $_POST['stallion_id'] ?? 0 );
+        wp_send_json_success( HLD_DB::get_progeny( $stallion_id ) );
+    }
+
+    public static function clear_progeny() {
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
+        check_ajax_referer( 'hld_admin_nonce', 'nonce' );
+        $stallion_id = absint( $_POST['stallion_id'] ?? 0 );
+        HLD_DB::delete_progeny( $stallion_id );
+        wp_send_json_success( array( 'message' => 'Progeny cleared.' ) );
+    }
+
+    /**
+     * Import a progeny CSV for one stallion. Replaces that stallion's set.
+     * Accepts the column layout from Brendan's export (case/spacing-flexible).
+     */
+    public static function import_progeny() {
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
+        check_ajax_referer( 'hld_admin_nonce', 'nonce' );
+
+        $stallion_id = absint( $_POST['stallion_id'] ?? 0 );
+        if ( ! $stallion_id || ! HLD_DB::get_stallion( $stallion_id ) ) {
+            wp_send_json_error( 'Save the stallion first, then import its progeny.' );
+        }
+        if ( empty( $_FILES['progeny_csv'] ) ) {
+            wp_send_json_error( 'No file uploaded.' );
+        }
+        $file = $_FILES['progeny_csv']['tmp_name'];
+        if ( ! is_readable( $file ) ) {
+            wp_send_json_error( 'File not readable.' );
+        }
+
+        $handle  = fopen( $file, 'r' );
+        $headers = fgetcsv( $handle );
+        if ( empty( $headers ) ) {
+            fclose( $handle );
+            wp_send_json_error( 'CSV header row is missing.' );
+        }
+        $headers = array_map( function ( $h ) {
+            $h = preg_replace( '/^\xEF\xBB\xBF/', '', (string) $h );
+            $h = strtolower( trim( $h ) );
+            return str_replace( array( ' ', '-' ), '_', $h );
+        }, $headers );
+
+        $rows   = array();
+        $errors = 0;
+        while ( ( $row = fgetcsv( $handle ) ) !== false ) {
+            if ( ! array_filter( $row, 'strlen' ) ) continue;
+            if ( count( $row ) < count( $headers ) ) {
+                $row = array_pad( $row, count( $headers ), '' );
+            } elseif ( count( $row ) > count( $headers ) ) {
+                $row = array_slice( $row, 0, count( $headers ) );
+            }
+            $d = array_combine( $headers, $row );
+
+            $name = trim( $d['name'] ?? '' );
+            if ( $name === '' ) { $errors++; continue; }
+
+            $rows[] = array(
+                'name'           => $name,
+                'foaling_date'   => $d['foaling_date']   ?? $d['foaled'] ?? '',
+                'country'        => $d['country_of_birth'] ?? $d['country'] ?? '',
+                'sex'            => $d['sex']            ?? '',
+                'dam'            => $d['dam']            ?? '',
+                'broodmare_sire' => $d['broodmare_sire'] ?? $d['dam_sire'] ?? '',
+                'prizemoney'     => $d['lifetime_prizemoney'] ?? $d['prizemoney'] ?? $d['earnings'] ?? '',
+                'mile_rate'      => $d['best_mile_rate'] ?? $d['mile_rate'] ?? $d['best_mile'] ?? '',
+                'starts'         => $d['starts']         ?? 0,
+                'wins'           => $d['wins']           ?? 0,
+            );
+        }
+        fclose( $handle );
+
+        $count = HLD_DB::replace_progeny( $stallion_id, $rows );
+
+        wp_send_json_success( array(
+            'count'   => $count,
+            'errors'  => $errors,
+            'message' => "Imported {$count} progeny." . ( $errors ? " {$errors} row(s) skipped (missing name)." : '' ),
+            'items'   => HLD_DB::get_progeny( $stallion_id ),
+        ) );
     }
 
     private static function normalise_import_country( $country ) {

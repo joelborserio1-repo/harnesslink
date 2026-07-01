@@ -48,6 +48,9 @@ if ( empty( $contact_blocks ) && ! empty( $stallion->contact_other ) ) {
     $contact_blocks['Contact'] = $stallion->contact_other;
 }
 $has_regional_contacts = ! empty( $contact_blocks );
+
+/* Structured progeny (stallions only, paid listings). */
+$progeny = ( $paying && $supports_gait ) ? HLD_DB::get_progeny( $stallion->id ) : array();
 ?>
 
 <div class="hl-directory harnesslink-directory hld-profile-wrap">
@@ -147,7 +150,53 @@ $has_regional_contacts = ! empty( $contact_blocks );
     <?php endif; ?>
 
     <!-- Progeny -->
-    <?php if ( $paying && $supports_gait && $stallion->progeny_note ): ?>
+    <?php if ( ! empty( $progeny ) ): ?>
+      <div class="hld-profile-section hld-progeny-section">
+        <div class="hld-progeny-head">
+          <h2>Notable Progeny</h2>
+          <span class="hld-progeny-count"><?= count( $progeny ) ?> listed</span>
+        </div>
+        <div class="hld-progeny-scroll">
+          <table class="hld-progeny-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Foaled</th>
+                <th>Country</th>
+                <th>Sex</th>
+                <th>Dam</th>
+                <th>Broodmare Sire</th>
+                <th class="hld-num">Prizemoney</th>
+                <th>Best Mile</th>
+                <th class="hld-num">Starts</th>
+                <th class="hld-num">Wins</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ( $progeny as $p ): ?>
+                <tr>
+                  <td class="hld-progeny-name"><?= esc_html( $p->name ) ?></td>
+                  <td><?= esc_html( $p->foaling_date ) ?></td>
+                  <td>
+                    <?php if ( $p->country ): ?>
+                      <span class="hld-progeny-flag"><?= esc_html( $p->country ) ?></span>
+                    <?php endif; ?>
+                  </td>
+                  <td><?= esc_html( $p->sex ) ?></td>
+                  <td><?= esc_html( $p->dam ) ?></td>
+                  <td><?= esc_html( $p->broodmare_sire ) ?></td>
+                  <td class="hld-num hld-progeny-money"><?= esc_html( $p->prizemoney ) ?></td>
+                  <td><?= esc_html( $p->mile_rate ) ?></td>
+                  <td class="hld-num"><?= (int) $p->starts ?></td>
+                  <td class="hld-num"><?= (int) $p->wins ?></td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+        <p class="hld-progeny-note">Progeny registered in Australia. International (NZ/US) progeny may not be fully represented.</p>
+      </div>
+    <?php elseif ( $paying && $supports_gait && $stallion->progeny_note ): ?>
       <div class="hld-profile-section">
         <h2>Notable Progeny</h2>
         <div class="hld-profile-bio"><?= nl2br( esc_html( $stallion->progeny_note ) ) ?></div>

@@ -83,10 +83,33 @@ class HLD_DB {
             KEY idx_sort (stallion_id, sort_order)
         ) {$charset};";
 
+        /* ── Progeny table ── */
+        $sql_progeny = "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}hld_progeny (
+            id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            stallion_id    BIGINT UNSIGNED NOT NULL,
+            name           VARCHAR(200)    NOT NULL DEFAULT '',
+            foaling_date   VARCHAR(40)     NOT NULL DEFAULT '',
+            country        VARCHAR(20)     NOT NULL DEFAULT '',
+            sex            VARCHAR(20)     NOT NULL DEFAULT '',
+            dam            VARCHAR(200)    NOT NULL DEFAULT '',
+            broodmare_sire VARCHAR(200)    NOT NULL DEFAULT '',
+            prizemoney     VARCHAR(60)     NOT NULL DEFAULT '',
+            prizemoney_num BIGINT          NOT NULL DEFAULT 0,
+            mile_rate      VARCHAR(40)     NOT NULL DEFAULT '',
+            starts         INT             NOT NULL DEFAULT 0,
+            wins           INT             NOT NULL DEFAULT 0,
+            sort_order     INT             NOT NULL DEFAULT 0,
+            created_at     DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_stallion (stallion_id),
+            KEY idx_money (stallion_id, prizemoney_num)
+        ) {$charset};";
+
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta( $sql_stallions );
         dbDelta( $sql_enquiries );
         dbDelta( $sql_gallery );
+        dbDelta( $sql_progeny );
         self::ensure_columns();
         self::dedupe_stallions();
 
@@ -109,6 +132,12 @@ class HLD_DB {
         if ( get_option( 'hld_slash_fix' ) !== '2' ) {
             self::repair_escaped_slashes();
             update_option( 'hld_slash_fix', '2' );
+        }
+
+        // One-time seed of Bettor's Delight progeny data.
+        if ( get_option( 'hld_progeny_seed' ) !== '1' ) {
+            self::seed_bettors_delight_progeny();
+            update_option( 'hld_progeny_seed', '1' );
         }
     }
 
@@ -775,5 +804,114 @@ class HLD_DB {
     public static function delete_gallery_for_stallion( $stallion_id ) {
         global $wpdb;
         return $wpdb->delete( $wpdb->prefix . 'hld_gallery', array( 'stallion_id' => absint( $stallion_id ) ) );
+    }
+
+    /* ════════════════════════════════════
+       PROGENY
+    ════════════════════════════════════ */
+
+    /** All progeny for a stallion, ordered by prizemoney (desc) then sort. */
+    public static function get_progeny( $stallion_id ) {
+        global $wpdb;
+        if ( ! self::has_progeny_table() ) return array();
+        return $wpdb->get_results( $wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}hld_progeny WHERE stallion_id = %d
+             ORDER BY prizemoney_num DESC, sort_order ASC, id ASC",
+            absint( $stallion_id )
+        ) );
+    }
+
+    public static function count_progeny( $stallion_id ) {
+        global $wpdb;
+        if ( ! self::has_progeny_table() ) return 0;
+        return (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}hld_progeny WHERE stallion_id = %d",
+            absint( $stallion_id )
+        ) );
+    }
+
+    private static function sanitize_progeny( $stallion_id, $data ) {
+        $money_raw = (string) ( $data['prizemoney'] ?? '' );
+        $money_num = isset( $data['prizemoney_num'] )
+            ? absint( $data['prizemoney_num'] )
+            : (int) preg_replace( '/[^0-9]/', '', $money_raw );
+
+        return array(
+            'stallion_id'    => absint( $stallion_id ),
+            'name'           => sanitize_text_field( $data['name'] ?? '' ),
+            'foaling_date'   => sanitize_text_field( $data['foaling_date'] ?? '' ),
+            'country'        => sanitize_text_field( $data['country'] ?? '' ),
+            'sex'            => sanitize_text_field( $data['sex'] ?? '' ),
+            'dam'            => sanitize_text_field( $data['dam'] ?? '' ),
+            'broodmare_sire' => sanitize_text_field( $data['broodmare_sire'] ?? '' ),
+            'prizemoney'     => sanitize_text_field( $money_raw ),
+            'prizemoney_num' => $money_num,
+            'mile_rate'      => sanitize_text_field( $data['mile_rate'] ?? '' ),
+            'starts'         => absint( $data['starts'] ?? 0 ),
+            'wins'           => absint( $data['wins'] ?? 0 ),
+            'sort_order'     => absint( $data['sort_order'] ?? 0 ),
+        );
+    }
+
+    public static function add_progeny( $stallion_id, $data ) {
+        global $wpdb;
+        if ( ! self::has_progeny_table() ) return 0;
+        $wpdb->insert( $wpdb->prefix . 'hld_progeny', self::sanitize_progeny( $stallion_id, $data ) );
+        return $wpdb->insert_id;
+    }
+
+    /** Replace the entire progeny set for a stallion with the given rows. */
+    public static function replace_progeny( $stallion_id, $rows ) {
+        global $wpdb;
+        if ( ! self::has_progeny_table() ) return 0;
+        $stallion_id = absint( $stallion_id );
+        $wpdb->delete( $wpdb->prefix . 'hld_progeny', array( 'stallion_id' => $stallion_id ) );
+        $count = 0;
+        $sort  = 0;
+        foreach ( (array) $rows as $row ) {
+            if ( empty( $row['name'] ) ) continue;
+            $row['sort_order'] = $sort++;
+            $wpdb->insert( $wpdb->prefix . 'hld_progeny', self::sanitize_progeny( $stallion_id, $row ) );
+            $count++;
+        }
+        return $count;
+    }
+
+    public static function delete_progeny( $stallion_id ) {
+        global $wpdb;
+        if ( ! self::has_progeny_table() ) return 0;
+        return $wpdb->delete( $wpdb->prefix . 'hld_progeny', array( 'stallion_id' => absint( $stallion_id ) ) );
+    }
+
+    public static function has_progeny_table() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'hld_progeny';
+        return (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+    }
+
+    /**
+     * One-time seed of Bettor's Delight progeny (from Brendan's AUS-registry
+     * export). Runs once; only fills if the stallion exists and has none yet.
+     */
+    public static function seed_bettors_delight_progeny() {
+        global $wpdb;
+        if ( ! self::has_progeny_table() ) return;
+
+        $table = $wpdb->prefix . 'hld_stallions';
+        $id = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT id FROM {$table} WHERE directory_type = 'stallion'
+             AND REPLACE(REPLACE(LOWER(name),'\\'',''),'’','') LIKE %s
+             ORDER BY id ASC LIMIT 1",
+            '%bettors delight%'
+        ) );
+        if ( ! $id ) return;
+        if ( self::count_progeny( $id ) > 0 ) return;
+
+        $seed_file = HLD_PLUGIN_DIR . 'data/bettors-delight-progeny.php';
+        if ( ! is_readable( $seed_file ) ) return;
+        $rows = include $seed_file;
+        if ( ! is_array( $rows ) || empty( $rows ) ) return;
+
+        self::replace_progeny( $id, $rows );
     }
 }
