@@ -156,6 +156,10 @@ $progeny = ( $paying && $supports_gait ) ? HLD_DB::get_progeny( $stallion->id ) 
           <h2>Notable Progeny</h2>
           <span class="hld-progeny-count"><?= count( $progeny ) ?> listed</span>
         </div>
+        <?php $progeny_intro = HLD_DB::progeny_intro( $stallion->name ); ?>
+        <?php if ( $progeny_intro ): ?>
+          <p class="hld-progeny-intro"><?= esc_html( $progeny_intro ) ?></p>
+        <?php endif; ?>
         <div class="hld-progeny-scroll">
           <table class="hld-progeny-table">
             <thead>

@@ -903,6 +903,26 @@ class HLD_DB {
     }
 
     /**
+     * Optional intro line shown above a stallion's progeny table. Keyed by a
+     * loose, apostrophe-insensitive name match. Add new stallions as needed.
+     */
+    public static function progeny_intro( $name ) {
+        $key = strtolower( trim( (string) $name ) );
+        $key = str_replace( array( "'", '’' ), '', $key );
+
+        $intros = array(
+            'bettors delight' => 'First crop of progeny began racing in the 2005/2006 season.',
+            'colt thirty one' => 'First crop of progeny began racing in the 2026 season.',
+        );
+        foreach ( $intros as $match => $line ) {
+            if ( strpos( $key, $match ) !== false ) {
+                return $line;
+            }
+        }
+        return '';
+    }
+
+    /**
      * One-time seed of bundled progeny sheets (Southern Hemisphere set from
      * Brendan). Runs once; for each mapped stallion, only fills if the stallion
      * exists and currently has no progeny (never clobbers manual edits).

@@ -1164,6 +1164,11 @@
   text-transform: uppercase; color: var(--hl-muted);
   background: #F1F5F9; border-radius: 999px; padding: 4px 10px;
 }
+.hld-progeny-intro {
+  margin: 0 2px 14px;
+  font-size: 14px; line-height: 1.5;
+  color: var(--hl-text); font-weight: 600;
+}
 .hld-progeny-scroll {
   overflow-x: auto;
   border: 1px solid var(--hl-border); border-radius: 12px;
