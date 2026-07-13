@@ -22,6 +22,32 @@ class HL_Stats {
         add_action( 'admin_init', [ $this, 'maybe_export_csv' ] );
         add_action( 'wp_ajax_hl_verify_pin', [ $this, 'ajax_verify_pin' ] );
         add_action( 'wp_ajax_hl_lock',       [ $this, 'ajax_lock' ] );
+
+        // Skip the language-pack update step that fails when
+        // wp-content/languages isn't writable by the web-server user.
+        add_filter( 'site_transient_update_core',    [ $this, 'skip_translation_updates' ] );
+        add_filter( 'site_transient_update_plugins', [ $this, 'skip_translation_updates' ] );
+        add_filter( 'site_transient_update_themes',  [ $this, 'skip_translation_updates' ] );
+    }
+
+    /**
+     * Clear pending translation updates so WordPress doesn't try (and fail)
+     * to copy language files after a plugin update.
+     *
+     * On this server the wp-content/languages directory isn't writable by the
+     * web-server user, so the bundled "Updating translations…" step throws a
+     * "files could not be copied" error after every plugin update. Emptying
+     * the translation list makes that step a no-op.
+     *
+     * This does NOT affect plugin, theme, or core updates — only language
+     * packs. To restore automatic translation updates, either delete this
+     * plugin or make wp-content/languages writable by the web-server user.
+     */
+    public function skip_translation_updates( $value ) {
+        if ( is_object( $value ) && isset( $value->translations ) ) {
+            $value->translations = [];
+        }
+        return $value;
     }
 
     /**

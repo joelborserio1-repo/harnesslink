@@ -39,6 +39,21 @@ The dashboard is gated behind a 4-digit PIN. **The PIN is 1234.** It is set
 automatically on activation/upgrade and can be changed at
 **Tools → Journalist Costs → Dashboard PIN**.
 
+## Translation-update errors on upload
+
+On servers where `wp-content/languages/` isn't writable by the web-server
+user, WordPress throws a *"files could not be copied"* error during the
+"Updating translations…" step after any plugin update. That step is
+WordPress core refreshing language packs — unrelated to this plugin — but
+it's noisy. v3.1.1 clears the pending translation-update list so that step
+becomes a no-op and the error stops appearing.
+
+This affects **language packs only** — plugin, theme and core updates are
+untouched. To restore automatic translation updates, make
+`wp-content/languages` writable by the web-server user (e.g.
+`chown -R www-data:www-data wp-content/languages`) and remove this plugin,
+or just fix the permissions and leave it be.
+
 ## Data sources
 
 - **Story counts & categories** — WordPress core (`wp_posts`, term tables). No
