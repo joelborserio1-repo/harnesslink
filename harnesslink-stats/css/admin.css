@@ -1,0 +1,95 @@
+.hl-stats-wrap h1 { margin-bottom: 4px; }
+.hl-stats-wrap .description { margin-bottom: 16px; color: #666; }
+
+/* Top bar */
+.hl-top-bar { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+
+/* Presets */
+.hl-presets { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.hl-preset-btn { display: inline-block; padding: 5px 14px; border: 1px solid #ccc; border-radius: 20px; font-size: 12px; font-weight: 600; color: #444; text-decoration: none; background: #fff; }
+.hl-preset-btn:hover { border-color: #2271b1; color: #2271b1; }
+.hl-preset-btn.active { background: #2271b1; border-color: #2271b1; color: #fff; }
+
+/* Inline filter */
+.hl-inline-filter { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 12px 16px; }
+.hl-inline-filter label { font-size: 12px; font-weight: 600; color: #555; display: flex; align-items: center; gap: 6px; }
+.hl-inline-filter select, .hl-inline-filter input[type="date"] { font-size: 13px; padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; }
+
+/* Cards */
+.hl-cards { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 24px; }
+.hl-card { flex: 1; min-width: 120px; background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 16px 18px; text-align: center; }
+.hl-card-value { font-size: 26px; font-weight: 700; color: #1d2327; line-height: 1; margin-bottom: 5px; }
+.hl-card-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #888; font-weight: 600; }
+.hl-card-good { border-color: #7ec8a0; background: #f0faf5; }
+.hl-card-good .hl-card-value { color: #1a7a45; }
+.hl-card-bad  { border-color: #f5a0a0; background: #fdf5f5; }
+.hl-card-bad  .hl-card-value { color: #a00; }
+
+/* Tabs */
+.hl-tabs { display: flex; gap: 0; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
+.hl-tab { padding: 8px 20px; font-size: 13px; font-weight: 600; color: #555; text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+.hl-tab:hover { color: #2271b1; }
+.hl-tab.active { color: #2271b1; border-bottom-color: #2271b1; }
+
+/* Section */
+.hl-section { margin-bottom: 32px; }
+.hl-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.hl-count { font-size: 13px; color: #888; }
+
+/* Tables */
+.wp-list-table th.num, .wp-list-table td.num { text-align: right; }
+.wp-list-table th.cpv-col, .wp-list-table td.cpv-col { width: 100px; }
+
+/* Bar */
+.hl-bar-wrap { height: 3px; background: #f0f0f0; border-radius: 2px; margin-top: 5px; }
+.hl-bar { height: 3px; background: #2271b1; border-radius: 2px; }
+
+/* CPV badges */
+.cpv-badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.cpv-good { background: #e6f7ee; color: #1a7a45; border: 1px solid #7ec8a0; }
+.cpv-ok   { background: #f0f0f0; color: #555;    border: 1px solid #ccc; }
+.cpv-bad  { background: #fdf0f0; color: #a00;    border: 1px solid #f5a0a0; }
+
+/* Rate badge */
+.rate-badge { font-size: 11px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; padding: 2px 6px; color: #555; font-weight: 600; }
+
+/* Trend */
+.trend-up   { color: #1a7a45; font-weight: 700; }
+.trend-down { color: #a00;    font-weight: 700; }
+.trend-flat { color: #888;    font-weight: 600; }
+.trend-na   { color: #ccc; }
+
+/* Breakdown blocks */
+.hl-breakdown-block { margin-bottom: 24px; background: #fff; border: 1px solid #e8e8e8; border-radius: 6px; overflow: hidden; }
+.hl-breakdown-block h3 { margin: 0; padding: 10px 14px; font-size: 13px; color: #fff; background: #2271b1; }
+.hl-sub-table { font-size: 13px; }
+.hl-sub-table.widefat { border: none; }
+
+/* Pagination */
+.hl-pagination { margin-top: 14px; }
+.hl-pagination .page-numbers { padding: 4px 10px; border: 1px solid #ccc; border-radius: 4px; margin-right: 3px; text-decoration: none; color: #2271b1; }
+.hl-pagination .page-numbers.current { background: #2271b1; color: #fff; border-color: #2271b1; }
+
+.hl-note { color: #777; font-size: 11px; }
+
+/* Output matrix (stories per day / week × category) */
+.hl-scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.hl-matrix { min-width: 640px; }
+.hl-matrix th.hl-period-col, .hl-matrix td:first-child { min-width: 150px; }
+.hl-matrix th.num, .hl-matrix td.num { width: 68px; white-space: nowrap; }
+.hl-matrix td.hl-zero { color: #cfcfcf; }
+.hl-matrix thead th { position: sticky; top: 0; }
+
+/* ── PIN screen ────────────────────────────────────────────────────────── */
+.hl-pin-screen { display:flex; align-items:center; justify-content:center; min-height:70vh; }
+.hl-pin-card   { background:#fff; border:1px solid #ddd; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,.08); padding:36px 32px; text-align:center; width:300px; }
+.hl-pin-logo   { font-size:44px; margin-bottom:8px; }
+.hl-pin-card h2 { margin:0 0 6px; font-size:18px; }
+.hl-pin-card p  { color:#666; font-size:13px; margin:0 0 20px; }
+.hl-pin-dots { display:flex; justify-content:center; gap:12px; margin-bottom:20px; }
+.hl-pin-dots span { width:13px; height:13px; border-radius:50%; border:2px solid #2271b1; background:transparent; transition:background .12s; }
+.hl-pin-dots span.filled { background:#2271b1; }
+.hl-pin-pad { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+.hl-pin-key { height:50px; font-size:18px; font-weight:600; border:1px solid #ddd; border-radius:8px; background:#f9f9f9; cursor:pointer; color:#1d2327; transition:background .1s; }
+.hl-pin-key:hover { background:#e8f0fb; border-color:#2271b1; }
+.hl-pin-key[data-key=""] { visibility:hidden; }
