@@ -18,6 +18,7 @@ class HL_Stats {
     public function __construct() {
         add_action( 'admin_menu', [ $this, 'add_menu' ] );
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
+        add_action( 'admin_init', [ $this, 'maybe_start_session' ], 1 );
         add_action( 'admin_init', [ $this, 'maybe_migrate' ] );
         add_action( 'admin_init', [ $this, 'maybe_export_csv' ] );
         add_action( 'wp_ajax_hl_verify_pin', [ $this, 'ajax_verify_pin' ] );
@@ -87,7 +88,22 @@ class HL_Stats {
     }
 
     private function start_session() {
-        if ( ! session_id() ) session_start();
+        if ( session_status() === PHP_SESSION_ACTIVE ) return;
+        // Never call session_start() after output has begun — it would emit
+        // "headers already sent" warnings. On the dashboard the session is
+        // started earlier via maybe_start_session() on admin_init.
+        if ( headers_sent() ) return;
+        session_start();
+    }
+
+    /**
+     * Start the PIN session before any HTML is output. Runs on admin_init
+     * (headers not yet sent) so render_page() can read $_SESSION safely.
+     */
+    public function maybe_start_session() {
+        if ( isset( $_GET['page'] ) && $_GET['page'] === 'hl-journalist-stats' ) {
+            $this->start_session();
+        }
     }
 
     public function ajax_verify_pin() {

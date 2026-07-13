@@ -3,7 +3,7 @@
  * Plugin Name: HarnessLink Journalist Stats
  * Plugin URI:  https://harnesslink.com
  * Description: Dashboard showing story output per day / week and by category (USA, AU, …) plus views and cost per journalist. Powered by WordPress core post data and WordPress Popular Posts.
- * Version:     3.1.1
+ * Version:     3.1.2
  * Author:      Joel Borserio
  * Author URI:  https://harnesslink.com
  * Text Domain: harnesslink-stats
@@ -11,7 +11,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'HL_STATS_VERSION', '3.1.1' );
+define( 'HL_STATS_VERSION', '3.1.2' );
 define( 'HL_STATS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'HL_STATS_URL', plugin_dir_url( __FILE__ ) );
 
