@@ -449,3 +449,32 @@
   font-size: 12px; padding: 8px 10px; white-space: nowrap;
 }
 .hld-progeny-admin-table { min-width: 820px; }
+
+/* ── Master Sync report ── */
+.hld-stat.hld-stat--danger .hld-stat__num { color: #B91C1C; }
+.hld-master-cols {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px; margin-top: 16px;
+}
+.hld-master-col {
+  border: 1px solid #E3E8F1; border-radius: 10px; overflow: hidden;
+  background: #fff;
+}
+.hld-master-col h3 {
+  margin: 0; padding: 10px 12px; font-size: 13px;
+  background: #F6F8FC; border-bottom: 1px solid #E3E8F1;
+  display: flex; align-items: center; gap: 8px;
+}
+.hld-master-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 24px; height: 20px; padding: 0 7px; border-radius: 999px;
+  background: #EEF2F7; color: #52627A; font-size: 12px; font-weight: 800;
+}
+.hld-master-badge--danger { background: #FEE2E2; color: #B91C1C; }
+.hld-master-badge--ok { background: #D1FAE5; color: #0D7A4F; }
+.hld-master-list { max-height: 320px; overflow-y: auto; }
+.hld-master-item {
+  padding: 7px 12px; font-size: 13px; border-bottom: 1px solid #F1F5F9;
+}
+.hld-master-item:last-child { border-bottom: none; }
+.hld-master-empty { display: block; padding: 10px 12px; color: #94A3B8; font-size: 13px; }

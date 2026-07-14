@@ -61,6 +61,15 @@ class HLD_Admin {
 
         add_submenu_page(
             'hld-dashboard',
+            'Master Sync',
+            'Master Sync',
+            'manage_options',
+            'hld-master',
+            array( __CLASS__, 'page_master' )
+        );
+
+        add_submenu_page(
+            'hld-dashboard',
             'Settings',
             'Settings',
             'manage_options',
@@ -161,6 +170,11 @@ class HLD_Admin {
     /* ── Import CSV page ── */
     public static function page_import() {
         include HLD_PLUGIN_DIR . 'admin/views/import.php';
+    }
+
+    /* ── Master Sync page ── */
+    public static function page_master() {
+        include HLD_PLUGIN_DIR . 'admin/views/master.php';
     }
 
     /* ── Settings page ── */

@@ -19,6 +19,8 @@ class HLD_Ajax {
         add_action( 'wp_ajax_hld_get_progeny',            array( __CLASS__, 'get_progeny' ) );
         add_action( 'wp_ajax_hld_import_progeny',         array( __CLASS__, 'import_progeny' ) );
         add_action( 'wp_ajax_hld_clear_progeny',          array( __CLASS__, 'clear_progeny' ) );
+        // Master sync (preview + apply)
+        add_action( 'wp_ajax_hld_master_sync',            array( __CLASS__, 'master_sync' ) );
         add_action( 'wp_ajax_hld_get_stallion',           array( __CLASS__, 'get_stallion' ) );
         add_action( 'wp_ajax_hld_update_enquiry_status',  array( __CLASS__, 'update_enquiry_status' ) );
         add_action( 'wp_ajax_hld_delete_enquiry',         array( __CLASS__, 'delete_enquiry' ) );
@@ -427,6 +429,52 @@ class HLD_Ajax {
             'errors'  => $errors,
             'message' => "Imported {$count} progeny." . ( $errors ? " {$errors} row(s) skipped (missing name)." : '' ),
             'items'   => HLD_DB::get_progeny( $stallion_id ),
+        ) );
+    }
+
+    /* ════════════════════════════════════
+       MASTER SYNC (preview / apply)
+    ════════════════════════════════════ */
+
+    /**
+     * Preview or apply the master stallion sync. Rules:
+     *   - protect paying/featured, update existing free, add new,
+     *     delete free listings not in the sheet (full replace).
+     * Preview (default) writes nothing. Apply requires confirm=1.
+     */
+    public static function master_sync() {
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
+        check_ajax_referer( 'hld_admin_nonce', 'nonce' );
+        HLD_DB::ensure_columns();
+
+        $apply = ! empty( $_POST['confirm'] ) && (string) $_POST['confirm'] === '1';
+
+        // Source: an uploaded CSV if provided, otherwise the bundled master.
+        if ( ! empty( $_FILES['master_csv']['tmp_name'] ) && is_readable( $_FILES['master_csv']['tmp_name'] ) ) {
+            $file = $_FILES['master_csv']['tmp_name'];
+        } else {
+            $file = HLD_PLUGIN_DIR . 'data/master-stallions.csv';
+        }
+        if ( ! is_readable( $file ) ) {
+            wp_send_json_error( 'Could not read the master CSV.' );
+        }
+
+        $parsed = HLD_Master::parse_csv( $file );
+        if ( is_wp_error( $parsed ) ) {
+            wp_send_json_error( $parsed->get_error_message() );
+        }
+
+        $result = HLD_Master::sync( $parsed['rows'], $apply );
+
+        wp_send_json_success( array(
+            'applied'  => $result['applied'],
+            'counts'   => $result['counts'],
+            'add'      => $result['add'],
+            'update'   => $result['update'],
+            'skip'     => $result['skip'],
+            'delete'   => $result['delete'],
+            'warnings' => $parsed['warnings'],
+            'errors'   => $parsed['errors'],
         ) );
     }
 

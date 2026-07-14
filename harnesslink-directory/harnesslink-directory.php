@@ -3,14 +3,14 @@
  * Plugin Name: HarnessLink Directory
  * Plugin URI:  https://harnesslink.com
  * Description: Scalable multi-category directory for HarnessLink (stallions, trainers, drivers, agistment, transport, vets and more) with paid/free tier listings, CSV import, and internal profile pages.
- * Version:     1.5.2
+ * Version:     1.6.0
  * Author:      HarnessLink
  * Text Domain: harnesslink-directory
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'HLD_VERSION',    '1.5.2' );
+define( 'HLD_VERSION',    '1.6.0' );
 define( 'HLD_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'HLD_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
@@ -39,6 +39,7 @@ require_once HLD_PLUGIN_DIR . 'includes/class-hld-db.php';
 require_once HLD_PLUGIN_DIR . 'includes/class-hld-post-types.php';
 require_once HLD_PLUGIN_DIR . 'includes/class-hld-shortcodes.php';
 require_once HLD_PLUGIN_DIR . 'includes/class-hld-auth.php';
+require_once HLD_PLUGIN_DIR . 'includes/class-hld-master.php';
 require_once HLD_PLUGIN_DIR . 'includes/class-hld-ajax.php';
 require_once HLD_PLUGIN_DIR . 'admin/class-hld-admin.php';
 
