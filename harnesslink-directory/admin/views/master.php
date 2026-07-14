@@ -62,10 +62,19 @@
 </div>
 
 <script>
-(function ($) {
-  const ajax  = HLD_Admin.ajax_url;
-  const nonce = HLD_Admin.nonce;
+jQuery(function ($) {
+  // HLD_Admin is localized onto the footer-loaded admin script; fall back to
+  // sane defaults so the buttons always bind even if load order varies.
+  var CFG = (typeof HLD_Admin !== 'undefined') ? HLD_Admin : {};
+  const ajax  = CFG.ajax_url || (window.ajaxurl || '');
+  const nonce = CFG.nonce || '';
   let lastPreviewOk = false;
+
+  if (!ajax || !nonce) {
+    $('#hld-master-status').addClass('error').show().text(
+      'Could not initialise (admin script not loaded). Hard-refresh the page (Cmd/Ctrl+Shift+R) and try again.'
+    );
+  }
 
   function esc(v){ return $('<div>').text(v==null?'':String(v)).html(); }
 
@@ -152,5 +161,5 @@
     lastPreviewOk = false;
     $('#hld-master-apply').prop('disabled', true);
   });
-})(jQuery);
+});
 </script>
