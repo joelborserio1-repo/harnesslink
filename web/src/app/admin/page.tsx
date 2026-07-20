@@ -21,7 +21,12 @@ export default async function AdminHome({
     <div className="mx-auto max-w-5xl px-4 py-8">
       <div className="flex items-baseline justify-between">
         <h1 className="text-2xl font-bold text-neutral-900">Articles</h1>
-        <span className="text-sm text-neutral-500">{total} total</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-neutral-500">{total} total</span>
+          <Link href="/admin/articles/new" className="rounded bg-navy px-3 py-1.5 text-sm font-semibold text-white">
+            + New article
+          </Link>
+        </div>
       </div>
 
       <form className="mt-4 flex flex-wrap gap-2" action="/admin">

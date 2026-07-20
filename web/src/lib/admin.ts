@@ -193,3 +193,9 @@ export async function deleteAd(id: string) {
   const res = await adminFetch(`/ads/${id}`, { method: "DELETE" });
   return res.ok;
 }
+
+export async function createArticle(body: Record<string, unknown>) {
+  const res = await adminFetch(`/articles`, { method: "POST", body: JSON.stringify({ article: body }) });
+  if (!res.ok) return null;
+  return (await res.json() as { article: AdminArticle }).article;
+}

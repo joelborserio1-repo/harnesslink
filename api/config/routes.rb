@@ -37,7 +37,7 @@ Rails.application.routes.draw do
       get "feed", to: "sitemaps#feed"
 
       namespace :admin do
-        resources :articles, only: [:index, :show, :update]
+        resources :articles, only: [:index, :show, :create, :update]
         resources :authors, only: [:index, :update]
         resources :categories, only: [:index]
         resources :directory_listings, only: [:index, :show, :create, :update, :destroy] do

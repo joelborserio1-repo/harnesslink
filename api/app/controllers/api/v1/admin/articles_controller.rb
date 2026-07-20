@@ -27,6 +27,19 @@ module Api
           render json: { article: AdminArticleSerializer.full(find_article) }
         end
 
+        # POST /api/v1/admin/articles — author a new article (TipTap editor).
+        def create
+          article = Article.new(article_params)
+          article.legacy_source ||= "editorial"
+          apply_associations(article)
+
+          if article.save
+            render json: { article: AdminArticleSerializer.full(article.reload) }, status: :created
+          else
+            render json: { errors: article.errors.full_messages }, status: :unprocessable_entity
+          end
+        end
+
         # PATCH /api/v1/admin/articles/:id
         def update
           article = find_article
@@ -47,12 +60,18 @@ module Api
         end
 
         def article_params
-          params.require(:article).permit(
+          permitted = params.require(:article).permit(
             :title, :subtitle, :slug, :excerpt, :status, :body_format, :body_html,
             :seo_title, :seo_description, :focus_keyword, :canonical_url, :robots,
             :og_title, :og_description, :twitter_title, :twitter_description,
-            :schema_type, :primary_category_id, :needs_review
+            :schema_type, :primary_category_id, :needs_review, :published_at
           )
+          # TipTap sends body_json as a JSON string; store it as a hash.
+          if params[:article].key?(:body_json)
+            raw = params[:article][:body_json]
+            permitted[:body_json] = raw.is_a?(String) ? (JSON.parse(raw) rescue {}) : raw
+          end
+          permitted
         end
 
         # Rebuild byline order from author_ids; set category/tag membership.

@@ -67,6 +67,21 @@ module Api
           assert_response :unprocessable_entity
           assert JSON.parse(response.body)["errors"].present?
         end
+
+        test "creates a TipTap article, storing body_json + rendered html" do
+          assert_difference "Article.count", 1 do
+            post "/api/v1/admin/articles", headers: auth, params: { article: {
+              title: "Authored Post", slug: "authored-post", status: "published",
+              body_format: "tiptap_json", body_html: "<p>Hello</p>",
+              body_json: '{"type":"doc","content":[]}', published_at: Time.current.iso8601
+            } }
+          end
+          assert_response :created
+          a = Article.find_by(slug: "authored-post")
+          assert a.status_published?
+          assert_equal "<p>Hello</p>", a.body_html
+          assert_equal "doc", a.body_json["type"]
+        end
       end
     end
   end

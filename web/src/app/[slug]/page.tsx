@@ -170,17 +170,16 @@ export default async function ArticlePage({ params }: Params) {
         </figure>
       )}
 
-      {/* Legacy WordPress HTML is rendered verbatim (sanitised at import time). */}
-      {article.body_format === "legacy_html" ? (
+      {/* Legacy WP HTML is preserved verbatim; TipTap articles store their
+          rendered HTML in body_html at save time — both render the same way. */}
+      {article.body_html ? (
         <div
           className="prose-article mt-6"
-          dangerouslySetInnerHTML={{ __html: article.body_html ?? "" }}
+          dangerouslySetInnerHTML={{ __html: article.body_html }}
         />
       ) : (
         <div className="prose-article mt-6">
-          <p className="text-neutral-500">
-            (TipTap-rendered content — renderer for new articles comes later.)
-          </p>
+          <p className="text-neutral-500">(No content yet.)</p>
         </div>
       )}
 
