@@ -24,6 +24,13 @@ module Api
         assert a["body_html"].present?
         assert a.dig("seo", "canonical_url").end_with?("/#{articles(:lead).slug}/")
         assert_equal "Adam Hamilton", a["authors"].first["name"]
+        # Author box needs role/bio; article page needs tags + a related set.
+        assert_equal "Contributor", a["authors"].first["role_title"]
+        assert_includes a["tags"].map { |t| t["name"] }, "The Meadowlands"
+        assert_equal "/tag/the-meadowlands/", a["tags"].first["url"]
+        assert_kind_of Array, a["related"], "related must always be present (possibly empty)"
+        assert_not_includes a["related"].map { |r| r["slug"] }, articles(:lead).slug,
+                            "related must never include the article itself"
       end
 
       test "show 404s for an unknown or non-live slug" do

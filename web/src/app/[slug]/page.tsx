@@ -3,6 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getArticle, type ArticleFull } from "@/lib/api";
 import { formatDate } from "@/lib/format";
+import Breadcrumbs, { type Crumb } from "@/components/article/Breadcrumbs";
+import AuthorBox from "@/components/article/AuthorBox";
+import ArticleTile from "@/components/home/ArticleTile";
 
 // SSR per request on staging (no build-time API dependency). For production,
 // switch to ISR: `export const revalidate = 60` + a generateStaticParams that
@@ -78,25 +81,36 @@ export default async function ArticlePage({ params }: Params) {
   const article = await getArticle(slug);
   if (!article) notFound();
 
+  const crumbs: Crumb[] = [
+    { name: "Home", url: "/" },
+    ...(article.category ? [{ name: article.category.name, url: article.category.url }] : []),
+    { name: article.title, url: article.url },
+  ];
+
   return (
-    <article className="card mx-auto my-8 max-w-3xl p-6 sm:p-10">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(newsArticleJsonLd(article)) }}
-      />
+    <div className="mx-auto my-8 max-w-3xl px-4 sm:px-0">
+      <div className="mb-3">
+        <Breadcrumbs items={crumbs} />
+      </div>
 
-      {article.category && (
-        <Link
-          href={article.category.url}
-          className="text-xs font-bold uppercase tracking-wider text-accent"
-        >
-          {article.category.name}
-        </Link>
-      )}
+      <article className="card p-6 sm:p-10">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(newsArticleJsonLd(article)) }}
+        />
 
-      <h1 className="font-headline mt-2 text-5xl font-extrabold leading-tight tracking-tight text-navy-deep">
-        {article.title}
-      </h1>
+        {article.category && (
+          <Link
+            href={article.category.url}
+            className="text-xs font-bold uppercase tracking-wider text-accent"
+          >
+            {article.category.name}
+          </Link>
+        )}
+
+        <h1 className="font-headline mt-2 text-5xl font-extrabold leading-tight tracking-tight text-navy-deep">
+          {article.title}
+        </h1>
       {article.subtitle && (
         <p className="mt-3 text-xl text-neutral-600">{article.subtitle}</p>
       )}
@@ -159,6 +173,36 @@ export default async function ArticlePage({ params }: Params) {
           </p>
         </div>
       )}
-    </article>
+
+        {article.tags.length > 0 && (
+          <div className="mt-8 flex flex-wrap gap-2 border-t border-neutral-200 pt-6">
+            {article.tags.map((t) => (
+              <Link
+                key={t.slug}
+                href={t.url}
+                className="rounded-full bg-page px-3 py-1 text-sm font-semibold text-navy hover:bg-navy hover:text-white"
+              >
+                {t.name}
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {article.authors[0] && <AuthorBox author={article.authors[0]} />}
+      </article>
+
+      {article.related.length > 0 && (
+        <section className="mt-10">
+          <h2 className="mb-4 border-b-2 border-navy pb-2 font-headline text-xl font-extrabold text-navy">
+            More {article.category ? `from ${article.category.name}` : "harness racing news"}
+          </h2>
+          <div className="grid gap-[18px] sm:grid-cols-2 lg:grid-cols-3">
+            {article.related.slice(0, 6).map((a) => (
+              <ArticleTile key={a.id} article={a} />
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
   );
 }

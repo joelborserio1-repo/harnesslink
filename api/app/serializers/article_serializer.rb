@@ -24,8 +24,9 @@ class ArticleSerializer
       body_html: article.body_html,
       body_json: article.body_json,
       modified_at: (article.legacy_modified_at || article.updated_at)&.iso8601,
-      authors: article.article_authors.map { |aa| author(aa.author) },
+      authors: article.article_authors.map { |aa| author_detail(aa.author) },
       categories: article.categories.map { |c| category(c) },
+      tags: article.tags.map { |t| tag(t) },
       featured_image: image(article.featured_media),
       seo: {
         title: article.seo_title.presence || "#{article.title} | Harnesslink",
@@ -50,6 +51,18 @@ class ArticleSerializer
     return nil unless author
     a = author.canonical
     { name: a.name, slug: a.slug, url: "/author/#{a.slug}/" }
+  end
+
+  # Richer author for the article page's author box (bio / role for E-E-A-T).
+  def self.author_detail(author)
+    return nil unless author
+    a = author.canonical
+    { name: a.name, slug: a.slug, url: "/author/#{a.slug}/",
+      bio: a.bio, role_title: a.role_title }
+  end
+
+  def self.tag(tag)
+    { name: tag.name, slug: tag.slug, url: "/tag/#{tag.slug}/" }
   end
 
   def self.image(media)

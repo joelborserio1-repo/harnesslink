@@ -6,6 +6,8 @@ const REVALIDATE = 60; // ISR: articles regenerate at most once a minute
 
 export type Ref = { name: string; slug: string; url: string };
 
+export type AuthorDetail = Ref & { bio: string | null; role_title: string | null };
+
 export type Thumb = {
   src: string;
   srcset: string;
@@ -48,10 +50,12 @@ export type ArticleFull = ArticleSummary & {
   body_html: string | null;
   body_json: Record<string, unknown>;
   modified_at: string | null;
-  authors: Ref[];
+  authors: AuthorDetail[];
   categories: Ref[];
+  tags: Ref[];
   featured_image: Thumb;
   seo: ArticleSeo;
+  related: ArticleSummary[];
 };
 
 export type Category = { name: string; slug: string; kind: string; url: string };
