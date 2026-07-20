@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getArticle, type ArticleFull } from "@/lib/api";
+import { getArticle, listArticles, type ArticleFull } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import Breadcrumbs, { type Crumb } from "@/components/article/Breadcrumbs";
 import AuthorBox from "@/components/article/AuthorBox";
+import ArticleSidebar from "@/components/article/ArticleSidebar";
+import AdSlot from "@/components/AdSlot";
 import ArticleTile from "@/components/home/ArticleTile";
 
 // SSR per request on staging (no build-time API dependency). For production,
@@ -81,6 +83,10 @@ export default async function ArticlePage({ params }: Params) {
   const article = await getArticle(slug);
   if (!article) notFound();
 
+  // "Most Read" widget — recent stories, excluding this one.
+  const { articles: recent } = await listArticles(1, 6);
+  const mostRead = recent.filter((a) => a.slug !== article.slug).slice(0, 5);
+
   const crumbs: Crumb[] = [
     { name: "Home", url: "/" },
     ...(article.category ? [{ name: article.category.name, url: article.category.url }] : []),
@@ -88,12 +94,14 @@ export default async function ArticlePage({ params }: Params) {
   ];
 
   return (
-    <div className="mx-auto my-8 max-w-3xl px-4 sm:px-0">
-      <div className="mb-3">
-        <Breadcrumbs items={crumbs} />
-      </div>
+    <div className="mx-auto my-8 max-w-6xl px-4">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+        <div className="min-w-0">
+          <div className="mb-3">
+            <Breadcrumbs items={crumbs} />
+          </div>
 
-      <article className="card p-6 sm:p-10">
+          <article className="card p-6 sm:p-10">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(newsArticleJsonLd(article)) }}
@@ -191,18 +199,27 @@ export default async function ArticlePage({ params }: Params) {
         {article.authors[0] && <AuthorBox author={article.authors[0]} />}
       </article>
 
-      {article.related.length > 0 && (
-        <section className="mt-10">
-          <h2 className="mb-4 border-b-2 border-navy pb-2 font-headline text-xl font-extrabold text-navy">
-            More {article.category ? `from ${article.category.name}` : "harness racing news"}
-          </h2>
-          <div className="grid gap-[18px] sm:grid-cols-2 lg:grid-cols-3">
-            {article.related.slice(0, 6).map((a) => (
-              <ArticleTile key={a.id} article={a} />
-            ))}
+          {article.related.length > 0 && (
+            <section className="mt-10">
+              <h2 className="mb-4 border-b-2 border-navy pb-2 font-headline text-xl font-extrabold text-navy">
+                More {article.category ? `from ${article.category.name}` : "harness racing news"}
+              </h2>
+              <div className="grid gap-[18px] sm:grid-cols-2 lg:grid-cols-3">
+                {article.related.slice(0, 6).map((a) => (
+                  <ArticleTile key={a.id} article={a} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Mobile: one in-flow ad below the article (sidebar is desktop-only) */}
+          <div className="mt-8 lg:hidden">
+            <AdSlot size="mpu" zone="article-mobile" />
           </div>
-        </section>
-      )}
+        </div>
+
+        <ArticleSidebar mostRead={mostRead} />
+      </div>
     </div>
   );
 }
