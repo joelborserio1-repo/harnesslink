@@ -92,3 +92,17 @@ export async function getCategory(slug: string) {
     `/api/v1/categories/${encodeURIComponent(slug)}`
   );
 }
+
+export async function getAuthor(slug: string) {
+  return get<{
+    author?: { name: string; slug: string; bio: string | null; role_title: string | null; url: string };
+    articles?: ArticleSummary[];
+    redirect_to?: string;
+  }>(`/api/v1/authors/${encodeURIComponent(slug)}`);
+}
+
+export async function getTag(slug: string) {
+  return get<{ tag: { name: string; slug: string; url: string }; articles: ArticleSummary[] }>(
+    `/api/v1/tags/${encodeURIComponent(slug)}`
+  );
+}

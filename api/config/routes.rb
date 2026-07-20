@@ -10,6 +10,8 @@ Rails.application.routes.draw do
       # Articles are addressed by slug (the whole /%postname%/ path).
       resources :articles, only: [:index, :show], param: :slug
       resources :categories, only: [:index, :show], param: :slug
+      resources :authors, only: [:show], param: :slug
+      resources :tags, only: [:show], param: :slug
 
       get "redirects/resolve", to: "redirects#resolve"
       resources :missed_paths, only: [:create]
@@ -18,6 +20,7 @@ Rails.application.routes.draw do
       get "sitemap", to: "sitemaps#index"
       get "sitemap/articles/:page", to: "sitemaps#articles"
       get "sitemap/news", to: "sitemaps#news"
+      get "sitemap/archives", to: "sitemaps#archives"
       get "feed", to: "sitemaps#feed"
 
       namespace :admin do

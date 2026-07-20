@@ -15,6 +15,10 @@ module Api
         xml Sitemaps::Builder.news_xml
       end
 
+      def archives
+        xml Sitemaps::Builder.archives_xml
+      end
+
       def feed
         xml Sitemaps::Builder.feed_xml
       end

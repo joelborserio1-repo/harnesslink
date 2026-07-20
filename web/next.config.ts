@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
       { source: "/sitemap.xml", destination: `${API_BASE}/api/v1/sitemap` },
       { source: "/sitemap-articles-:page.xml", destination: `${API_BASE}/api/v1/sitemap/articles/:page` },
       { source: "/news-sitemap.xml", destination: `${API_BASE}/api/v1/sitemap/news` },
+      { source: "/archives-sitemap.xml", destination: `${API_BASE}/api/v1/sitemap/archives` },
       // /feed needs the trailing slash because trailingSlash:true is on.
       { source: "/feed/", destination: `${API_BASE}/api/v1/feed` },
     ];

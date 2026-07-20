@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCategory } from "@/lib/api";
-import ArticleCard from "@/components/ArticleCard";
+import ArchiveSection from "@/components/ArchiveSection";
 
 export const dynamic = "force-dynamic";
 
@@ -24,18 +24,11 @@ export default async function CategoryPage({ params }: Params) {
   if (!data) notFound();
 
   return (
-    <div className="card mx-auto my-8 max-w-3xl p-6 sm:p-9">
-      <h1 className="font-headline border-b-2 border-accent pb-2 text-4xl font-extrabold tracking-tight text-navy-deep">
-        {data.category.name}
-      </h1>
-      <div className="mt-2">
-        {data.articles.length === 0 && (
-          <p className="py-8 text-neutral-500">No articles yet.</p>
-        )}
-        {data.articles.map((a) => (
-          <ArticleCard key={a.id} article={a} />
-        ))}
-      </div>
-    </div>
+    <ArchiveSection
+      eyebrow={data.category.kind === "geographic" ? "Country" : "Section"}
+      title={data.category.name}
+      subtitle={`The latest ${data.category.name} harness racing news, results and features.`}
+      articles={data.articles}
+    />
   );
 }

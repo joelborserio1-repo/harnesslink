@@ -32,6 +32,7 @@ module Sitemaps
     def index_xml
       entries = (1..page_count).map { |p| "<sitemap><loc>#{site_url}/sitemap-articles-#{p}.xml</loc></sitemap>" }
       entries << "<sitemap><loc>#{site_url}/news-sitemap.xml</loc></sitemap>"
+      entries << "<sitemap><loc>#{site_url}/archives-sitemap.xml</loc></sitemap>"
       <<~XML
         <?xml version="1.0" encoding="UTF-8"?>
         <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -51,6 +52,23 @@ module Sitemaps
           "#{lastmod ? "<lastmod>#{lastmod}</lastmod>" : ''}" \
           "<changefreq>weekly</changefreq></url>"
       end
+      <<~XML
+        <?xml version="1.0" encoding="UTF-8"?>
+        <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        #{urls.join("\n")}
+        </urlset>
+      XML
+    end
+
+    # ---- archive sitemap (category / author / tag archive URLs) ----
+    def archives_xml
+      paths = []
+      Category.order(:id).pluck(:slug).each { |s| paths << "/category/#{s}/" }
+      # DISTINCT requires the ORDER BY column in the select list, so order by
+      # the slug we're plucking rather than id.
+      Author.where(merged_into_id: nil).joins(:article_authors).distinct.order(:slug).pluck(:slug).each { |s| paths << "/author/#{s}/" }
+      Tag.joins(:article_tags).distinct.order(:slug).pluck(:slug).each { |s| paths << "/tag/#{s}/" }
+      urls = paths.uniq.map { |p| "<url><loc>#{site_url}#{p}</loc><changefreq>daily</changefreq></url>" }
       <<~XML
         <?xml version="1.0" encoding="UTF-8"?>
         <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
