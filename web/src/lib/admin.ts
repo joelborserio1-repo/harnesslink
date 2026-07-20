@@ -35,6 +35,7 @@ export type AdminArticle = AdminArticleSummary & {
   excerpt: string | null;
   body_format: string;
   body_html: string | null;
+  body_json: Record<string, unknown> | null;
   seo_title: string | null;
   seo_description: string | null;
   canonical_url: string | null;

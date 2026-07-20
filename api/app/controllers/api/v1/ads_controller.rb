@@ -11,6 +11,12 @@ module Api
         render json: { ads: ads }
       end
 
+      # POST /api/v1/ads/:id/impression — count a viewable impression.
+      def impression
+        Ad.where(id: params[:id]).update_all("impressions = impressions + 1")
+        head :no_content
+      end
+
       # GET /api/v1/ads/:id/click — count the click and 302 to the target.
       def click
         ad = Ad.find_by(id: params[:id])

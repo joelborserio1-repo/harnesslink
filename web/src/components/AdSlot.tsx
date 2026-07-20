@@ -1,4 +1,5 @@
 import { getAds } from "@/lib/api";
+import AdImpression from "@/components/AdImpression";
 
 // A reserved advertising location. It reserves its exact IAB dimensions so
 // filling it causes ZERO layout shift (CLS is part of the SEO constraint), and
@@ -35,6 +36,7 @@ export default async function AdSlot({
         style={{ width: "100%", maxWidth: s.w, height: s.h }}
         className="flex items-center justify-center overflow-hidden rounded"
       >
+        {ad ? <AdImpression id={ad.id} /> : null}
         {ad?.html ? (
           <div className="h-full w-full" dangerouslySetInnerHTML={{ __html: ad.html }} />
         ) : ad?.image_url ? (

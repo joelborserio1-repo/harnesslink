@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
 import { getArticle, listCategories, listAuthors, updateArticle } from "@/lib/admin";
+import TipTapEditor from "@/components/admin/TipTapEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,9 @@ export default async function EditArticle({ params }: { params: Promise<{ id: st
       seo_title: formData.get("seo_title"),
       seo_description: formData.get("seo_description"),
       canonical_url: formData.get("canonical_url"),
+      body_format: formData.get("body_format"),
       body_html: formData.get("body_html"),
+      body_json: formData.get("body_json"),
       category_ids: formData.getAll("category_ids").map(Number),
       author_ids: formData.getAll("author_ids").map(Number),
     };
@@ -92,10 +95,18 @@ export default async function EditArticle({ params }: { params: Promise<{ id: st
           <label className={label}>
             Body{" "}
             <span className="font-normal normal-case text-neutral-400">
-              ({article.body_format} — legacy HTML, edit raw)
+              {article.body_format === "tiptap_json" ? "(rich text)" : "(legacy HTML — edited verbatim)"}
             </span>
           </label>
-          <textarea name="body_html" defaultValue={article.body_html ?? ""} rows={14} className={`${input} font-mono text-xs`} />
+          {article.body_format === "tiptap_json" ? (
+            <TipTapEditor initialJSON={article.body_json} />
+          ) : (
+            <>
+              {/* Legacy WP HTML is preserved verbatim — raw editing, no TipTap conversion. */}
+              <input type="hidden" name="body_format" value="legacy_html" />
+              <textarea name="body_html" defaultValue={article.body_html ?? ""} rows={14} className={`${input} font-mono text-xs`} />
+            </>
+          )}
         </div>
 
         <fieldset className="rounded border border-neutral-200 p-4">

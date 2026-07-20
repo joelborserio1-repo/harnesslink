@@ -28,6 +28,14 @@ module Api
         get "/api/v1/ads/999999/click"
         assert_redirected_to "/"
       end
+
+      test "impression beacon increments the counter" do
+        ad = ads(:leaderboard_a)
+        assert_difference -> { ad.reload.impressions }, 1 do
+          post "/api/v1/ads/#{ad.id}/impression"
+        end
+        assert_response :no_content
+      end
     end
   end
 end
