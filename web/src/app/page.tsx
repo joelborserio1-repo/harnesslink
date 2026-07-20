@@ -16,13 +16,13 @@ export default async function HomePage() {
           {lead.category && (
             <Link
               href={lead.category.url}
-              className="text-xs font-bold uppercase tracking-wider text-red-600"
+              className="text-xs font-bold uppercase tracking-wider text-accent"
             >
               {lead.category.name}
             </Link>
           )}
-          <h1 className="mt-2 text-4xl font-extrabold leading-tight tracking-tight text-neutral-900">
-            <Link href={lead.url} className="hover:text-red-700">
+          <h1 className="font-headline mt-2 text-5xl font-extrabold leading-tight tracking-tight text-navy-deep">
+            <Link href={lead.url} className="hover:text-navy">
               {lead.title}
             </Link>
           </h1>

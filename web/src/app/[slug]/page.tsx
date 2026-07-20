@@ -91,13 +91,13 @@ export default async function ArticlePage({ params }: Params) {
       {article.category && (
         <Link
           href={article.category.url}
-          className="text-xs font-bold uppercase tracking-wider text-red-600"
+          className="text-xs font-bold uppercase tracking-wider text-accent"
         >
           {article.category.name}
         </Link>
       )}
 
-      <h1 className="mt-2 text-4xl font-extrabold leading-tight tracking-tight text-neutral-900">
+      <h1 className="font-headline mt-2 text-5xl font-extrabold leading-tight tracking-tight text-navy-deep">
         {article.title}
       </h1>
       {article.subtitle && (
@@ -111,7 +111,7 @@ export default async function ArticlePage({ params }: Params) {
             {article.authors.map((a, i) => (
               <span key={a.slug}>
                 {i > 0 && ", "}
-                <Link href={a.url} className="font-semibold text-neutral-700 hover:text-red-600">
+                <Link href={a.url} className="font-semibold text-neutral-700 hover:text-accent">
                   {a.name}
                 </Link>
               </span>

@@ -8,13 +8,13 @@ export default function ArticleCard({ article }: { article: ArticleSummary }) {
       {article.category && (
         <Link
           href={article.category.url}
-          className="text-xs font-bold uppercase tracking-wider text-red-600"
+          className="text-xs font-bold uppercase tracking-wider text-accent"
         >
           {article.category.name}
         </Link>
       )}
-      <h2 className="mt-1 text-xl font-bold leading-snug text-neutral-900">
-        <Link href={article.url} className="group-hover:text-red-700">
+      <h2 className="font-headline mt-1 text-xl font-bold leading-snug text-neutral-900">
+        <Link href={article.url} className="group-hover:text-navy">
           {article.title}
         </Link>
       </h2>
