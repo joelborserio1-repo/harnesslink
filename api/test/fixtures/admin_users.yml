@@ -1,0 +1,4 @@
+# Devise admin logins. One valid fixture (blank emails collide on the unique index).
+site_admin:
+  email: admin@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(AdminUser, "password12") %>

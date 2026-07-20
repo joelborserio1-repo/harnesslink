@@ -21,6 +21,11 @@ Rails.application.configure do
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
 
+  # The internal admin (Avo + Devise) is served by Rails, not a CDN — serve its
+  # static assets and give Devise mailers a host.
+  config.public_file_server.enabled = true
+  config.action_mailer.default_url_options = { host: ENV.fetch("ADMIN_HOST", "localhost") }
+
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
   config.assume_ssl = ENV["RAILS_ASSUME_SSL"] == "true"
 

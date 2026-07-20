@@ -197,3 +197,9 @@ end
   ad.save!
 end
 puts "  #{Ad.count} ads."
+
+puts "Seeding admin user…"
+admin_email = ENV.fetch("ADMIN_EMAIL", "admin@harnesslink.com")
+admin_pass  = ENV["ADMIN_PASSWORD"].presence || "change-me-now"
+AdminUser.find_or_create_by!(email: admin_email) { |u| u.password = admin_pass }
+puts "  admin: #{admin_email}"

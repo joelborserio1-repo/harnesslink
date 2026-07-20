@@ -25,6 +25,10 @@ services:
   api:
     build: ./api
     restart: unless-stopped
+    # Exposed so the internal admin (Avo at /avo) is reachable in the browser,
+    # e.g. http://<host>:3001/avo. The public site still talks to it privately.
+    ports:
+      - "${ADMIN_PORT:-3001}:80"
     environment:
       RAILS_ENV: production
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:?set SECRET_KEY_BASE in .env}
@@ -33,6 +37,8 @@ services:
       RAILS_MAX_THREADS: "5"
       ADMIN_USER: ${ADMIN_USER:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@harnesslink.com}
+      ADMIN_HOST: ${ADMIN_HOST:-localhost}
       # Responsive images via imgproxy. Leave IMGPROXY_URL empty to serve
       # originals; set it to the PUBLIC imgproxy URL (browser-reachable) to
       # enable WebP/AVIF resizing. Keys optional (blank = insecure signatures).
