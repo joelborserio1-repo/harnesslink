@@ -97,6 +97,14 @@ export async function getCategory(slug: string) {
   );
 }
 
+export async function searchArticles(q: string, page = 1) {
+  if (!q || q.trim().length < 2) return { query: q, articles: [] as ArticleSummary[], total: 0, page };
+  const data = await get<{ query: string; articles: ArticleSummary[]; total: number; page: number }>(
+    `/api/v1/search?q=${encodeURIComponent(q)}&page=${page}`
+  );
+  return data ?? { query: q, articles: [], total: 0, page };
+}
+
 export async function getAuthor(slug: string) {
   return get<{
     author?: { name: string; slug: string; bio: string | null; role_title: string | null; url: string };

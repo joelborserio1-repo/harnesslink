@@ -25,12 +25,20 @@ export default function SiteHeader() {
               Harness Racing News
             </span>
           </Link>
-          <Link
-            href="/"
-            className="hidden rounded bg-amber px-4 py-2 text-sm font-bold text-[#241a00] hover:brightness-105 sm:block"
-          >
-            The Insider
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/search/" aria-label="Search" className="text-white/80 hover:text-white">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                <circle cx="11" cy="11" r="7" />
+                <path d="M21 21l-4.3-4.3" strokeLinecap="round" />
+              </svg>
+            </Link>
+            <Link
+              href="/the-insider/"
+              className="hidden rounded bg-amber px-4 py-2 text-sm font-bold text-[#241a00] hover:brightness-105 sm:block"
+            >
+              The Insider
+            </Link>
+          </div>
         </div>
       </div>
 

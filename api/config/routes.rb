@@ -22,6 +22,9 @@ Rails.application.routes.draw do
       get "directory/:type", to: "directory#type"
       get "directory/:type/:id", to: "directory#show"
 
+      # Public article search.
+      get "search", to: "search#index"
+
       # Free registration-wall signup.
       post "subscribe", to: "subscriptions#create"
 
