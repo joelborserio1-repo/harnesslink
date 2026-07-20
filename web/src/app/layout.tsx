@@ -31,7 +31,7 @@ export default async function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Source+Sans+3:wght@400;500;600;700&display=swap"
         />
       </head>
-      <body className="flex min-h-full flex-col bg-white text-neutral-900">
+      <body className="flex min-h-full flex-col bg-page text-neutral-900">
         {!isAdmin && <SiteHeader />}
         <main className="flex-1">{children}</main>
         {!isAdmin && <SiteFooter />}
