@@ -7,6 +7,7 @@ import Breadcrumbs, { type Crumb } from "@/components/article/Breadcrumbs";
 import AuthorBox from "@/components/article/AuthorBox";
 import ArticleSidebar from "@/components/article/ArticleSidebar";
 import ViewBeacon from "@/components/article/ViewBeacon";
+import RegistrationWall from "@/components/article/RegistrationWall";
 import AdSlot from "@/components/AdSlot";
 import ArticleTile from "@/components/home/ArticleTile";
 
@@ -97,6 +98,7 @@ export default async function ArticlePage({ params }: Params) {
   return (
     <div className="mx-auto my-8 max-w-6xl px-4">
       <ViewBeacon slug={article.slug} />
+      <RegistrationWall slug={article.slug} />
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
         <div className="min-w-0">
           <div className="mb-3">

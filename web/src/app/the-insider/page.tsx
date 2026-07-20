@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import SubscribeForm from "@/components/SubscribeForm";
 
 export const dynamic = "force-dynamic";
 
@@ -37,22 +38,9 @@ export default function InsiderPage() {
             landing in your inbox every Thursday.
           </p>
 
-          <form className="mt-6 flex flex-col gap-3 sm:flex-row" action="#">
-            <input
-              type="email"
-              name="email"
-              required
-              placeholder="you@email.com"
-              aria-label="Email address"
-              className="w-full rounded-lg px-4 py-3 text-neutral-900 sm:max-w-sm"
-            />
-            <button
-              type="submit"
-              className="rounded-lg bg-amber px-6 py-3 font-bold text-[#241a00] hover:brightness-105"
-            >
-              Subscribe free
-            </button>
-          </form>
+          <div className="mt-6 max-w-md">
+            <SubscribeForm dark cta="Subscribe free" />
+          </div>
           <p className="mt-2 text-xs text-[#9db4ec]">Free forever. Unsubscribe any time.</p>
         </div>
       </section>

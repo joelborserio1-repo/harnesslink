@@ -23,6 +23,8 @@ const nextConfig: NextConfig = {
       { source: "/ad/:id/click", destination: `${API_BASE}/api/v1/ads/:id/click` },
       // Ad viewable-impression beacon.
       { source: "/ad/:id/impression", destination: `${API_BASE}/api/v1/ads/:id/impression` },
+      // Free registration-wall / newsletter signup.
+      { source: "/api/subscribe", destination: `${API_BASE}/api/v1/subscribe` },
       // Article view beacon — browser POSTs here; proxied to the API counter.
       { source: "/track/view/:slug", destination: `${API_BASE}/api/v1/articles/:slug/view` },
     ];

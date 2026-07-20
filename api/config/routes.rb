@@ -22,6 +22,9 @@ Rails.application.routes.draw do
       get "directory/:type", to: "directory#type"
       get "directory/:type/:id", to: "directory#show"
 
+      # Free registration-wall signup.
+      post "subscribe", to: "subscriptions#create"
+
       # Ads — public delivery + impression/click tracking.
       get "ads", to: "ads#index"
       get "ads/:id/click", to: "ads#click"

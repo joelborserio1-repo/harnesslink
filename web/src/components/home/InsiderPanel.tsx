@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SubscribeForm from "@/components/SubscribeForm";
 
 // The Insider subscriber box. Uses h-full + flex so it fills the featured
 // hero's height in the top row (content distributes top→bottom).
@@ -22,18 +23,9 @@ export default function InsiderPanel() {
         <li className="flex gap-2"><span className="text-amber">✓</span> The tips that matter, every week</li>
       </ul>
 
-      <form className="mt-auto flex flex-col gap-2.5" action="/the-insider/">
-        <input
-          type="email"
-          name="email"
-          placeholder="you@email.com"
-          aria-label="Email address"
-          className="rounded-lg px-3 py-2.5 text-sm text-neutral-900"
-        />
-        <button type="submit" className="rounded-lg bg-amber px-3 py-2.5 text-sm font-bold text-[#241a00]">
-          Subscribe free
-        </button>
-      </form>
+      <div className="mt-auto">
+        <SubscribeForm />
+      </div>
 
       <Link href="/the-insider/" className="mt-3 text-center text-xs font-semibold text-[#9db4ec] hover:text-white">
         Browse past editions →
