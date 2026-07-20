@@ -87,17 +87,8 @@ test:
 # Read https://guides.rubyonrails.org/configuring.html#configuring-a-database
 # for a full overview on how database connection configuration can be specified.
 #
+# Staging/production: a single database. DATABASE_URL (set in the container)
+# supplies host/user/password/database and overrides the values below.
 production:
-  primary: &primary_production
-    <<: *default
-    database: api_production
-    username: api
-    password: <%= ENV["API_DATABASE_PASSWORD"] %>
-  cache:
-    <<: *primary_production
-    database: api_production_cache
-    migrations_paths: db/cache_migrate
-  queue:
-    <<: *primary_production
-    database: api_production_queue
-    migrations_paths: db/queue_migrate
+  <<: *default
+  database: <%= ENV.fetch("HARNESSLINK_DB_NAME", "harnesslink_production") %>

@@ -16,8 +16,10 @@ gem "puma", ">= 5.0"
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 
 # Use the database-backed adapters for Rails.cache and Active Job
-gem "solid_cache"
-gem "solid_queue"
+# Solid Cache/Queue (DB-backed cache + jobs) are deferred until we add
+# background jobs. Staging uses memory cache + the async job adapter.
+# gem "solid_cache"
+# gem "solid_queue"
 
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false

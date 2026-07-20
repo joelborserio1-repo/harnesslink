@@ -1,0 +1,53 @@
+# Harnesslink staging stack: Postgres + Rails API + Next.js public site.
+#
+#   cp .env.example .env    # then set SECRET_KEY_BASE and DB_PASSWORD
+#   docker compose up -d --build
+#
+# The site is served on http://<host>:${WEB_PORT:-8080}. Put Cloudflare or the
+# host's nginx in front for TLS and the real domain. See DEPLOY.md.
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: harnesslink
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-harnesslink}
+      POSTGRES_DB: harnesslink_production
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U harnesslink -d harnesslink_production"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./api
+    restart: unless-stopped
+    environment:
+      RAILS_ENV: production
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?set SECRET_KEY_BASE in .env}
+      DATABASE_URL: postgres://harnesslink:${DB_PASSWORD:-harnesslink}@db:5432/harnesslink_production
+      RAILS_LOG_TO_STDOUT: "1"
+      RAILS_MAX_THREADS: "5"
+      # RAILS_FORCE_SSL: "true"   # enable once TLS terminates upstream
+    depends_on:
+      db:
+        condition: service_healthy
+    # The entrypoint runs `db:prepare` (migrate + seed the 20 demo articles on
+    # first boot); Thruster serves the API on port 80 inside the network.
+
+  web:
+    build: ./web
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_BASE: http://api        # server-to-server, inside the compose network
+    depends_on:
+      - api
+    ports:
+      - "${WEB_PORT:-8080}:3000"
+
+volumes:
+  pgdata:

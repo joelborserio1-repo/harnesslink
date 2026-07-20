@@ -3,7 +3,10 @@ import { listArticles } from "@/lib/api";
 import ArticleCard from "@/components/ArticleCard";
 import AdSlot from "@/components/AdSlot";
 
-export const revalidate = 60;
+// SSR per request on staging so content is always live (no build-time API
+// dependency). Switch to ISR (export const revalidate = 60) for production once
+// the importer has populated content and builds run against a live API.
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const { articles } = await listArticles(1, 20);

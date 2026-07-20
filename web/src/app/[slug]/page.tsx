@@ -1,18 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getArticle, listArticles, type ArticleFull } from "@/lib/api";
+import { getArticle, type ArticleFull } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 
-export const revalidate = 60;
+// SSR per request on staging (no build-time API dependency). For production,
+// switch to ISR: `export const revalidate = 60` + a generateStaticParams that
+// pre-renders known slugs once builds run against a live API.
+export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ slug: string }> };
-
-// Pre-render the known article paths at build; others render on demand (ISR).
-export async function generateStaticParams() {
-  const { articles } = await listArticles(1, 50);
-  return articles.map((a) => ({ slug: a.slug }));
-}
 
 function robotsFrom(value: string) {
   const tokens = value.split(",").map((t) => t.trim().toLowerCase());

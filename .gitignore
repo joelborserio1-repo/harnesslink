@@ -1,3 +1,6 @@
 # Build artifacts
 harnesslink-directory.zip
 *.zip
+
+# Local secrets
+.env

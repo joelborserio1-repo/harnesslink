@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getCategory } from "@/lib/api";
 import ArticleCard from "@/components/ArticleCard";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ slug: string }> };
 

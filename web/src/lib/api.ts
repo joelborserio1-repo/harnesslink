@@ -60,10 +60,17 @@ export type ArticleFull = ArticleSummary & {
 export type Category = { name: string; slug: string; kind: string; url: string };
 
 async function get<T>(path: string): Promise<T | null> {
-  const res = await fetch(`${API_BASE}${path}`, { next: { revalidate: REVALIDATE } });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`API ${path} -> ${res.status}`);
-  return (await res.json()) as T;
+  // Fail-soft: never throw. This lets `next build` succeed even when the API
+  // isn't running (e.g. building the Docker image), and keeps the site up if
+  // the API blips at runtime.
+  try {
+    const res = await fetch(`${API_BASE}${path}`, { next: { revalidate: REVALIDATE } });
+    if (res.status === 404) return null;
+    if (!res.ok) return null;
+    return (await res.json()) as T;
+  } catch {
+    return null;
+  }
 }
 
 export async function listArticles(page = 1, perPage = 12) {
