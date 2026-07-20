@@ -14,15 +14,14 @@ const NAV = [
 export default function SiteHeader() {
   return (
     <header>
-      {/* Masthead */}
-      <div className="border-b border-neutral-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+      {/* Masthead — royal navy, matching the white HARNESSLINK wordmark logo. */}
+      <div className="bg-navy">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5">
           <Link href="/" className="flex flex-col leading-none">
-            {/* Swap for <img src="/harnesslink-logo.png"> once the asset lands. */}
-            <span className="font-headline text-3xl font-extrabold tracking-tight text-navy">
+            <span className="font-headline text-3xl font-extrabold uppercase tracking-[0.12em] text-white sm:text-4xl">
               Harnesslink
             </span>
-            <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.25em] text-muted">
+            <span className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/60">
               Harness Racing News
             </span>
           </Link>
@@ -35,8 +34,8 @@ export default function SiteHeader() {
         </div>
       </div>
 
-      {/* Primary nav */}
-      <nav className="bg-navy-deep">
+      {/* Primary nav — same royal navy, divided by a hairline. */}
+      <nav className="border-t border-white/10 bg-navy">
         <div className="mx-auto flex max-w-6xl items-center gap-6 overflow-x-auto px-4">
           {NAV.map((item) => (
             <Link

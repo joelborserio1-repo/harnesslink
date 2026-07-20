@@ -5,9 +5,9 @@
 
 /* Harnesslink brand tokens, extracted from the live site. */
 @theme {
-  --color-navy: #244287;
-  --color-navy-deep: #0b1f3a;
-  --color-accent: #e45637;
+  --color-navy: #0e2a6b;       /* brand royal navy (masthead / footer) */
+  --color-navy-deep: #0a2057;  /* darker shade for bands / hovers */
+  --color-accent: #e45637;     /* burnt-orange chevron / CTA accent */
   --color-ink: #1a1a1a;
   --color-muted: #6f6f6f;
   --color-mist: #f4f5f7;
