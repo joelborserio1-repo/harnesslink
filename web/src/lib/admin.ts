@@ -200,3 +200,19 @@ export async function createArticle(body: Record<string, unknown>) {
   if (!res.ok) return null;
   return (await res.json() as { article: AdminArticle }).article;
 }
+
+export type AdminStats = {
+  published: number;
+  drafts: number;
+  needs_review: number;
+  total_views: number;
+  subscribers: number;
+  listings: number;
+  active_ads: number;
+};
+
+export async function getAdminStats() {
+  const res = await adminFetch(`/stats`);
+  if (!res.ok) return null;
+  return (await res.json()) as AdminStats;
+}

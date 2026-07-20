@@ -44,6 +44,7 @@ Rails.application.routes.draw do
       get "feed", to: "sitemaps#feed"
 
       namespace :admin do
+        get "stats", to: "stats#show"
         resources :articles, only: [:index, :show, :create, :update]
         resources :authors, only: [:index, :update]
         resources :categories, only: [:index]

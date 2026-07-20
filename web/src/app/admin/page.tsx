@@ -1,9 +1,24 @@
 import Link from "next/link";
-import { listArticles } from "@/lib/admin";
+import { listArticles, getAdminStats } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
 const STATUSES = ["", "published", "draft", "in_review", "scheduled", "archived"];
+
+const ADMIN_NAV = [
+  { href: "/admin", label: "Articles" },
+  { href: "/admin/directory", label: "Directory" },
+  { href: "/admin/ads", label: "Ads" },
+];
+
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-lg border border-neutral-200 bg-white p-4">
+      <div className="text-2xl font-extrabold text-navy">{value.toLocaleString()}</div>
+      <div className="text-xs uppercase tracking-wide text-neutral-500">{label}</div>
+    </div>
+  );
+}
 
 export default async function AdminHome({
   searchParams,
@@ -15,10 +30,34 @@ export default async function AdminHome({
   if (sp.status) params.status = sp.status;
   if (sp.needs_review) params.needs_review = sp.needs_review;
   if (sp.q) params.q = sp.q;
-  const { articles, total } = await listArticles(params);
+  const [{ articles, total }, stats] = await Promise.all([listArticles(params), getAdminStats()]);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
+      {/* Admin section nav + Avo link */}
+      <div className="mb-6 flex flex-wrap items-center gap-2">
+        {ADMIN_NAV.map((n) => (
+          <Link key={n.href} href={n.href} className="rounded-full bg-neutral-100 px-3 py-1.5 text-sm font-semibold text-navy hover:bg-neutral-200">
+            {n.label}
+          </Link>
+        ))}
+        <a href="/avo" className="rounded-full border border-navy/20 px-3 py-1.5 text-sm font-semibold text-navy hover:bg-navy hover:text-white">
+          Full admin (Avo) ↗
+        </a>
+      </div>
+
+      {/* Dashboard stats */}
+      {stats && (
+        <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <Stat label="Published" value={stats.published} />
+          <Stat label="Total views" value={stats.total_views} />
+          <Stat label="Subscribers" value={stats.subscribers} />
+          <Stat label="Needs review" value={stats.needs_review} />
+          <Stat label="Listings" value={stats.listings} />
+          <Stat label="Live ads" value={stats.active_ads} />
+        </div>
+      )}
+
       <div className="flex items-baseline justify-between">
         <h1 className="text-2xl font-bold text-neutral-900">Articles</h1>
         <div className="flex items-center gap-3">
