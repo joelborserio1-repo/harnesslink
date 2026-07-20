@@ -10,7 +10,9 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       # Articles are addressed by slug (the whole /%postname%/ path).
-      resources :articles, only: [:index, :show], param: :slug
+      resources :articles, only: [:index, :show], param: :slug do
+        post :view, on: :member
+      end
       resources :categories, only: [:index, :show], param: :slug
       resources :authors, only: [:show], param: :slug
       resources :tags, only: [:show], param: :slug

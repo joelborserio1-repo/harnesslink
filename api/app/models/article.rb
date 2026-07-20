@@ -32,6 +32,10 @@ class Article < ApplicationRecord
   validates :legacy_url, uniqueness: true, allow_nil: true
   validate  :body_present_for_format
 
+  # Push to the social webhook the moment an article becomes published (once).
+  # Imported articles carry social_posted_at already, so a bulk import is silent.
+  after_commit :share_socially_if_newly_published, on: [:create, :update]
+
   scope :live, -> { status_published.where(published_at: ..Time.current) }
   scope :recent_first, -> { order(published_at: :desc) }
 
@@ -39,6 +43,19 @@ class Article < ApplicationRecord
   def primary_author
     authors.merge(ArticleAuthor.order(:position)).first
   end
+
+  private
+
+  def share_socially_if_newly_published
+    return unless status_published? && social_posted_at.nil?
+    return if ENV["SOCIAL_WEBHOOK_URL"].blank?
+    # Only when it just became published — on create, or a status change.
+    return unless previous_changes.key?("id") || previous_changes.key?("status")
+
+    SocialPublishJob.perform_later(id)
+  end
+
+  public
 
   private
 

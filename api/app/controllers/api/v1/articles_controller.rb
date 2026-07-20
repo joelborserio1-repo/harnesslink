@@ -34,6 +34,13 @@ module Api
         render json: { article: json }
       end
 
+      # POST /api/v1/articles/:slug/view — increment the view counter (fired by a
+      # browser beacon, so bots/SSR prefetch don't inflate it). Atomic, no body.
+      def view
+        Article.where(slug: params[:slug]).update_all("view_count = view_count + 1")
+        head :no_content
+      end
+
       private
 
       # "More from {region}" — recent live stories in the same primary category

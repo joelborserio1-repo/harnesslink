@@ -39,6 +39,8 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@harnesslink.com}
       ADMIN_HOST: ${ADMIN_HOST:-localhost}
+      # Publish → social webhook (Zapier / Make / Ayrshare). Empty = disabled.
+      SOCIAL_WEBHOOK_URL: ${SOCIAL_WEBHOOK_URL:-}
       # Responsive images via imgproxy. Leave IMGPROXY_URL empty to serve
       # originals; set it to the PUBLIC imgproxy URL (browser-reachable) to
       # enable WebP/AVIF resizing. Keys optional (blank = insecure signatures).

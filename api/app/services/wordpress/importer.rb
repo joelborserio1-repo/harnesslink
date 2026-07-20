@@ -47,6 +47,9 @@ module Wordpress
       article = Article.find_or_initialize_by(legacy_wp_id: post[:id])
       was_new = article.new_record?
       article.assign_attributes(mapped.attributes)
+      # Imported articles were already published on WordPress — mark them shared
+      # so the social webhook never fires for a 62k backfill.
+      article.social_posted_at ||= (article.published_at || Time.current)
 
       categories = mapped.categories.map { |c| upsert_category(c) }
       article.primary_category = categories.first if categories.first

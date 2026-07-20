@@ -33,6 +33,14 @@ module Api
                             "related must never include the article itself"
       end
 
+      test "view beacon increments the counter" do
+        article = articles(:lead)
+        assert_difference -> { article.reload.view_count }, 1 do
+          post "/api/v1/articles/#{article.slug}/view"
+        end
+        assert_response :no_content
+      end
+
       test "show 404s for an unknown or non-live slug" do
         get "/api/v1/articles/nope-not-real"
         assert_response :not_found
