@@ -1,317 +1,301 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# migration/recon.rb
-#
-# READ-ONLY reconnaissance of a WordPress database.
-#
-# This script NEVER writes to the database. It opens a read-only transaction,
-# issues only SELECTs, and emits a markdown report to migration/RECON.md.
-# It is deliberately standalone (no Rails, no ActiveRecord) so it can be run
-# against a read-only replica before any application code exists.
-#
-# Requirements:
-#   gem install mysql2      # the only dependency
+# Harnesslink WordPress reconnaissance.
+# READ-ONLY. Never writes to the database.
 #
 # Usage:
-#   # Point it at a READ-ONLY copy/replica. Never production write creds.
-#   WP_DB_HOST=127.0.0.1 \
-#   WP_DB_PORT=3306 \
-#   WP_DB_NAME=harnesslink \
-#   WP_DB_USER=readonly \
-#   WP_DB_PASSWORD=secret \
-#   WP_TABLE_PREFIX=wp_ \
-#   ruby migration/recon.rb
+#   WP_DB_HOST=127.0.0.1 WP_DB_NAME=hl_recon WP_DB_USER=root \
+#   WP_DB_PASSWORD=secret WP_TABLE_PREFIX=wzev_ ruby migration/recon.rb
 #
-#   # Or with a single URL:
-#   WP_DATABASE_URL="mysql2://readonly:secret@127.0.0.1:3306/harnesslink" \
-#   ruby migration/recon.rb
+# Or:
+#   WP_DATABASE_URL=mysql2://user:pass@host/dbname WP_TABLE_PREFIX=wzev_ ruby migration/recon.rb
 #
-# Options (env):
-#   WP_TABLE_PREFIX   default "wp_"
-#   WP_DB_SSL         "1" to require SSL
-#   RECON_OUT         output path, default "migration/RECON.md"
-#   RECON_SAMPLE      number of sample URLs to reconstruct, default 50
-#   RECON_SKIP_MEDIA_SCAN  "1" to skip the (heavier) content-reference media scan
+# Output: migration/RECON.md
 #
-# What it reports (see the task brief):
-#   1.  Permalink structure + reconstructed sample post URLs
-#   2.  Post counts by post_type, post_status, and by year
-#   3.  All distinct post_type values
-#   4.  Category + tag taxonomy trees (counts, slugs, hierarchy)
-#   5.  Authors: ids, display names, post counts, near-duplicate flags
-#   6.  wp_postmeta: distinct meta_key frequencies (Rank Math etc.)
-#   7.  Media: count, size (best-effort from DB), MIME types, referenced vs orphaned
-#   8.  Duplicate slugs
-#   9.  Comment counts by status
-#   10. Date range of published content
-
-require "time"
+# This is a merge of two recon drafts: the section structure and integrity
+# checks come from the hand-written version; the near-duplicate author
+# detection (brief #5), media referenced-vs-orphaned content scan (brief #7),
+# permalink URL reconstruction, category tree, and streaming scans were folded
+# in from the generated version.
 
 begin
   require "mysql2"
 rescue LoadError
   abort <<~MSG
-    [recon] The 'mysql2' gem is required but not installed.
-        gem install mysql2
-    (This is the only dependency. See the header of this file.)
+    Missing dependency: mysql2
+
+      gem install mysql2
+
+    On macOS you may first need:  brew install mysql-client
+    On Ubuntu:                    sudo apt install libmysqlclient-dev
   MSG
 end
 
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
+require "uri"
+require "time"
 
-module Recon
-  OUT_PATH        = ENV.fetch("RECON_OUT", "migration/RECON.md")
-  SAMPLE_SIZE     = Integer(ENV.fetch("RECON_SAMPLE", "50"))
-  SKIP_MEDIA_SCAN = ENV["RECON_SKIP_MEDIA_SCAN"] == "1"
+# ---------------------------------------------------------------- config
 
-  # Table prefix is operator-supplied config, but validate it hard because it
-  # is interpolated into SQL. Anything outside [A-Za-z0-9_] is rejected.
-  def self.table_prefix
-    tp = ENV.fetch("WP_TABLE_PREFIX", "wp_")
-    unless tp.match?(/\A[A-Za-z0-9_]+\z/)
-      abort "[recon] WP_TABLE_PREFIX #{tp.inspect} is invalid (expected [A-Za-z0-9_]+)."
+PREFIX = ENV.fetch("WP_TABLE_PREFIX", "wp_")
+
+unless PREFIX.match?(/\A[A-Za-z0-9_]+\z/)
+  abort "WP_TABLE_PREFIX must be alphanumeric/underscore only, got: #{PREFIX.inspect}"
+end
+
+def connection_config
+  if (url = ENV["WP_DATABASE_URL"])
+    uri = URI.parse(url)
+    {
+      host:     uri.host,
+      port:     uri.port || 3306,
+      username: uri.user,
+      password: uri.password && URI.decode_www_form_component(uri.password),
+      database: uri.path.delete_prefix("/")
+    }
+  else
+    {
+      host:     ENV.fetch("WP_DB_HOST", "127.0.0.1"),
+      port:     ENV.fetch("WP_DB_PORT", 3306).to_i,
+      username: ENV.fetch("WP_DB_USER"),
+      password: ENV.fetch("WP_DB_PASSWORD", ""),
+      database: ENV.fetch("WP_DB_NAME")
+    }
+  end
+rescue KeyError => e
+  abort "Missing required env var: #{e.message}"
+end
+
+OUT_PATH = File.join(__dir__, "RECON.md")
+
+# ---------------------------------------------------------------- small utils
+
+module ReconUtil
+  module_function
+
+  # Pure-Ruby Levenshtein for author near-duplicate detection (few dozen names).
+  def levenshtein(a, b)
+    a = a.to_s; b = b.to_s
+    return b.length if a.empty?
+    return a.length if b.empty?
+    prev = (0..b.length).to_a
+    a.each_char.with_index do |ca, i|
+      cur = [i + 1]
+      b.each_char.with_index do |cb, j|
+        cost = ca == cb ? 0 : 1
+        cur << [prev[j + 1] + 1, cur[j] + 1, prev[j] + cost].min
+      end
+      prev = cur
     end
-    tp
+    prev.last
   end
 
-  def self.connect
-    if (url = ENV["WP_DATABASE_URL"])
-      require "uri"
-      u = URI.parse(url)
-      opts = {
-        host:     u.host,
-        port:     u.port || 3306,
-        username: u.user,
-        password: u.password && URI.decode_www_form_component(u.password),
-        database: u.path.sub(%r{\A/}, ""),
-      }
-    else
-      opts = {
-        host:     ENV.fetch("WP_DB_HOST", "127.0.0.1"),
-        port:     Integer(ENV.fetch("WP_DB_PORT", "3306")),
-        username: ENV.fetch("WP_DB_USER") { abort "[recon] set WP_DB_USER (or WP_DATABASE_URL)" },
-        password: ENV["WP_DB_PASSWORD"],
-        database: ENV.fetch("WP_DB_NAME") { abort "[recon] set WP_DB_NAME (or WP_DATABASE_URL)" },
-      }
-    end
-    opts[:sslmode]  = :required if ENV["WP_DB_SSL"] == "1"
-    opts[:encoding] = "utf8mb4"
-    opts[:reconnect] = false
+  def normalize_name(name)
+    name.to_s.downcase.gsub(/[^a-z0-9]+/, " ").strip.squeeze(" ")
+  end
 
-    client = Mysql2::Client.new(**opts)
-    # Belt and braces: make the whole session read-only so a stray write errors.
-    begin
-      client.query("SET SESSION TRANSACTION READ ONLY")
-      client.query("START TRANSACTION READ ONLY")
-    rescue Mysql2::Error => e
-      warn "[recon] warning: could not start a READ ONLY transaction (#{e.message}). Continuing; SELECT-only."
+  # Extract an int field from a serialized PHP blob, e.g.
+  #   s:8:"filesize";i:12345;  -> 12345
+  def php_serialized_int(blob, key)
+    return nil unless blob
+    m = blob.match(/s:\d+:"#{Regexp.escape(key)}";i:(\d+);/)
+    m && m[1].to_i
+  end
+
+  def human_bytes(n)
+    return "unknown" if n.nil?
+    units = %w[B KB MB GB TB]
+    size = n.to_f
+    i = 0
+    while size >= 1024 && i < units.length - 1
+      size /= 1024
+      i += 1
     end
-    client
-  rescue Mysql2::Error => e
-    abort "[recon] could not connect: #{e.message}"
+    format("%.2f %s", size, units[i])
   end
 end
 
-# ---------------------------------------------------------------------------
-# Small helpers
-# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------- helpers
 
-class DB
-  def initialize(client, prefix)
-    @client = client
+class Recon
+  include ReconUtil
+  STATEMENT_TIMEOUT_SECONDS = 300
+
+  def initialize(config, prefix)
     @prefix = prefix
+    @client = Mysql2::Client.new(**config.merge(reconnect: true, encoding: "utf8mb4"))
+    @out = []
+    guard_read_only!
+    set_timeout!
+    begin_read_only_txn!
   end
 
-  # Interpolate the validated table prefix. %-placeholders let us write
-  # readable SQL: q("SELECT * FROM %{posts}")
-  def q(sql, as: :hash)
-    resolved = format_tables(sql)
-    @client.query(resolved, as: as, cast: true, symbolize_keys: (as == :hash))
+  def t(name) = "#{@prefix}#{name}"
+
+  def query(sql)
+    @client.query(sql, cast_booleans: true).to_a
+  rescue Mysql2::Error => e
+    warn "  ! query failed: #{e.message[0, 200]}"
+    []
   end
 
   def scalar(sql)
-    row = q(sql, as: :array).first
-    row && row.first
+    row = query(sql).first
+    row && row.values.first
   end
 
-  def escape(str)
-    @client.escape(str.to_s)
+  # Stream a large result set row-by-row without buffering it all in Ruby.
+  # Must be consumed fully before the connection issues another query.
+  def stream(sql)
+    result = @client.query(sql, stream: true, cache_rows: false)
+    result.each { |row| yield row }
+  rescue Mysql2::Error => e
+    warn "  ! stream failed: #{e.message[0, 200]}"
   end
 
-  def table(name) = "#{@prefix}#{name}"
-
-  private
-
-  def format_tables(sql)
-    sql.gsub(/%\{(\w+)\}/) { table(Regexp.last_match(1)) }
-  end
-end
-
-# Pure-Ruby Levenshtein for author near-duplicate detection (few dozen names).
-def levenshtein(a, b)
-  a = a.to_s; b = b.to_s
-  return b.length if a.empty?
-  return a.length if b.empty?
-  prev = (0..b.length).to_a
-  a.each_char.with_index do |ca, i|
-    cur = [i + 1]
-    b.each_char.with_index do |cb, j|
-      cost = ca == cb ? 0 : 1
-      cur << [prev[j + 1] + 1, cur[j] + 1, prev[j] + cost].min
+  # Refuse to run if the credentials can write. Cheap insurance.
+  def guard_read_only!
+    grants = query("SHOW GRANTS FOR CURRENT_USER()").flat_map(&:values).join(" ")
+    dangerous = %w[INSERT UPDATE DELETE DROP ALTER CREATE TRUNCATE ALL\ PRIVILEGES]
+    if dangerous.any? { |p| grants.include?(p) }
+      warn "!" * 70
+      warn "WARNING: these credentials appear to have WRITE access."
+      warn "This script only reads, but you should be using a read-only user."
+      warn "Continuing in 5 seconds. Ctrl-C to abort."
+      warn "!" * 70
+      sleep 5
     end
-    prev = cur
-  end
-  prev.last
-end
-
-def normalize_name(name)
-  name.to_s.downcase.gsub(/[^a-z0-9]+/, " ").strip.squeeze(" ")
-end
-
-# Best-effort extraction of an integer field from a serialized PHP string,
-# e.g. s:8:"filesize";i:12345;  -> 12345
-def php_serialized_int(blob, key)
-  return nil unless blob
-  m = blob.match(/s:\d+:"#{Regexp.escape(key)}";i:(\d+);/)
-  m && m[1].to_i
-end
-
-def human_bytes(n)
-  return "unknown" if n.nil?
-  units = %w[B KB MB GB TB]
-  size = n.to_f
-  i = 0
-  while size >= 1024 && i < units.length - 1
-    size /= 1024
-    i += 1
-  end
-  format("%.2f %s", size, units[i])
-end
-
-# ---------------------------------------------------------------------------
-# Report builder
-# ---------------------------------------------------------------------------
-
-class Report
-  def initialize
-    @lines = []
   end
 
-  def h1(t) = @lines << "# #{t}\n"
-  def h2(t) = @lines << "\n## #{t}\n"
-  def h3(t) = @lines << "\n### #{t}\n"
-  def p(t)  = @lines << "#{t}\n"
-  def raw(t) = @lines << t
-  def blank = @lines << ""
-
-  def table(headers, rows)
-    @lines << "| #{headers.join(' | ')} |"
-    @lines << "| #{headers.map { '---' }.join(' | ')} |"
-    rows.each { |r| @lines << "| #{r.map { |c| md_cell(c) }.join(' | ')} |" }
-    @lines << ""
+  def set_timeout!
+    @client.query("SET SESSION max_execution_time = #{STATEMENT_TIMEOUT_SECONDS * 1000}")
+  rescue Mysql2::Error
+    # MariaDB uses a different variable; non-fatal either way.
+    begin
+      @client.query("SET SESSION max_statement_time = #{STATEMENT_TIMEOUT_SECONDS}")
+    rescue Mysql2::Error
+      warn "  (could not set statement timeout — proceeding without)"
+    end
   end
 
-  def to_s = @lines.join("\n") + "\n"
-
-  private
-
-  def md_cell(c)
-    c.to_s.gsub("|", "\\|").gsub("\n", " ").strip
-  end
-end
-
-# ---------------------------------------------------------------------------
-# Recon sections
-# ---------------------------------------------------------------------------
-
-class Recon::Run
-  def initialize(db, report)
-    @db = db
-    @r  = report
+  # Belt-and-braces on top of the grant guard: make the session read-only so a
+  # stray write errors out instead of mutating anything.
+  def begin_read_only_txn!
+    @client.query("SET SESSION TRANSACTION READ ONLY")
+    @client.query("START TRANSACTION READ ONLY")
+  rescue Mysql2::Error => e
+    warn "  (could not start READ ONLY transaction: #{e.message[0, 120]} — SELECT-only regardless)"
   end
 
-  def call
-    @r.h1("Harnesslink — WordPress Recon Report")
-    @r.p("_Read-only inspection. Generated by `migration/recon.rb`._")
-    @r.p("Table prefix: `#{@db.table('')}`  ·  MySQL/MariaDB: `#{@db.scalar('SELECT VERSION()')}`")
-    @r.p("Sample size for URL reconstruction: #{Recon::SAMPLE_SIZE}")
+  # --------------------------------------------------------- output
 
-    section_permalinks
-    section_post_counts
-    section_post_types
-    section_taxonomy
-    section_authors
-    section_postmeta
-    section_media
-    section_duplicate_slugs
-    section_comments
-    section_date_range
-    section_notes
-  end
+  def h(level, text) = @out << "\n#{'#' * level} #{text}\n"
+  def p_(text)       = @out << "#{text}\n"
 
-  # --- 1. Permalink structure ------------------------------------------------
-  def section_permalinks
-    @r.h2("1. Permalink structure")
-
-    structure = @db.scalar("SELECT option_value FROM %{options} WHERE option_name = 'permalink_structure'")
-    siteurl   = @db.scalar("SELECT option_value FROM %{options} WHERE option_name = 'siteurl'")
-    home      = @db.scalar("SELECT option_value FROM %{options} WHERE option_name = 'home'")
-    cat_base  = @db.scalar("SELECT option_value FROM %{options} WHERE option_name = 'category_base'")
-    tag_base  = @db.scalar("SELECT option_value FROM %{options} WHERE option_name = 'tag_base'")
-
-    @r.table(%w[option value], [
-      ["permalink_structure", structure.nil? ? "(empty — plain ?p=ID permalinks!)" : "`#{structure}`"],
-      ["siteurl", siteurl],
-      ["home", home],
-      ["category_base", cat_base.to_s.empty? ? "(default: /category/)" : "`#{cat_base}`"],
-      ["tag_base", tag_base.to_s.empty? ? "(default: /tag/)" : "`#{tag_base}`"],
-    ])
-
-    if structure.nil? || structure.strip.empty?
-      @r.p("> **WARNING:** No pretty-permalink structure is set. URLs are likely `?p=ID`. " \
-           "Confirm against the live site before designing routing.")
+  def table(rows, columns: nil)
+    if rows.empty?
+      p_ "_No rows returned._"
       return
     end
-
-    @r.p("Reconstructed sample post URLs (built from `permalink_structure` + real post data). " \
-         "Eyeball these against the live site to confirm the pattern:")
-
-    rows = @db.q(<<~SQL)
-      SELECT p.ID, p.post_name, p.post_date, p.post_type
-      FROM %{posts} p
-      WHERE p.post_status = 'publish'
-        AND p.post_type = 'post'
-        AND p.post_name <> ''
-      ORDER BY p.post_date DESC
-      LIMIT #{Recon::SAMPLE_SIZE}
-    SQL
-
-    sample = rows.map do |row|
-      cat = primary_category_slug(row[:ID])
-      [row[:ID], reconstruct_url(structure, row, cat)]
+    cols = columns || rows.first.keys
+    @out << "| #{cols.join(' | ')} |"
+    @out << "|#{cols.map { '---' }.join('|')}|"
+    rows.each do |r|
+      @out << "| #{cols.map { |c| r[c].to_s.gsub('|', '\\|')[0, 120] }.join(' | ')} |"
     end
-    @r.table(%w[post_id reconstructed_path], sample)
+    @out << ""
+  end
+
+  def section(title)
+    puts "  → #{title}"
+    h 2, title
+    yield
+  end
+
+  # --------------------------------------------------------- report
+
+  def run
+    puts "\nHarnesslink recon — prefix: #{@prefix}\n\n"
+
+    h 1, "Harnesslink WordPress Reconnaissance"
+    p_ "Generated: #{Time.now.utc.iso8601}"
+    p_ "Table prefix: `#{@prefix}`"
+    p_ "MySQL/MariaDB: `#{scalar('SELECT VERSION()')}`"
+    p_ ""
+    p_ "> Read-only report. Produced by `migration/recon.rb`."
+
+    permalinks
+    post_types
+    posts_by_year
+    drafts_by_year
+    taxonomies
+    terms
+    authors
+    meta_keys
+    media
+    duplicate_slugs
+    comments
+    plugins
+    tables
+    date_range
+    orphans
+
+    File.write(OUT_PATH, @out.join("\n"))
+    puts "\nWritten: #{OUT_PATH}\n\n"
+  end
+
+  # --------------------------------------------------------- sections
+
+  def permalinks
+    section "1. Permalink structure (CRITICAL — determines routing)" do
+      rows = query(<<~SQL)
+        SELECT option_name, option_value FROM #{t 'options'}
+        WHERE option_name IN (
+          'permalink_structure','home','siteurl','category_base','tag_base',
+          'blogname','posts_per_page','page_on_front','show_on_front','date_format'
+        )
+      SQL
+      table rows
+
+      structure = rows.find { |r| r["option_name"] == "permalink_structure" }&.dig("option_value").to_s
+
+      if structure.strip.empty?
+        p_ "\n> **WARNING:** No pretty-permalink structure set — URLs are likely `?p=ID`. " \
+           "Confirm against the live site before designing routing.\n"
+      end
+
+      p_ "\n**Sample published post URLs** — reconstructed from `permalink_structure` + real post data. " \
+         "Eyeball against the live site to confirm the pattern:\n"
+      samples = query(<<~SQL)
+        SELECT ID, post_name, post_date, post_title
+        FROM #{t 'posts'}
+        WHERE post_type='post' AND post_status='publish' AND post_name <> ''
+        ORDER BY post_date DESC LIMIT 50
+      SQL
+      recon_rows = samples.map do |s|
+        { "ID" => s["ID"],
+          "reconstructed_path" => reconstruct_url(structure, s, primary_category_slug(s["ID"])),
+          "post_title" => s["post_title"] }
+      end
+      table recon_rows
+    end
   end
 
   def primary_category_slug(post_id)
-    slug = @db.scalar(<<~SQL)
+    slug = scalar(<<~SQL)
       SELECT t.slug
-      FROM %{term_relationships} tr
-      JOIN %{term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
-      JOIN %{terms} t ON t.term_id = tt.term_id
-      WHERE tr.object_id = #{Integer(post_id)}
-        AND tt.taxonomy = 'category'
-      ORDER BY tt.count DESC
-      LIMIT 1
+      FROM #{t 'term_relationships'} tr
+      JOIN #{t 'term_taxonomy'} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
+      JOIN #{t 'terms'} t ON t.term_id = tt.term_id
+      WHERE tr.object_id = #{Integer(post_id)} AND tt.taxonomy = 'category'
+      ORDER BY tt.count DESC LIMIT 1
     SQL
     slug || "uncategorized"
   end
 
   def reconstruct_url(structure, row, cat_slug)
-    d = row[:post_date]
+    return "(no permalink_structure)" if structure.to_s.strip.empty?
+    d = row["post_date"]
     d = Time.parse(d.to_s) unless d.respond_to?(:year)
     structure
       .gsub("%year%",     format("%04d", d.year))
@@ -320,151 +304,157 @@ class Recon::Run
       .gsub("%hour%",     format("%02d", d.hour))
       .gsub("%minute%",   format("%02d", d.min))
       .gsub("%second%",   format("%02d", d.sec))
-      .gsub("%postname%", row[:post_name].to_s)
-      .gsub("%post_id%",  row[:ID].to_s)
+      .gsub("%postname%", row["post_name"].to_s)
+      .gsub("%post_id%",  row["ID"].to_s)
       .gsub("%category%", cat_slug.to_s)
       .gsub("%author%",   "author")
   end
 
-  # --- 2. Post counts --------------------------------------------------------
-  def section_post_counts
-    @r.h2("2. Post counts")
-
-    @r.h3("By post_type × post_status")
-    rows = @db.q(<<~SQL)
-      SELECT post_type, post_status, COUNT(*) AS n
-      FROM %{posts}
-      GROUP BY post_type, post_status
-      ORDER BY post_type, n DESC
-    SQL
-    @r.table(%w[post_type post_status count], rows.map { |x| [x[:post_type], x[:post_status], x[:n]] })
-
-    @r.h3("Published posts by year (post_type='post')")
-    rows = @db.q(<<~SQL)
-      SELECT YEAR(post_date) AS yr, COUNT(*) AS n
-      FROM %{posts}
-      WHERE post_type = 'post' AND post_status = 'publish'
-      GROUP BY yr
-      ORDER BY yr
-    SQL
-    @r.table(%w[year count], rows.map { |x| [x[:yr], x[:n]] })
+  def post_types
+    section "2. Post types and statuses" do
+      table query(<<~SQL)
+        SELECT post_type, post_status, COUNT(*) AS count
+        FROM #{t 'posts'}
+        GROUP BY post_type, post_status
+        ORDER BY count DESC
+      SQL
+      p_ "> Watch for custom post types beyond post/page/attachment/revision/nav_menu_item — " \
+         "those (e.g. `guest_author`) may carry URLs or attribution we must preserve."
+    end
   end
 
-  # --- 3. Distinct post types ------------------------------------------------
-  def section_post_types
-    @r.h2("3. Distinct post_type values")
-    rows = @db.q(<<~SQL)
-      SELECT post_type, COUNT(*) AS n
-      FROM %{posts}
-      GROUP BY post_type
-      ORDER BY n DESC
-    SQL
-    @r.table(%w[post_type count], rows.map { |x| [x[:post_type], x[:n]] })
-    @r.p("> Watch for custom post types beyond `post`/`page`/`attachment`/`revision`/`nav_menu_item` — " \
-         "those may carry URLs we must preserve.")
+  def posts_by_year
+    section "3. Published posts by year" do
+      table query(<<~SQL)
+        SELECT YEAR(post_date) AS yr, COUNT(*) AS count
+        FROM #{t 'posts'}
+        WHERE post_type='post' AND post_status='publish'
+        GROUP BY yr ORDER BY yr
+      SQL
+    end
   end
 
-  # --- 4. Taxonomy -----------------------------------------------------------
-  def section_taxonomy
-    @r.h2("4. Taxonomy (categories + tags)")
-
-    %w[category post_tag].each do |tax|
-      label = tax == "category" ? "Categories" : "Tags"
-      @r.h3(label)
-      rows = @db.q(<<~SQL)
-        SELECT t.term_id, t.name, t.slug, tt.parent, tt.count
-        FROM %{term_taxonomy} tt
-        JOIN %{terms} t ON t.term_id = tt.term_id
-        WHERE tt.taxonomy = '#{@db.escape(tax)}'
-        ORDER BY tt.count DESC
+  def drafts_by_year
+    section "4. Drafts by year (are these abandoned or a failed import?)" do
+      table query(<<~SQL)
+        SELECT YEAR(post_date) AS yr, COUNT(*) AS count
+        FROM #{t 'posts'}
+        WHERE post_type='post' AND post_status='draft'
+        GROUP BY yr ORDER BY yr
       SQL
 
-      if tax == "category"
-        print_category_tree(rows)
-      else
-        @r.table(%w[name slug count term_id], rows.first(200).map { |x| [x[:name], x[:slug], x[:count], x[:term_id]] })
-        @r.p("_Showing up to 200 tags by count; #{rows.length} total._") if rows.length > 200
-      end
+      p_ "\n**Sample drafts:**\n"
+      table query(<<~SQL)
+        SELECT ID, post_title, post_date, post_author
+        FROM #{t 'posts'}
+        WHERE post_type='post' AND post_status='draft'
+        ORDER BY post_date DESC LIMIT 15
+      SQL
     end
+  end
 
-    @r.h3("Other taxonomies present")
-    rows = @db.q(<<~SQL)
-      SELECT taxonomy, COUNT(*) AS terms
-      FROM %{term_taxonomy}
-      GROUP BY taxonomy
-      ORDER BY terms DESC
-    SQL
-    @r.table(%w[taxonomy term_count], rows.map { |x| [x[:taxonomy], x[:terms]] })
+  def taxonomies
+    section "5. Taxonomies" do
+      table query(<<~SQL)
+        SELECT taxonomy, COUNT(*) AS terms
+        FROM #{t 'term_taxonomy'}
+        GROUP BY taxonomy ORDER BY terms DESC
+      SQL
+    end
+  end
+
+  def terms
+    section "6. Categories and tags (with counts)" do
+      p_ "**Category tree** (hierarchical; indentation = parent/child):\n"
+      cats = query(<<~SQL)
+        SELECT t.term_id, t.name, t.slug, tt.parent, tt.count
+        FROM #{t 'term_taxonomy'} tt
+        JOIN #{t 'terms'} t ON t.term_id = tt.term_id
+        WHERE tt.taxonomy='category'
+        ORDER BY tt.count DESC
+      SQL
+      print_category_tree(cats)
+
+      p_ "\n**Top 50 tags:**\n"
+      table query(<<~SQL)
+        SELECT t.name, t.slug, tt.count
+        FROM #{t 'term_taxonomy'} tt
+        JOIN #{t 'terms'} t ON t.term_id = tt.term_id
+        WHERE tt.taxonomy='post_tag'
+        ORDER BY tt.count DESC LIMIT 50
+      SQL
+    end
   end
 
   def print_category_tree(rows)
-    by_parent = Hash.new { |h, k| h[k] = [] }
-    rows.each { |r| by_parent[r[:parent].to_i] << r }
-    by_parent.each_value { |list| list.sort_by! { |r| r[:name].to_s.downcase } }
-
-    lines = []
+    by_parent = Hash.new { |hh, k| hh[k] = [] }
+    rows.each { |r| by_parent[r["parent"].to_i] << r }
+    by_parent.each_value { |list| list.sort_by! { |r| r["name"].to_s.downcase } }
     walk = lambda do |parent_id, depth|
       by_parent[parent_id].each do |node|
-        indent = "  " * depth
-        lines << "#{indent}- **#{node[:name]}** (`#{node[:slug]}`) — #{node[:count]} posts [term_id #{node[:term_id]}]"
-        walk.call(node[:term_id].to_i, depth + 1)
+        @out << "#{'  ' * depth}- **#{node['name']}** (`#{node['slug']}`) — #{node['count']} posts [term_id #{node['term_id']}]"
+        walk.call(node["term_id"].to_i, depth + 1)
       end
     end
     walk.call(0, 0)
-    @r.raw(lines.join("\n"))
-    @r.blank
+    @out << ""
   end
 
-  # --- 5. Authors ------------------------------------------------------------
-  def section_authors
-    @r.h2("5. Authors")
+  def authors
+    section "7. Authors (WP users + Co-Authors Plus guest authors)" do
+      p_ "**WordPress users with posts:**\n"
+      wp_users = query(<<~SQL)
+        SELECT u.ID, u.user_login, u.display_name, u.user_email,
+               COUNT(p.ID) AS posts
+        FROM #{t 'users'} u
+        LEFT JOIN #{t 'posts'} p
+          ON p.post_author = u.ID AND p.post_type='post' AND p.post_status='publish'
+        GROUP BY u.ID ORDER BY posts DESC
+      SQL
+      table wp_users
 
-    rows = @db.q(<<~SQL)
-      SELECT u.ID, u.display_name, u.user_login, u.user_email,
-             COUNT(p.ID) AS posts
-      FROM %{users} u
-      LEFT JOIN %{posts} p
-        ON p.post_author = u.ID
-       AND p.post_type = 'post'
-       AND p.post_status = 'publish'
-      GROUP BY u.ID, u.display_name, u.user_login, u.user_email
-      ORDER BY posts DESC
-    SQL
+      p_ "\n**Guest authors (Co-Authors Plus / PublishPress):**\n"
+      guests = query(<<~SQL)
+        SELECT ID, post_title, post_name, post_status
+        FROM #{t 'posts'}
+        WHERE post_type IN ('guest_author','ppma_boxes')
+        ORDER BY post_title LIMIT 700
+      SQL
+      table guests
 
-    @r.table(%w[id display_name user_login posts email],
-             rows.map { |x| [x[:ID], x[:display_name], x[:user_login], x[:posts], x[:user_email]] })
+      p_ "\n**Author taxonomy terms:**\n"
+      table query(<<~SQL)
+        SELECT t.name, t.slug, tt.taxonomy, tt.count
+        FROM #{t 'term_taxonomy'} tt
+        JOIN #{t 'terms'} t ON t.term_id = tt.term_id
+        WHERE tt.taxonomy LIKE '%author%'
+        ORDER BY tt.count DESC LIMIT 700
+      SQL
 
-    # Also: post_author IDs that reference no user row (orphaned attribution).
-    orphans = @db.q(<<~SQL)
-      SELECT p.post_author AS author_id, COUNT(*) AS posts
-      FROM %{posts} p
-      LEFT JOIN %{users} u ON u.ID = p.post_author
-      WHERE p.post_type = 'post' AND p.post_status = 'publish' AND u.ID IS NULL
-      GROUP BY p.post_author
-    SQL
-    unless orphans.empty?
-      @r.h3("⚠️ Posts with author_id not present in users table")
-      @r.table(%w[author_id posts], orphans.map { |x| [x[:author_id], x[:posts]] })
-    end
-
-    @r.h3("Possible duplicate authors (same person, different rows)")
-    flags = detect_duplicate_authors(rows)
-    if flags.empty?
-      @r.p("_None detected by name similarity._")
-    else
-      @r.table(["author A", "author B", "why"],
-               flags.map { |a, b, why| ["#{a[:display_name]} (id #{a[:ID]})", "#{b[:display_name]} (id #{b[:ID]})", why] })
-      @r.p("> Review manually — near-duplicate names often mean one contributor got two accounts. " \
-           "Decide the canonical author before import so attribution + archive URLs stay stable.")
+      # brief #5 — flag near-duplicate names that are probably the same person,
+      # across BOTH wp_users display names and guest-author titles.
+      p_ "\n**Possible duplicate authors (same person, different rows):**\n"
+      candidates = []
+      wp_users.each { |u| candidates << { label: u["display_name"], id: "user:#{u['ID']}", email: u["user_email"] } }
+      guests.each   { |g| candidates << { label: g["post_title"],   id: "guest:#{g['ID']}", email: nil } }
+      candidates.reject! { |c| c[:label].to_s.strip.empty? }
+      flags = detect_duplicate_authors(candidates)
+      if flags.empty?
+        p_ "_None detected by name similarity._"
+      else
+        table(flags.map { |a, b, why| { "A" => "#{a[:label]} (#{a[:id]})", "B" => "#{b[:label]} (#{b[:id]})", "why" => why } })
+        p_ "> Review manually — near-duplicate names often mean one contributor got two accounts, " \
+           "or a WP user also exists as a Co-Authors-Plus guest. Pick the canonical author before " \
+           "import so attribution + author-archive URLs stay stable."
+      end
     end
   end
 
-  def detect_duplicate_authors(rows)
-    named = rows.reject { |r| r[:display_name].to_s.strip.empty? }
+  def detect_duplicate_authors(candidates)
     flags = []
-    named.combination(2).each do |a, b|
-      na = normalize_name(a[:display_name])
-      nb = normalize_name(b[:display_name])
+    candidates.combination(2).each do |a, b|
+      na = normalize_name(a[:label])
+      nb = normalize_name(b[:label])
       next if na.empty? || nb.empty?
       reasons = []
       reasons << "identical normalized name" if na == nb
@@ -472,230 +462,221 @@ class Recon::Run
       dist = levenshtein(na, nb)
       maxlen = [na.length, nb.length].max
       reasons << "edit distance #{dist} of #{maxlen}" if na != nb && maxlen >= 5 && dist <= 2
-      # Same email is a strong signal.
-      reasons << "same email" if !a[:user_email].to_s.empty? && a[:user_email] == b[:user_email]
+      reasons << "same email" if !a[:email].to_s.empty? && a[:email] == b[:email]
       flags << [a, b, reasons.join("; ")] unless reasons.empty?
     end
     flags
   end
 
-  # --- 6. postmeta keys ------------------------------------------------------
-  def section_postmeta
-    @r.h2("6. wp_postmeta — distinct meta_key frequencies")
-    rows = @db.q(<<~SQL)
-      SELECT meta_key, COUNT(*) AS n
-      FROM %{postmeta}
-      GROUP BY meta_key
-      ORDER BY n DESC
-    SQL
-    @r.table(%w[meta_key count], rows.map { |x| [x[:meta_key], x[:n]] })
+  def meta_keys
+    section "8. Post meta keys (the plugin archaeology)" do
+      p_ "Anything with high frequency is load-bearing. Rank Math keys are"
+      p_ "required for SEO parity.\n"
+      rows = query(<<~SQL)
+        SELECT meta_key, COUNT(*) AS count
+        FROM #{t 'postmeta'}
+        GROUP BY meta_key
+        HAVING count > 10
+        ORDER BY count DESC
+        LIMIT 300
+      SQL
+      table rows
 
-    rank_math = rows.select { |x| x[:meta_key].to_s.start_with?("rank_math") }
-    @r.h3("Rank Math keys (SEO metadata to migrate)")
-    if rank_math.empty?
-      @r.p("_No `rank_math*` keys found. Confirm the SEO plugin in use (Yoast uses `_yoast_wpseo_*`)._")
-      yoast = rows.select { |x| x[:meta_key].to_s.start_with?("_yoast_wpseo") }
-      unless yoast.empty?
-        @r.p("Found Yoast keys instead:")
-        @r.table(%w[meta_key count], yoast.map { |x| [x[:meta_key], x[:n]] })
+      rank = rows.select { |r| r["meta_key"].to_s.start_with?("rank_math") }
+      p_ "\n**Rank Math keys (SEO metadata to migrate — brief #3):**\n"
+      if rank.empty?
+        p_ "_No `rank_math*` keys found. Confirm the SEO plugin (Yoast uses `_yoast_wpseo_*`)._"
+        yoast = rows.select { |r| r["meta_key"].to_s.start_with?("_yoast_wpseo") }
+        (table(yoast); p_("_(Yoast keys found instead.)_")) unless yoast.empty?
+      else
+        table rank
       end
-    else
-      @r.table(%w[meta_key count], rank_math.map { |x| [x[:meta_key], x[:n]] })
     end
   end
 
-  # --- 7. Media --------------------------------------------------------------
-  def section_media
-    @r.h2("7. Media (attachments)")
+  def media
+    section "9. Media" do
+      total = scalar("SELECT COUNT(*) FROM #{t 'posts'} WHERE post_type='attachment'").to_i
+      p_ "Total attachments: **#{total}**\n"
 
-    total = @db.scalar("SELECT COUNT(*) FROM %{posts} WHERE post_type = 'attachment'")
-    @r.p("Total attachments: **#{total}**")
+      p_ "**By MIME type:**\n"
+      table query(<<~SQL)
+        SELECT post_mime_type, COUNT(*) AS count
+        FROM #{t 'posts'}
+        WHERE post_type='attachment'
+        GROUP BY post_mime_type ORDER BY count DESC
+      SQL
 
-    @r.h3("By MIME type")
-    rows = @db.q(<<~SQL)
-      SELECT post_mime_type AS mime, COUNT(*) AS n
-      FROM %{posts}
-      WHERE post_type = 'attachment'
-      GROUP BY post_mime_type
-      ORDER BY n DESC
-    SQL
-    @r.table(%w[mime_type count], rows.map { |x| [x[:mime].to_s.empty? ? "(none)" : x[:mime], x[:n]] })
+      p_ "\n**Attachments by year:**\n"
+      table query(<<~SQL)
+        SELECT YEAR(post_date) AS yr, COUNT(*) AS count
+        FROM #{t 'posts'}
+        WHERE post_type='attachment'
+        GROUP BY yr ORDER BY yr
+      SQL
 
-    @r.h3("Total size (best-effort, from DB)")
-    size_bytes, covered, meta_total = attachment_total_size
-    @r.p("Sum of `filesize` fields parsed from `_wp_attachment_metadata`: **#{human_bytes(size_bytes)}** " \
-         "(#{size_bytes} bytes)")
-    @r.p("_Coverage: #{covered} of #{meta_total} metadata rows carried a parseable `filesize`. " \
-         "WordPress does not reliably store file size in the DB — treat this as a floor and confirm " \
-         "against the object store / filesystem._")
+      # Best-effort total size from serialized _wp_attachment_metadata.
+      p_ "\n**Total size (best-effort, from DB):**\n"
+      bytes, covered, meta_total = attachment_total_size
+      p_ "Sum of `filesize` parsed from `_wp_attachment_metadata`: **#{human_bytes(bytes)}** (#{bytes} bytes)."
+      p_ "_Coverage: #{covered} of #{meta_total} metadata rows had a parseable filesize. WordPress does not " \
+         "reliably store file size in the DB — treat as a floor; confirm against the object store._"
 
-    @r.h3("Referenced vs orphaned")
-    if Recon::SKIP_MEDIA_SCAN
-      @r.p("_Content-reference scan skipped (RECON_SKIP_MEDIA_SCAN=1). Reporting attachment→parent linkage only._")
-      linked   = @db.scalar("SELECT COUNT(*) FROM %{posts} WHERE post_type='attachment' AND post_parent <> 0")
-      unlinked = total.to_i - linked.to_i
-      @r.table(["metric", "count"],
-               [["attached to a parent post (post_parent<>0)", linked],
-                ["not attached to any parent", unlinked]])
-    else
-      referenced, orphaned, scanned_posts, total_att = media_reference_scan
-      @r.table(["metric", "count"], [
-        ["attachments referenced in post_content", referenced],
-        ["attachments NOT referenced in post_content (orphan candidates)", orphaned],
-        ["attachments with a filename on disk", total_att],
-        ["posts scanned for references", scanned_posts],
+      # brief #7 — referenced-in-content vs orphaned.
+      p_ "\n**Referenced in post content vs orphaned:**\n"
+      referenced, orphaned, scanned, with_file = media_reference_scan
+      table([
+        { "metric" => "attachments referenced in post/page content", "count" => referenced },
+        { "metric" => "attachments NOT referenced in content (orphan candidates)", "count" => orphaned },
+        { "metric" => "attachments with a file on disk (_wp_attached_file)", "count" => with_file },
+        { "metric" => "posts/pages scanned", "count" => scanned },
       ])
-      @r.p("> Method: collected every attachment's file basename from `_wp_attached_file`, streamed all " \
-           "`post`/`page` content, extracted `/wp-content/uploads/...` references, and intersected by basename. " \
-           "This counts references in body content only — not those set via theme options, widgets, or " \
-           "post-meta (e.g. featured images via `_thumbnail_id`). Featured-image usage is reported separately below.")
-
-      thumb = @db.scalar("SELECT COUNT(DISTINCT meta_value) FROM %{postmeta} WHERE meta_key = '_thumbnail_id'")
-      @r.p("Distinct attachments used as featured images (`_thumbnail_id`): **#{thumb}**")
+      thumb = scalar("SELECT COUNT(DISTINCT meta_value) FROM #{t 'postmeta'} WHERE meta_key='_thumbnail_id'")
+      p_ "Distinct attachments used as featured images (`_thumbnail_id`): **#{thumb}**"
+      p_ "> Method: matched attachment file basenames (size-suffixes like `-1024x768` stripped) against " \
+         "`/wp-content/uploads/...` references in body content. Counts body + featured images, not " \
+         "theme/widget usage."
     end
   end
 
   def attachment_total_size
-    meta_total = 0
-    covered = 0
-    total_bytes = 0
-    stream_rows(<<~SQL) do |row|
-      SELECT meta_value
-      FROM %{postmeta}
-      WHERE meta_key = '_wp_attachment_metadata'
-    SQL
+    meta_total = 0; covered = 0; bytes = 0
+    stream("SELECT meta_value FROM #{t 'postmeta'} WHERE meta_key='_wp_attachment_metadata'") do |row|
       meta_total += 1
-      fs = php_serialized_int(row[:meta_value], "filesize")
+      fs = php_serialized_int(row["meta_value"], "filesize")
       if fs
         covered += 1
-        total_bytes += fs
+        bytes += fs
       end
     end
-    [total_bytes, covered, meta_total]
+    [bytes, covered, meta_total]
   end
 
   def media_reference_scan
-    # 1) Build set of attachment basenames (and the count of attachments).
-    basenames = {}      # basename => attachment_id (last wins; fine for presence)
-    total_att = 0
-    stream_rows(<<~SQL) do |row|
-      SELECT pm.post_id AS att_id, pm.meta_value AS path
-      FROM %{postmeta} pm
-      WHERE pm.meta_key = '_wp_attached_file'
-    SQL
-      total_att += 1
-      base = File.basename(row[:path].to_s)
-      basenames[base] = row[:att_id] unless base.empty?
+    basenames = {}
+    with_file = 0
+    stream("SELECT meta_value FROM #{t 'postmeta'} WHERE meta_key='_wp_attached_file'") do |row|
+      with_file += 1
+      base = File.basename(row["meta_value"].to_s)
+      basenames[base] = true unless base.empty?
     end
 
-    # 2) Stream post/page content, collect referenced basenames.
-    referenced_bases = {}
-    scanned_posts = 0
+    referenced = {}
+    scanned = 0
     ref_re = %r{/wp-content/uploads/[^\s"'()<>]+}i
-    stream_rows(<<~SQL) do |row|
-      SELECT post_content
-      FROM %{posts}
-      WHERE post_type IN ('post','page') AND post_status <> 'trash'
-    SQL
-      scanned_posts += 1
-      content = row[:post_content].to_s
+    stream("SELECT post_content FROM #{t 'posts'} WHERE post_type IN ('post','page') AND post_status <> 'trash'") do |row|
+      scanned += 1
+      content = row["post_content"].to_s
       next if content.empty?
       content.scan(ref_re) do |url|
-        b = File.basename(url.split("?").first.split("#").first)
-        # Strip WP size suffixes like -1024x768 so resized variants map back to the original.
-        b = b.sub(/-\d+x\d+(?=\.[A-Za-z0-9]+\z)/, "")
-        referenced_bases[b] = true if basenames.key?(b)
-        referenced_bases[File.basename(url)] = true if basenames.key?(File.basename(url))
+        raw = File.basename(url.split("?").first.split("#").first)
+        stripped = raw.sub(/-\d+x\d+(?=\.[A-Za-z0-9]+\z)/, "")
+        referenced[stripped] = true if basenames.key?(stripped)
+        referenced[raw] = true if basenames.key?(raw)
       end
     end
 
-    referenced = basenames.keys.count { |b| referenced_bases.key?(b) }
-    orphaned = total_att - referenced
-    [referenced, orphaned, scanned_posts, total_att]
+    ref_count = basenames.keys.count { |b| referenced.key?(b) }
+    [ref_count, with_file - ref_count, scanned, with_file]
   end
 
-  # --- 8. Duplicate slugs ----------------------------------------------------
-  def section_duplicate_slugs
-    @r.h2("8. Duplicate slugs")
-    rows = @db.q(<<~SQL)
-      SELECT post_name, post_type, COUNT(*) AS n
-      FROM %{posts}
-      WHERE post_status = 'publish' AND post_name <> ''
-      GROUP BY post_name, post_type
-      HAVING n > 1
-      ORDER BY n DESC
-      LIMIT 500
-    SQL
-    if rows.empty?
-      @r.p("_No duplicate slugs among published posts._")
-    else
-      @r.p("Duplicate `post_name` within the same `post_type` (published). " \
-           "WordPress disambiguates these by date/parent in the URL — routing must too.")
-      @r.table(%w[slug post_type occurrences], rows.map { |x| [x[:post_name], x[:post_type], x[:n]] })
-      @r.p("_Showing up to 500._") if rows.length >= 500
+  def duplicate_slugs
+    section "10. Duplicate slugs (URLs we cannot cleanly preserve)" do
+      rows = query(<<~SQL)
+        SELECT post_name, COUNT(*) AS count,
+               GROUP_CONCAT(ID ORDER BY ID SEPARATOR ', ') AS ids
+        FROM #{t 'posts'}
+        WHERE post_type='post' AND post_status='publish' AND post_name != ''
+        GROUP BY post_name HAVING count > 1
+        ORDER BY count DESC LIMIT 200
+      SQL
+      p_ "**#{rows.size} duplicate slugs found** (capped at 200).\n"
+      table rows
     end
   end
 
-  # --- 9. Comments -----------------------------------------------------------
-  def section_comments
-    @r.h2("9. Comments by status")
-    rows = @db.q(<<~SQL)
-      SELECT comment_approved AS status, COUNT(*) AS n
-      FROM %{comments}
-      GROUP BY comment_approved
-      ORDER BY n DESC
-    SQL
-    legend = { "1" => "approved", "0" => "unapproved/pending", "spam" => "spam", "trash" => "trash", "post-trashed" => "post-trashed" }
-    @r.table(%w[status meaning count],
-             rows.map { |x| [x[:status], legend[x[:status].to_s] || "?", x[:n]] })
-    @r.p("_v1 does not migrate comments (out of scope), but this sizes the future job._")
+  def comments
+    section "11. Comments" do
+      table query(<<~SQL)
+        SELECT comment_approved AS status, COUNT(*) AS count
+        FROM #{t 'comments'}
+        GROUP BY comment_approved ORDER BY count DESC
+      SQL
+    end
   end
 
-  # --- 10. Date range --------------------------------------------------------
-  def section_date_range
-    @r.h2("10. Date range of published content")
-    row = @db.q(<<~SQL).first
-      SELECT MIN(post_date) AS first_pub, MAX(post_date) AS last_pub, COUNT(*) AS n
-      FROM %{posts}
-      WHERE post_type = 'post' AND post_status = 'publish'
-    SQL
-    @r.table(%w[metric value], [
-      ["earliest published post", row[:first_pub]],
-      ["latest published post", row[:last_pub]],
-      ["total published posts", row[:n]],
-    ])
+  def plugins
+    section "12. Active plugins" do
+      row = query("SELECT option_value FROM #{t 'options'} WHERE option_name='active_plugins'").first
+      if row
+        raw = row["option_value"].to_s
+        plugins = raw.scan(/"([^"]+\.php)"/).flatten
+        p_ "**#{plugins.size} active plugins:**\n"
+        plugins.sort.each { |pl| p_ "- `#{pl}`" }
+      else
+        p_ "_Could not read active_plugins._"
+      end
+    end
   end
 
-  def section_notes
-    @r.h2("Notes & caveats")
-    @r.p("- This report is generated read-only; no writes were issued.")
-    @r.p("- Media total size is a DB-derived floor; authoritative size comes from the object store.")
-    @r.p("- Reference scan covers body content + featured images, not theme/widget usage.")
-    @r.p("- Reconstructed URLs are derived from `permalink_structure`; verify against the live site.")
+  def tables
+    section "13. Database tables by size" do
+      table query(<<~SQL)
+        SELECT table_name AS tbl, table_rows AS approx_rows,
+               ROUND((data_length + index_length)/1024/1024, 1) AS mb
+        FROM information_schema.TABLES
+        WHERE table_schema = DATABASE()
+        ORDER BY (data_length + index_length) DESC
+      SQL
+    end
   end
 
-  private
+  def date_range
+    section "14. Content date range" do
+      table query(<<~SQL)
+        SELECT MIN(post_date) AS earliest, MAX(post_date) AS latest,
+               COUNT(*) AS published
+        FROM #{t 'posts'}
+        WHERE post_type='post' AND post_status='publish'
+      SQL
+    end
+  end
 
-  # Stream large result sets row-by-row without buffering the whole set in Ruby.
-  def stream_rows(sql)
-    resolved = sql.gsub(/%\{(\w+)\}/) { @db.table(Regexp.last_match(1)) }
-    client = @db.instance_variable_get(:@client)
-    result = client.query(resolved, stream: true, cache_rows: false, symbolize_keys: true, as: :hash)
-    result.each { |row| yield row }
+  def orphans
+    section "15. Integrity checks" do
+      p_ "**Published posts with an empty slug** (cannot build a URL):\n"
+      table query(<<~SQL)
+        SELECT COUNT(*) AS count FROM #{t 'posts'}
+        WHERE post_type='post' AND post_status='publish' AND (post_name='' OR post_name IS NULL)
+      SQL
+
+      p_ "\n**Published posts with no category:**\n"
+      table query(<<~SQL)
+        SELECT COUNT(*) AS count FROM #{t 'posts'} p
+        WHERE p.post_type='post' AND p.post_status='publish'
+          AND NOT EXISTS (
+            SELECT 1 FROM #{t 'term_relationships'} tr
+            JOIN #{t 'term_taxonomy'} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
+            WHERE tr.object_id = p.ID AND tt.taxonomy = 'category'
+          )
+      SQL
+
+      p_ "\n**Attachments whose parent post no longer exists:**\n"
+      table query(<<~SQL)
+        SELECT COUNT(*) AS count FROM #{t 'posts'} a
+        WHERE a.post_type='attachment' AND a.post_parent != 0
+          AND NOT EXISTS (SELECT 1 FROM #{t 'posts'} p WHERE p.ID = a.post_parent)
+      SQL
+
+      p_ "\n**Featured images pointing at missing attachments:**\n"
+      table query(<<~SQL)
+        SELECT COUNT(*) AS count
+        FROM #{t 'postmeta'} pm
+        WHERE pm.meta_key='_thumbnail_id'
+          AND NOT EXISTS (SELECT 1 FROM #{t 'posts'} p WHERE p.ID = pm.meta_value)
+      SQL
+    end
   end
 end
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
-
-prefix = Recon.table_prefix
-client = Recon.connect
-db     = DB.new(client, prefix)
-report = Report.new
-
-warn "[recon] connected. Running read-only inspection (prefix=#{prefix})…"
-Recon::Run.new(db, report).call
-
-File.write(Recon::OUT_PATH, report.to_s)
-warn "[recon] wrote #{Recon::OUT_PATH}"
+Recon.new(connection_config, PREFIX).run
