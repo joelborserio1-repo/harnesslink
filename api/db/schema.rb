@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_20_010008) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_20_010010) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -71,10 +71,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_010008) do
     t.string "featured_image_credit"
     t.bigint "featured_media_id"
     t.string "focus_keyword"
+    t.jsonb "import_flags", default: [], null: false
     t.datetime "legacy_modified_at"
     t.string "legacy_source"
     t.string "legacy_url"
     t.bigint "legacy_wp_id"
+    t.boolean "needs_review", default: false, null: false
     t.text "og_description"
     t.bigint "og_image_id"
     t.string "og_title"
@@ -98,6 +100,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_010008) do
     t.index ["featured_media_id"], name: "index_articles_on_featured_media_id"
     t.index ["legacy_url"], name: "index_articles_on_legacy_url", unique: true
     t.index ["legacy_wp_id"], name: "index_articles_on_legacy_wp_id", unique: true
+    t.index ["needs_review"], name: "index_articles_on_needs_review"
     t.index ["og_image_id"], name: "index_articles_on_og_image_id"
     t.index ["primary_category_id", "published_at"], name: "index_articles_on_primary_category_id_and_published_at"
     t.index ["primary_category_id"], name: "index_articles_on_primary_category_id"
@@ -150,6 +153,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_010008) do
     t.datetime "updated_at", null: false
     t.index ["category_id"], name: "index_countries_on_category_id"
     t.index ["slug"], name: "index_countries_on_slug", unique: true
+  end
+
+  create_table "import_runs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "cursor_legacy_id", default: 0, null: false
+    t.datetime "finished_at"
+    t.text "last_error"
+    t.string "source", default: "wordpress", null: false
+    t.datetime "started_at"
+    t.jsonb "stats", default: {}, null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "media_assets", force: :cascade do |t|
