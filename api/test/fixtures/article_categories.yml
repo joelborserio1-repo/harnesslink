@@ -1,0 +1,7 @@
+lead_usa:
+  article: lead
+  category: usa
+
+lead_top4:
+  article: lead
+  category: top4

@@ -1,0 +1,20 @@
+usa:
+  name: USA
+  slug: usa
+  kind: geographic
+  position: 1
+  legacy_term_id: 3
+
+new_zealand:
+  name: New Zealand
+  slug: new-zealand
+  kind: geographic
+  position: 2
+  legacy_term_id: 2
+
+top4:
+  name: Top 4
+  slug: top4
+  kind: editorial
+  position: 10
+  legacy_term_id: 4084

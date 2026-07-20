@@ -1,0 +1,16 @@
+hero:
+  legacy_wp_id: 2200001
+  legacy_url: https://harnesslink.com/wp-content/uploads/2026/07/hero.jpg
+  storage_key: media/2026/07/hero.jpg
+  mime_type: image/jpeg
+  width: 1200
+  height: 800
+  byte_size: 245000
+  alt: A pacer winning at the wire
+  status: active
+
+missing_file:
+  legacy_wp_id: 1900001
+  legacy_url: https://harnesslink.com/wp-content/uploads/2019/01/gone.jpg
+  mime_type: image/jpeg
+  status: missing

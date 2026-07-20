@@ -1,0 +1,17 @@
+adam:
+  name: Adam Hamilton
+  slug: adam-hamilton
+  role_title: Contributor
+  legacy_refs: { wp_user_id: 30, tag_id: 5001 }
+
+bruce:
+  name: Bruce Stewart
+  slug: bruce-stewart
+  legacy_refs: { wp_user_id: 18 }
+
+# Duplicate account for the same person, collapsed onto `bruce`.
+bruce_dup:
+  name: Bruce Stewart
+  slug: bruce-stewart-2
+  merged_into: bruce
+  legacy_refs: { wp_user_id: 328 }

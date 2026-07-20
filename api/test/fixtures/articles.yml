@@ -1,0 +1,25 @@
+lead:
+  title: Lexus Kody wins the $300,000 G2 Spirit of Massachusetts Trot
+  subtitle: A dominant front-running display
+  slug: lexus-kody-wins-the-300000-g2-spirit-of-massachusetts-trot
+  excerpt: Lexus Kody led throughout to take the feature.
+  body_format: legacy_html
+  body_html: "<p>Lexus Kody won the feature in a fast time.</p>"
+  status: published
+  published_at: <%= 2.days.ago.to_fs(:db) %>
+  legacy_modified_at: <%= 1.day.ago.to_fs(:db) %>
+  primary_category: usa
+  featured_media: hero
+  seo_title: Lexus Kody wins Spirit of Massachusetts Trot | Harnesslink
+  seo_description: Full report on the $300,000 G2 Spirit of Massachusetts Trot.
+  canonical_url: https://harnesslink.com/lexus-kody-wins-the-300000-g2-spirit-of-massachusetts-trot/
+  legacy_wp_id: 2387693
+  legacy_url: /lexus-kody-wins-the-300000-g2-spirit-of-massachusetts-trot/
+  legacy_source: wordpress
+
+new_draft:
+  title: A brand new CMS article
+  slug: a-brand-new-cms-article
+  body_format: tiptap_json
+  body_json: { type: doc, content: [] }
+  status: draft

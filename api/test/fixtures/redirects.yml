@@ -1,0 +1,7 @@
+# A real-world case: WordPress kept the old slug (39k of these exist as
+# _wp_old_slug) and 301s it to the current article path.
+old_slug:
+  from_path: /lexus-kody-wins-the-spirit-of-massachusetts/
+  to_path: /lexus-kody-wins-the-300000-g2-spirit-of-massachusetts-trot/
+  status_code: 301
+  reason: wp_old_slug
