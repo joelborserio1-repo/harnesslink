@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { COUNTRIES, countryHref } from "@/lib/countries";
+import NewsMenu from "@/components/NewsMenu";
 
 // Editorial top nav from the live site. TODO: make DB-driven (nav is data in v1).
+// "News" is special-cased below into a country dropdown (see NewsMenu).
 const NAV = [
   { label: "Home", href: "/" },
-  { label: "News", href: "/" },
   { label: "Racing", href: "/" },
   { label: "The Insider", href: "/" },
   { label: "Contact Us", href: "/" },
@@ -35,10 +35,21 @@ export default function SiteHeader() {
         </div>
       </div>
 
-      {/* Primary nav — same royal navy, divided by a hairline. */}
+      {/* Primary nav — same royal navy, divided by a hairline. Wraps on narrow
+          screens (no overflow clipping, so the News dropdown can escape). */}
       <nav className="border-t border-white/10 bg-navy">
-        <div className="mx-auto flex max-w-6xl items-center gap-6 overflow-x-auto px-4">
-          {NAV.map((item) => (
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 px-4">
+          <Link
+            href="/"
+            className="whitespace-nowrap border-b-2 border-transparent py-3 text-sm font-semibold uppercase tracking-wide text-white/90 hover:border-accent hover:text-white"
+          >
+            Home
+          </Link>
+
+          {/* News → country dropdown */}
+          <NewsMenu />
+
+          {NAV.filter((i) => i.label !== "Home").map((item) => (
             <Link
               key={item.label}
               href={item.href}
@@ -49,24 +60,6 @@ export default function SiteHeader() {
           ))}
         </div>
       </nav>
-
-      {/* Explore by Countries — the geographic sections. Archives at /category/{slug}/. */}
-      <div className="border-b border-black/10 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center gap-1 overflow-x-auto px-4 py-2">
-          <span className="mr-1 shrink-0 text-[11px] font-bold uppercase tracking-wide text-muted">
-            Explore by Country
-          </span>
-          {COUNTRIES.map((c) => (
-            <Link
-              key={c.slug}
-              href={countryHref(c.slug)}
-              className="shrink-0 rounded-full px-3 py-1 text-[13px] font-semibold text-navy hover:bg-navy hover:text-white"
-            >
-              {c.code}
-            </Link>
-          ))}
-        </div>
-      </div>
     </header>
   );
 }
