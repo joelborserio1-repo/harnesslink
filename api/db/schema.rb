@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_20_010007) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_20_010008) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -170,6 +170,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_010007) do
     t.integer "width"
     t.index ["legacy_url"], name: "index_media_assets_on_legacy_url"
     t.index ["legacy_wp_id"], name: "index_media_assets_on_legacy_wp_id", unique: true
+  end
+
+  create_table "missed_paths", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "hits", default: 0, null: false
+    t.datetime "last_seen_at"
+    t.string "path", null: false
+    t.string "referer"
+    t.datetime "updated_at", null: false
+    t.index ["path"], name: "index_missed_paths_on_path", unique: true
   end
 
   create_table "redirects", force: :cascade do |t|

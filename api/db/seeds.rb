@@ -122,4 +122,12 @@ end
   ArticleCategory.find_or_create_by!(article: article, category: CATEGORIES[cat_key]) if article
 end
 
-puts "Done. #{Article.count} articles, #{Category.count} categories, #{Author.count} authors."
+# A demo legacy redirect (the WordPress _wp_old_slug case: 39k of these exist).
+Redirect.find_or_create_by!(from_path: "/lexus-kody-wins-spirit-of-mass/") do |r|
+  r.to_path = "/lexus-kody-wins-the-300000-g2-spirit-of-massachusetts-trot/"
+  r.status_code = 301
+  r.reason = "wp_old_slug"
+end
+
+puts "Done. #{Article.count} articles, #{Category.count} categories, " \
+     "#{Author.count} authors, #{Redirect.count} redirects."

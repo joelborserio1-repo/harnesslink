@@ -10,6 +10,9 @@ Rails.application.routes.draw do
       # Articles are addressed by slug (the whole /%postname%/ path).
       resources :articles, only: [:index, :show], param: :slug
       resources :categories, only: [:index, :show], param: :slug
+
+      get "redirects/resolve", to: "redirects#resolve"
+      resources :missed_paths, only: [:create]
     end
   end
 end

@@ -29,4 +29,19 @@ class RedirectTest < ActiveSupport::TestCase
     end
     assert_not_nil r.reload.last_hit_at
   end
+
+  test "resolve matches an exact from_path" do
+    assert_equal redirects(:old_slug), Redirect.resolve(redirects(:old_slug).from_path)
+  end
+
+  test "resolve tolerates a missing trailing slash" do
+    without_slash = redirects(:old_slug).from_path.chomp("/")
+    assert_equal redirects(:old_slug), Redirect.resolve(without_slash)
+  end
+
+  test "resolve ignores query string and returns nil for unknown paths" do
+    assert_equal redirects(:old_slug), Redirect.resolve("#{redirects(:old_slug).from_path}?utm=1")
+    assert_nil Redirect.resolve("/nothing-here/")
+    assert_nil Redirect.resolve("")
+  end
 end
