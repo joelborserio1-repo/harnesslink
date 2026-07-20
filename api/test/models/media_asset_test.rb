@@ -22,4 +22,19 @@ class MediaAssetTest < ActiveSupport::TestCase
     dup = MediaAsset.new(legacy_wp_id: media_assets(:hero).legacy_wp_id)
     assert_not dup.valid?
   end
+
+  test "responsive returns src, srcset and intrinsic dimensions" do
+    r = media_assets(:hero).responsive
+    assert_equal media_assets(:hero).width, r[:width]
+    assert_equal media_assets(:hero).height, r[:height]
+    assert r[:srcset].include?("320w")
+    assert r[:srcset].include?("1280w")
+    assert r[:src].present?
+  end
+
+  test "responsive prefers storage_key, falls back to legacy_url" do
+    assert_equal media_assets(:hero).storage_key, media_assets(:hero).source_url
+    only_legacy = MediaAsset.new(legacy_url: "https://x.com/b.jpg")
+    assert_equal "https://x.com/b.jpg", only_legacy.source_url
+  end
 end

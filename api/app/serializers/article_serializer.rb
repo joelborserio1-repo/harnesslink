@@ -54,7 +54,8 @@ class ArticleSerializer
 
   def self.image(media)
     return nil unless media
-    { url: media.storage_key, alt: media.alt, width: media.width, height: media.height,
-      caption: media.caption, credit: media.credit }
+    data = media.responsive
+    return nil unless data
+    data.merge(caption: media.caption, credit: media.credit)
   end
 end

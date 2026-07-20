@@ -66,6 +66,21 @@ module Wordpress
       assert run.status_completed?
     end
 
+    test "imports and links the featured image" do
+      featured = { legacy_id: 7001, url: "https://harnesslink.com/wp-content/uploads/x.jpg",
+                   width: 1200, height: 800, alt: "A pacer", mime_type: "image/jpeg" }
+      run = Importer.new(source: source([
+        wp_post(id: 5007, slug: "with-photo", title: "Photo", featured: featured)
+      ])).call
+
+      media = Article.find_by(legacy_wp_id: 5007).featured_media
+      assert_not_nil media
+      assert_equal 1200, media.width
+      assert_equal "https://harnesslink.com/wp-content/uploads/x.jpg", media.legacy_url
+      assert_equal 1, run.stats["media"]
+      assert media.responsive[:srcset].include?("640w")
+    end
+
     test "resumes from the run cursor, skipping processed posts" do
       run = ImportRun.start!
       run.update!(cursor_legacy_id: 5005)

@@ -66,8 +66,26 @@ foreach ($query->posts as $p) {
     ];
   }
 
+  // Featured image (imgproxy will resize the original; no file move needed yet).
+  $featured = null;
+  $thumb_id = get_post_thumbnail_id($id);
+  if ($thumb_id) {
+    $src = wp_get_attachment_image_src($thumb_id, 'full');
+    if ($src) {
+      $featured = [
+        'legacy_id' => (int) $thumb_id,
+        'url' => $src[0],
+        'width' => (int) $src[1],
+        'height' => (int) $src[2],
+        'alt' => get_post_meta($thumb_id, '_wp_attachment_image_alt', true),
+        'mime_type' => get_post_mime_type($thumb_id),
+      ];
+    }
+  }
+
   $out[] = [
     'id' => $id,
+    'featured' => $featured,
     'post_name' => $p->post_name,
     'post_title' => $p->post_title,
     'post_content' => $p->post_content,

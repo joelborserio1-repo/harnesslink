@@ -7,10 +7,14 @@ const REVALIDATE = 60; // ISR: articles regenerate at most once a minute
 export type Ref = { name: string; slug: string; url: string };
 
 export type Thumb = {
-  url: string | null;
-  alt: string | null;
+  src: string;
+  srcset: string;
+  sizes: string;
   width: number | null;
   height: number | null;
+  alt: string;
+  caption?: string | null;
+  credit?: string | null;
 } | null;
 
 export type ArticleSummary = {
@@ -46,14 +50,7 @@ export type ArticleFull = ArticleSummary & {
   modified_at: string | null;
   authors: Ref[];
   categories: Ref[];
-  featured_image: {
-    url: string | null;
-    alt: string | null;
-    width: number | null;
-    height: number | null;
-    caption: string | null;
-    credit: string | null;
-  } | null;
+  featured_image: Thumb;
   seo: ArticleSeo;
 };
 

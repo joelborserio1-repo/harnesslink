@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       modifiedTime: article.modified_at ?? undefined,
       authors: article.authors.map((a) => a.name),
       section: article.category?.name,
-      images: article.featured_image?.url ? [{ url: article.featured_image.url }] : undefined,
+      images: article.featured_image?.src ? [{ url: article.featured_image.src }] : undefined,
     },
     twitter: {
       card: "summary_large_image",
@@ -69,7 +69,7 @@ function newsArticleJsonLd(article: ArticleFull) {
     },
     mainEntityOfPage: { "@type": "WebPage", "@id": article.seo.canonical_url },
     articleSection: article.category?.name,
-    image: article.featured_image?.url ? [article.featured_image.url] : undefined,
+    image: article.featured_image?.src ? [article.featured_image.src] : undefined,
   };
 }
 
@@ -122,6 +122,29 @@ export default async function ArticlePage({ params }: Params) {
           </>
         )}
       </div>
+
+      {article.featured_image?.src && (
+        <figure className="mt-6">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={article.featured_image.src}
+            srcSet={article.featured_image.srcset}
+            sizes="(max-width: 768px) 100vw, 768px"
+            alt={article.featured_image.alt || article.title}
+            width={article.featured_image.width ?? undefined}
+            height={article.featured_image.height ?? undefined}
+            className="w-full rounded"
+          />
+          {(article.featured_image.caption || article.featured_image.credit) && (
+            <figcaption className="mt-2 text-sm text-neutral-500">
+              {article.featured_image.caption}
+              {article.featured_image.credit && (
+                <span className="italic"> — {article.featured_image.credit}</span>
+              )}
+            </figcaption>
+          )}
+        </figure>
+      )}
 
       {/* Legacy WordPress HTML is rendered verbatim (sanitised at import time). */}
       {article.body_format === "legacy_html" ? (

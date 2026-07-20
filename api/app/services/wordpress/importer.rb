@@ -50,6 +50,7 @@ module Wordpress
 
       categories = mapped.categories.map { |c| upsert_category(c) }
       article.primary_category = categories.first if categories.first
+      article.featured_media = upsert_media(post[:featured]) if post[:featured].present?
       article.save!
 
       @run.bump("articles_imported") if was_new
@@ -59,6 +60,27 @@ module Wordpress
       sync_tags(article, mapped.tags)
       sync_authors(article, mapped.authors)
       create_redirects(article, mapped.old_slugs)
+    end
+
+    def upsert_media(featured)
+      return nil if featured[:url].blank?
+
+      media =
+        if featured[:legacy_id].present?
+          MediaAsset.find_or_initialize_by(legacy_wp_id: featured[:legacy_id])
+        else
+          MediaAsset.find_or_initialize_by(legacy_url: featured[:url])
+        end
+
+      if media.new_record?
+        media.assign_attributes(
+          legacy_url: featured[:url], width: featured[:width], height: featured[:height],
+          alt: featured[:alt], mime_type: featured[:mime_type], status: :active
+        )
+        media.save!
+        @run.bump("media")
+      end
+      media
     end
 
     def upsert_category(descriptor)

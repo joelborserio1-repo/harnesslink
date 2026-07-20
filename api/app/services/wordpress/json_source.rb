@@ -30,8 +30,15 @@ module Wordpress
         categories: terms(h["categories"]),
         tags: terms(h["tags"]),
         authors: (h["authors"] || []).map { |a| { name: a["name"], slug: a["slug"], refs: a["refs"] || {} } },
-        old_slugs: h["old_slugs"] || []
+        old_slugs: h["old_slugs"] || [],
+        featured: featured(h["featured"])
       }
+    end
+
+    def featured(f)
+      return nil if f.blank?
+      { legacy_id: f["legacy_id"], url: f["url"], width: f["width"],
+        height: f["height"], alt: f["alt"], mime_type: f["mime_type"] }
     end
 
     def terms(arr)

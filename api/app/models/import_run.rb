@@ -5,7 +5,7 @@ class ImportRun < ApplicationRecord
 
   DEFAULT_STATS = {
     "posts_seen" => 0, "articles_imported" => 0, "authors" => 0,
-    "categories" => 0, "tags" => 0, "redirects" => 0,
+    "categories" => 0, "tags" => 0, "redirects" => 0, "media" => 0,
     "flagged" => 0, "errors" => 0
   }.freeze
 

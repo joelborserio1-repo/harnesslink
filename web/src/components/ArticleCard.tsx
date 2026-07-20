@@ -64,11 +64,15 @@ export default function ArticleCard({ article }: { article: ArticleSummary }) {
   return (
     <article className="group flex flex-col overflow-hidden rounded-lg border border-neutral-200 bg-white">
       <Link href={article.url} className="relative block aspect-[16/10] overflow-hidden bg-navy">
-        {article.image?.url ? (
+        {article.image?.src ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={article.image.url}
-            alt={article.image.alt ?? article.title}
+            src={article.image.src}
+            srcSet={article.image.srcset}
+            sizes="(max-width: 640px) 100vw, 400px"
+            alt={article.image.alt || article.title}
+            width={article.image.width ?? undefined}
+            height={article.image.height ?? undefined}
             loading="lazy"
             className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
           />
