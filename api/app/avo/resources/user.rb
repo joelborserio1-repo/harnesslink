@@ -1,21 +1,13 @@
 class Avo::Resources::User < Avo::BaseResource
   self.icon = "tabler/outline/users"
-  # self.avatar = {
-  #   source: :avatar
-  # }
-  # self.includes = []
-  # self.attachments = []
-  # self.search = {
-  #   query: -> { query.ransack(id_eq: q, m: "or").result(distinct: false) }
-  # }
+  self.title = :email
 
+  # Reader / editorial accounts (distinct from AdminUser Devise logins).
   def fields
     field :id, as: :id
-    # field :avatar, as: :avatar
-    field :email, as: :text
+    field :email, as: :text, required: true, link_to_record: true
     field :name, as: :text
-    field :role, as: :select, enum: ::User.roles
-    field :legacy_wp_user_id, as: :number
-    field :article_revisions, as: :has_many
+    field :role, as: :select, enum: (::User.respond_to?(:roles) ? ::User.roles : { "member" => 0 })
+    field :created_at, as: :date_time, readonly: true, hide_on: [:edit, :new], sortable: true
   end
 end
