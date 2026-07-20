@@ -13,6 +13,12 @@ Rails.application.routes.draw do
 
       get "redirects/resolve", to: "redirects#resolve"
       resources :missed_paths, only: [:create]
+
+      namespace :admin do
+        resources :articles, only: [:index, :show, :update]
+        resources :authors, only: [:index, :update]
+        resources :categories, only: [:index]
+      end
     end
   end
 end

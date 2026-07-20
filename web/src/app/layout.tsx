@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -13,9 +14,13 @@ export const metadata: Metadata = {
     "Harness racing's global news source — results, features and analysis from Australia, New Zealand, North America and Europe.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // The admin section has its own chrome — skip the public header/footer there.
+  const path = (await headers()).get("x-invoked-path") || "";
+  const isAdmin = path.startsWith("/admin");
+
   return (
     <html lang="en" className="h-full antialiased">
       <head>
@@ -27,9 +32,9 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-full flex-col bg-white text-neutral-900">
-        <SiteHeader />
+        {!isAdmin && <SiteHeader />}
         <main className="flex-1">{children}</main>
-        <SiteFooter />
+        {!isAdmin && <SiteFooter />}
       </body>
     </html>
   );

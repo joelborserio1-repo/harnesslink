@@ -31,6 +31,8 @@ services:
       DATABASE_URL: postgres://harnesslink:${DB_PASSWORD:-harnesslink}@db:5432/harnesslink_production
       RAILS_LOG_TO_STDOUT: "1"
       RAILS_MAX_THREADS: "5"
+      ADMIN_USER: ${ADMIN_USER:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
       # RAILS_FORCE_SSL: "true"   # enable once TLS terminates upstream
     depends_on:
       db:
@@ -44,6 +46,8 @@ services:
     environment:
       NODE_ENV: production
       API_BASE: http://api        # server-to-server, inside the compose network
+      ADMIN_USER: ${ADMIN_USER:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
     depends_on:
       - api
     ports:

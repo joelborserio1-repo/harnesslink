@@ -31,7 +31,8 @@ docker compose logs -f api
 ```
 
 Visit `http://<server-ip>:8080`. You should see the navy Harnesslink homepage
-with the card grid.
+with the card grid. The **editorial admin** is at `http://<server-ip>:8080/admin`
+(HTTP Basic — the `ADMIN_USER` / `ADMIN_PASSWORD` you set in `.env`).
 
 ## Putting it on staging.harnesslink.com with TLS
 
