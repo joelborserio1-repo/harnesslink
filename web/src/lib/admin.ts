@@ -75,3 +75,76 @@ export async function listAuthors() {
   if (!res.ok) return [] as Option[];
   return ((await res.json()).authors as { id: number; name: string }[]).map((a) => ({ id: a.id, name: a.name }));
 }
+
+// ---- Directory admin ----
+
+export type AdminDirectoryListing = {
+  id: number;
+  directory_type: string;
+  name: string;
+  slug: string;
+  stud_name: string;
+  country: string;
+  region: string;
+  is_paying: boolean;
+  is_featured: boolean;
+  path: string;
+  // full-only
+  gait?: string;
+  status_note?: string;
+  contact_phone?: string;
+  contact_email?: string;
+  contact_website?: string;
+  stud_website?: string;
+  contact_address?: string;
+  profile_bio?: string;
+  race_record?: string;
+  service_fee?: string;
+  progeny_note?: string;
+};
+
+export type AdminDirectoryType = { key: string; plural: string };
+
+export async function listDirectoryListings(params: Record<string, string> = {}) {
+  const qs = new URLSearchParams(params).toString();
+  const res = await adminFetch(`/directory_listings?${qs}`);
+  if (!res.ok) return { listings: [] as AdminDirectoryListing[], types: [] as AdminDirectoryType[], total: 0 };
+  return res.json() as Promise<{ listings: AdminDirectoryListing[]; types: AdminDirectoryType[]; total: number }>;
+}
+
+export async function getDirectoryListingAdmin(id: string) {
+  const res = await adminFetch(`/directory_listings/${id}`);
+  if (!res.ok) return null;
+  const data = (await res.json()) as { listing: AdminDirectoryListing };
+  return data.listing;
+}
+
+export async function saveDirectoryListing(id: string | null, body: Record<string, unknown>) {
+  const path = id ? `/directory_listings/${id}` : `/directory_listings`;
+  const res = await adminFetch(path, {
+    method: id ? "PATCH" : "POST",
+    body: JSON.stringify({ listing: body }),
+  });
+  return res.ok;
+}
+
+export async function deleteDirectoryListing(id: string) {
+  const res = await adminFetch(`/directory_listings/${id}`, { method: "DELETE" });
+  return res.ok;
+}
+
+// Multipart CSV upload — forwards the file to the Rails import endpoint.
+export async function importDirectoryCsv(form: FormData) {
+  const user = process.env.ADMIN_USER || "";
+  const pass = process.env.ADMIN_PASSWORD || "";
+  const auth = "Basic " + Buffer.from(`${user}:${pass}`).toString("base64");
+  const base = process.env.API_BASE || "http://127.0.0.1:3001";
+  const res = await fetch(`${base}/api/v1/admin/directory_listings/import`, {
+    method: "POST",
+    headers: { Authorization: auth }, // let fetch set the multipart boundary
+    body: form,
+    cache: "no-store",
+  });
+  if (!res.ok) return { created: 0, updated: 0, skipped: 0, errors: ["Upload failed"] };
+  return res.json() as Promise<{ created: number; updated: number; skipped: number; errors: string[] }>;
+}

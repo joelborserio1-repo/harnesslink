@@ -32,6 +32,9 @@ Rails.application.routes.draw do
         resources :articles, only: [:index, :show, :update]
         resources :authors, only: [:index, :update]
         resources :categories, only: [:index]
+        resources :directory_listings, only: [:index, :show, :create, :update, :destroy] do
+          post :import, on: :collection
+        end
       end
     end
   end
