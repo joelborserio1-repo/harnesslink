@@ -25,6 +25,15 @@ namespace :import do
     puts "last_error: #{run.last_error}" if run.last_error
   end
 
+  desc "Import WordPress users from an exported JSON file: rake 'import:users[path]'"
+  task :users, [:path] => :environment do |_t, args|
+    path = args[:path] || ENV["WP_USERS_JSON"] || abort("Usage: rake 'import:users[path/to/users.json]'")
+    result = Wordpress::UserImporter.from_json(path)
+    puts "Users: created=#{result.created} updated=#{result.updated} " \
+         "skipped=#{result.skipped} errors=#{result.errors.size}"
+    result.errors.first(10).each { |e| puts "  #{e}" }
+  end
+
   desc "Show the latest import run's progress + stats"
   task status: :environment do
     run = ImportRun.order(:id).last
