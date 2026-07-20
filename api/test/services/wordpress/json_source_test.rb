@@ -28,7 +28,7 @@ module Wordpress
 
       article = Article.find_by(legacy_wp_id: 9001)
       assert_not_nil article
-      assert_equal "JSON Race | Harnesslink", article.seo_title
+      assert_equal "JSON Race - Harnesslink", article.seo_title
       assert_equal "USA", article.primary_category.name
       assert_equal "Ken Weingartner", article.authors.first.name
       assert_not_nil Redirect.find_by(from_path: "/json-race-old/")

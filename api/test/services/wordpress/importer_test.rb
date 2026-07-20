@@ -81,6 +81,31 @@ module Wordpress
       assert media.responsive[:srcset].include?("640w")
     end
 
+    test "a legacy_term_id already taken by another row does not abort the post" do
+      # The new_zealand fixture already owns term_id 2 (like a demo-seed row that
+      # grabbed a low id); a different, real live category reuses it on import.
+      post = wp_post(id: 5010, slug: "collide", title: "Collide",
+                     categories: [{ name: "Harness Racing", slug: "harness-racing",
+                                    legacy_term_id: 2, kind: :geographic }])
+
+      run = Importer.new(source: source([post])).call
+
+      article = Article.find_by(legacy_wp_id: 5010)
+      assert_not_nil article, "post must import despite the term_id clash"
+      assert_equal "harness-racing", article.primary_category.slug
+      assert_nil article.primary_category.legacy_term_id, "clashing id stays with its original owner"
+      assert_equal 0, run.stats["errors"].to_i
+    end
+
+    test "backfills the WordPress term_id onto a slug-matched seed category" do
+      Category.create!(name: "Testland", slug: "testland", kind: :geographic) # seed row, no term_id
+      post = wp_post(id: 5011, slug: "testland-story", title: "Testland Story",
+                     categories: [{ name: "Testland", slug: "testland", legacy_term_id: 777, kind: :geographic }])
+
+      Importer.new(source: source([post])).call
+      assert_equal 777, Category.find_by(slug: "testland").legacy_term_id
+    end
+
     test "resumes from the run cursor, skipping processed posts" do
       run = ImportRun.start!
       run.update!(cursor_legacy_id: 5005)

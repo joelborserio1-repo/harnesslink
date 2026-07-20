@@ -38,7 +38,7 @@ module Wordpress
         "rank_math_robots" => 'a:2:{i:0;s:5:"index";i:1;s:6:"follow";}'
       })).call
 
-      assert_equal "Lexus Kody wins | Harnesslink", m.attributes[:seo_title]
+      assert_equal "Lexus Kody wins - Harnesslink", m.attributes[:seo_title]
       assert_equal "Report on the race.", m.attributes[:seo_description]
       assert_equal "lexus kody", m.attributes[:focus_keyword]
       assert_equal "index,follow", m.attributes[:robots]

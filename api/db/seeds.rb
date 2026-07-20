@@ -7,15 +7,18 @@
 # Idempotent: safe to run repeatedly (keyed on slug / legacy ids).
 
 puts "Seeding categories…"
+# NB: no legacy_term_id here. These are demo/nav placeholders; the real
+# WordPress term ids arrive with the importer, which backfills them by slug.
+# Asserting fabricated ids would collide with real term ids on import.
 CATEGORIES = {
-  usa:           { name: "USA",           kind: :geographic, position: 1,  legacy_term_id: 3 },
-  new_zealand:   { name: "New Zealand",   kind: :geographic, position: 2,  legacy_term_id: 2 },
-  australia:     { name: "Australia",     kind: :geographic, position: 3,  legacy_term_id: 5 },
-  canada:        { name: "Canada",        kind: :geographic, position: 4,  legacy_term_id: 4 },
-  europe:        { name: "Europe",        kind: :geographic, position: 5,  legacy_term_id: 6 },
-  international: { name: "International",  kind: :geographic, position: 6,  legacy_term_id: 24 },
-  uk_ire:        { name: "UK / IRE",       kind: :geographic, position: 7,  legacy_term_id: 1 },
-  top4:          { name: "Top 4",          kind: :editorial,  position: 10, legacy_term_id: 4084 }
+  usa:           { name: "USA",           kind: :geographic, position: 1 },
+  new_zealand:   { name: "New Zealand",   kind: :geographic, position: 2 },
+  australia:     { name: "Australia",     kind: :geographic, position: 3 },
+  canada:        { name: "Canada",        kind: :geographic, position: 4 },
+  europe:        { name: "Europe",        kind: :geographic, position: 5 },
+  international: { name: "International",  kind: :geographic, position: 6 },
+  uk_ire:        { name: "UK / IRE",       kind: :geographic, position: 7 },
+  top4:          { name: "Top 4",          kind: :editorial,  position: 10 }
 }.transform_values do |attrs|
   slug = attrs[:name].parameterize
   Category.find_or_create_by!(slug: slug) { |c| c.assign_attributes(attrs.merge(slug: slug)) }

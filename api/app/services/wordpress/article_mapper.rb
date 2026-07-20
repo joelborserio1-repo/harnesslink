@@ -102,8 +102,10 @@ module Wordpress
 
     def seo_attributes
       {
-        seo_title: expand_vars(@meta["rank_math_title"]),
-        seo_description: expand_vars(@meta["rank_math_description"]),
+        # Explicit per-post Rank Math title/description, else the site-wide
+        # format: post title = "%title% %sep% %sitename%", description = "%excerpt%".
+        seo_title: expand_vars(@meta["rank_math_title"]).presence || expand_vars("%title% %sep% %sitename%"),
+        seo_description: expand_vars(@meta["rank_math_description"]).presence || @post[:post_excerpt].presence,
         focus_keyword: @meta["rank_math_focus_keyword"].presence,
         canonical_url: @meta["rank_math_canonical_url"].presence,
         robots: parse_robots(@meta["rank_math_robots"]),
@@ -122,7 +124,7 @@ module Wordpress
       value.to_s
            .gsub("%title%", @post[:post_title].to_s)
            .gsub("%sitename%", @site_name)
-           .gsub("%sep%", "|")
+           .gsub("%sep%", "-") # Rank Math separator (title_separator) is a hyphen
            .gsub("%page%", "")
            .gsub(/%category%|%primary_category%/, primary ? primary[:name].to_s : "")
            .gsub("%currentyear%", (@post[:post_date]&.year || Time.current.year).to_s)

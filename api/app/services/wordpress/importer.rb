@@ -84,29 +84,39 @@ module Wordpress
     end
 
     def upsert_category(descriptor)
-      category = Category.find_or_initialize_by(slug: descriptor[:slug])
-      if category.new_record?
-        category.assign_attributes(
-          name: descriptor[:name],
-          legacy_term_id: descriptor[:legacy_term_id],
-          kind: descriptor[:kind] || :geographic
-        )
-        category.save!
-        @run.bump("categories")
-      end
-      category
+      upsert_term(Category, descriptor, kind: descriptor[:kind] || :geographic) { @run.bump("categories") }
     end
 
     def sync_tags(article, tags)
       tags.each do |descriptor|
-        tag = Tag.find_or_initialize_by(slug: descriptor[:slug])
-        if tag.new_record?
-          tag.assign_attributes(name: descriptor[:name], legacy_term_id: descriptor[:legacy_term_id])
-          tag.save!
-          @run.bump("tags")
-        end
+        tag = upsert_term(Tag, descriptor) { @run.bump("tags") }
         ArticleTag.find_or_create_by!(article: article, tag: tag)
       end
+    end
+
+    # Resolve a category/tag by slug — its stable URL identity, and unique per
+    # taxonomy in WordPress. Backfills fields (name, kind, and the WordPress
+    # term_id for provenance) on rows that predate the real import, e.g. the
+    # demo-seed categories. The term_id is only claimed when it isn't already
+    # taken by another row, so a stray/duplicate id is saved as null rather than
+    # raising — one term collision can never abort a post's import.
+    def upsert_term(klass, descriptor, kind: nil)
+      term = klass.find_or_initialize_by(slug: descriptor[:slug])
+      was_new = term.new_record?
+
+      term.name = descriptor[:name] if term.name.blank?
+      term.kind = kind if kind && term.respond_to?(:kind=) && term.kind.blank?
+      term_id = descriptor[:legacy_term_id]
+      if term.legacy_term_id.blank? && term_id.present? &&
+         !klass.where(legacy_term_id: term_id).where.not(id: term.id).exists?
+        term.legacy_term_id = term_id
+      end
+
+      if term.new_record? || term.changed?
+        term.save!
+        yield if was_new
+      end
+      term
     end
 
     def sync_authors(article, authors)
