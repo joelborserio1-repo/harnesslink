@@ -1,15 +1,27 @@
-import { listArticles } from "@/lib/api";
+import { listArticles, getCategory } from "@/lib/api";
+import { COUNTRIES } from "@/lib/countries";
 import AdSlot from "@/components/AdSlot";
 import Hero from "@/components/home/Hero";
 import TrendingTile from "@/components/home/TrendingTile";
 import InternationalGrid from "@/components/home/InternationalGrid";
+import CountryRail, { type RegionBlock } from "@/components/home/CountryRail";
 import NextToGo from "@/components/home/NextToGo";
 import InsiderPanel from "@/components/home/InsiderPanel";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const { articles } = await listArticles(1, 20);
+  // Recent feed for the hero/trending/international, plus the five country
+  // sections fetched in parallel for the "Racing by Country" rail.
+  const [{ articles }, regions] = await Promise.all([
+    listArticles(1, 20),
+    Promise.all(
+      COUNTRIES.map(async (country): Promise<RegionBlock> => {
+        const data = await getCategory(country.slug);
+        return { country, articles: data?.articles ?? [] };
+      })
+    ),
+  ]);
   const heroSlides = articles.slice(0, 4);
   const trending = articles.slice(4, 7);
   const international = articles.slice(4);
@@ -36,6 +48,16 @@ export default async function HomePage() {
                 <TrendingTile key={a.id} article={a} />
               ))}
             </div>
+          </section>
+
+          <section className="card p-6">
+            <p className="eyebrow text-[15px]">Explore by Country</p>
+            <h2 className="font-headline text-[26px] font-bold text-navy [text-wrap:balance]">Racing by Country</h2>
+            <p className="mt-1 max-w-[64ch] text-[15px] text-[#41454e]">
+              The latest from harness racing&apos;s major regions — Australia, New Zealand, the USA,
+              Canada and Europe.
+            </p>
+            <CountryRail regions={regions} />
           </section>
 
           <AdSlot size="leaderboard" zone="home-mid" />
