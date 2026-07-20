@@ -70,15 +70,22 @@ trap cleanup EXIT
 
 echo "[run_recon] starting disposable MariaDB ($MARIADB_IMAGE)…"
 docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
+# By default the throwaway DB lives on normal container storage (safe on any
+# laptop). Set FAST_TMPFS=1 to keep it in RAM instead (faster, but needs enough
+# free RAM to hold the whole imported DB — only do this if you have headroom).
+TMPFS_ARGS=()
+if [[ "${FAST_TMPFS:-}" == "1" ]]; then
+  TMPFS_ARGS=(--tmpfs /var/lib/mysql:rw,size=8g)
+  echo "[run_recon] FAST_TMPFS=1 — keeping the throwaway DB in RAM."
+fi
 docker run -d --name "$CONTAINER" \
   -e MYSQL_ROOT_PASSWORD="$ROOT_PW" \
   -e MYSQL_DATABASE="$DB_NAME" \
-  --tmpfs /var/lib/mysql:rw,size=8g \
+  "${TMPFS_ARGS[@]}" \
   "$MARIADB_IMAGE" \
   --max_allowed_packet=1G --innodb_buffer_pool_size=1G >/dev/null
-# Note: /var/lib/mysql on tmpfs keeps the throwaway DB in RAM and guarantees it
-# vanishes on teardown. If your dump is very large or RAM is tight, delete the
-# --tmpfs line to use normal container storage instead.
+# The container (and all its data) is removed on exit by the cleanup trap, so
+# nothing persists regardless of storage mode.
 
 echo -n "[run_recon] waiting for MariaDB to accept connections"
 for _ in $(seq 1 60); do
