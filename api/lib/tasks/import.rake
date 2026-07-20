@@ -17,6 +17,14 @@ namespace :import do
     puts "last_error: #{run.last_error}" if run.last_error
   end
 
+  desc "Import from an exported JSON file (migration/export_posts.php): rake 'import:json[path]'"
+  task :json, [:path] => :environment do |_t, args|
+    path = args[:path] || ENV["WP_JSON"] || abort("Usage: rake 'import:json[path/to/posts.json]'")
+    run = Wordpress::Importer.new(source: Wordpress::JsonSource.new(path: path)).call
+    puts "Import #{run.status}. #{run.stats.to_json}"
+    puts "last_error: #{run.last_error}" if run.last_error
+  end
+
   desc "Show the latest import run's progress + stats"
   task status: :environment do
     run = ImportRun.order(:id).last
