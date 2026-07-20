@@ -14,6 +14,12 @@ Rails.application.routes.draw do
       get "redirects/resolve", to: "redirects#resolve"
       resources :missed_paths, only: [:create]
 
+      # SEO — served at the public domain via Next.js rewrites.
+      get "sitemap", to: "sitemaps#index"
+      get "sitemap/articles/:page", to: "sitemaps#articles"
+      get "sitemap/news", to: "sitemaps#news"
+      get "feed", to: "sitemaps#feed"
+
       namespace :admin do
         resources :articles, only: [:index, :show, :update]
         resources :authors, only: [:index, :update]
