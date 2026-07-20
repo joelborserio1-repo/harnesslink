@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { COUNTRIES, countryHref } from "@/lib/countries";
 
 // Editorial top nav from the live site. TODO: make DB-driven (nav is data in v1).
 const NAV = [
@@ -48,6 +49,24 @@ export default function SiteHeader() {
           ))}
         </div>
       </nav>
+
+      {/* Explore by Countries — the geographic sections. Archives at /category/{slug}/. */}
+      <div className="border-b border-black/10 bg-white">
+        <div className="mx-auto flex max-w-6xl items-center gap-1 overflow-x-auto px-4 py-2">
+          <span className="mr-1 shrink-0 text-[11px] font-bold uppercase tracking-wide text-muted">
+            Explore by Country
+          </span>
+          {COUNTRIES.map((c) => (
+            <Link
+              key={c.slug}
+              href={countryHref(c.slug)}
+              className="shrink-0 rounded-full px-3 py-1 text-[13px] font-semibold text-navy hover:bg-navy hover:text-white"
+            >
+              {c.code}
+            </Link>
+          ))}
+        </div>
+      </div>
     </header>
   );
 }
