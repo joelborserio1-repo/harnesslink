@@ -16,31 +16,29 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-6">
-      {/* Top band — a 2-col / 2-row grid so the rail lines up with the main
-          column: Hero (featured) ↔ Insider on row 1, Trending ↔ Next To Go on
-          row 2. Grid rows top-align across columns, so it stays aligned
-          regardless of each block's own height. */}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+      {/* Row 1 — the featured hero and The Insider as an equal-height pair. */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-stretch">
         <Hero slides={heroSlides} />
         <InsiderPanel />
-
-        <section className="card min-w-0 p-6">
-          <p className="eyebrow text-[15px]">Trending Now</p>
-          <h2 className="font-headline text-[26px] font-bold text-navy [text-wrap:balance]">
-            Explore our Trending Stories
-          </h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
-            {trending.map((a) => (
-              <TrendingTile key={a.id} article={a} />
-            ))}
-          </div>
-        </section>
-        <NextToGo />
       </div>
 
-      {/* Rest of the page — main content plus a slimmer sticky ad rail. */}
+      {/* Row 2 — main column + sticky rail. Both columns restart here, so
+          Next To Go sits level with Trending and every card flows at its own
+          natural height (no forced-row white gaps). */}
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
         <div className="flex min-w-0 flex-col gap-6">
+          <section className="card p-6">
+            <p className="eyebrow text-[15px]">Trending Now</p>
+            <h2 className="font-headline text-[26px] font-bold text-navy [text-wrap:balance]">
+              Explore our Trending Stories
+            </h2>
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+              {trending.map((a) => (
+                <TrendingTile key={a.id} article={a} />
+              ))}
+            </div>
+          </section>
+
           <AdSlot size="leaderboard" zone="home-top" />
 
           <section className="card p-6">
@@ -72,16 +70,17 @@ export default async function HomePage() {
           <AdSlot size="leaderboard" zone="home-bottom" />
         </div>
 
-        {/* Sticky ad rail (desktop). The Insider + Next To Go blocks moved up
-            into the aligned top band, so this carries the ad units only. */}
+        {/* Sticky rail — Next To Go (level with Trending) then the ad units. */}
         <aside className="hidden flex-col gap-6 self-start lg:sticky lg:top-4 lg:flex">
+          <NextToGo />
           <AdSlot size="mpu" zone="home-rail-2" />
           <AdSlot size="halfpage" zone="home-rail-3" />
         </aside>
       </div>
 
-      {/* Mobile: one rail ad below everything */}
+      {/* Mobile: Next To Go + one ad below everything. */}
       <div className="mt-6 flex flex-col gap-5 lg:hidden">
+        <NextToGo />
         <AdSlot size="mpu" zone="home-rail-mobile" />
       </div>
     </div>

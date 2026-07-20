@@ -1,14 +1,13 @@
 import Link from "next/link";
 import NewsMenu from "@/components/NewsMenu";
+import RacingMenu from "@/components/RacingMenu";
 
 // Editorial top nav from the live site. TODO: make DB-driven (nav is data in v1).
-// "News" is special-cased below into a country dropdown (see NewsMenu).
+// "News" and "Racing" are special-cased below into dropdown/mega-menus.
 const NAV = [
-  { label: "Home", href: "/" },
-  { label: "Racing", href: "/" },
-  { label: "The Insider", href: "/" },
-  { label: "Contact Us", href: "/" },
-  { label: "Directory", href: "/" },
+  { label: "The Insider", href: "/the-insider/" },
+  { label: "Contact Us", href: "/contact/" },
+  { label: "Directory", href: "/directory/" },
   { label: "Login", href: "/" },
 ];
 
@@ -46,10 +45,11 @@ export default function SiteHeader() {
             Home
           </Link>
 
-          {/* News → country dropdown */}
+          {/* News → country dropdown, Racing → country/fields/results mega-menu */}
           <NewsMenu />
+          <RacingMenu />
 
-          {NAV.filter((i) => i.label !== "Home").map((item) => (
+          {NAV.map((item) => (
             <Link
               key={item.label}
               href={item.href}
