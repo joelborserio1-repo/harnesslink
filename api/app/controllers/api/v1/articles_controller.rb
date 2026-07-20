@@ -9,7 +9,7 @@ module Api
         per_page = [[params.fetch(:per_page, 12).to_i, 1].max, 50].min
 
         scope = Article.live
-                       .includes(:primary_category, article_authors: :author)
+                       .includes(:primary_category, :categories, :featured_media, article_authors: :author)
                        .recent_first
         articles = scope.offset((page - 1) * per_page).limit(per_page)
 

@@ -12,6 +12,8 @@ class ArticleSerializer
       excerpt: article.excerpt,
       published_at: article.published_at&.iso8601,
       category: category(article.primary_category),
+      categories: article.categories.map { |c| category(c) },
+      image: image(article.featured_media),
       author: author(article.article_authors.first&.author)
     }
   end

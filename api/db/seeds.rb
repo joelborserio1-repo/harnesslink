@@ -94,7 +94,7 @@ ARTICLES.each do |slug, title, wp_id, date, cat_key, author_key|
     title: title,
     body_format: :legacy_html,
     body_html: body,
-    excerpt: "#{lede}.",
+    excerpt: "#{lede} — full report, sectionals and reaction from the meeting, plus what it means for the weeks ahead.",
     status: :published,
     published_at: published_at,
     legacy_modified_at: published_at,
@@ -110,6 +110,16 @@ ARTICLES.each do |slug, title, wp_id, date, cat_key, author_key|
   article.save!
   ArticleCategory.find_or_create_by!(article: article, category: category)
   ArticleAuthor.find_or_create_by!(article: article, author: author) { |aa| aa.position = 0 }
+end
+
+# A few cross-region stories, to mirror the real multi-category badges.
+{
+  "nz-cup-could-host-harness-racings-ultimate-decider" => :australia,
+  "sporting-greats-hail-inter-dominion-final-for-the-ages" => :new_zealand,
+  "gus-staying-prowess-gives-him-the-inter-dominion" => :new_zealand
+}.each do |slug, cat_key|
+  article = Article.find_by(slug: slug)
+  ArticleCategory.find_or_create_by!(article: article, category: CATEGORIES[cat_key]) if article
 end
 
 puts "Done. #{Article.count} articles, #{Category.count} categories, #{Author.count} authors."

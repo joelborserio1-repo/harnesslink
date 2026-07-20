@@ -15,7 +15,7 @@ module Api
         return head :not_found unless category
 
         articles = category.articles.live
-                           .includes(:primary_category, article_authors: :author)
+                           .includes(:primary_category, :categories, :featured_media, article_authors: :author)
                            .recent_first.limit(24)
 
         render json: {

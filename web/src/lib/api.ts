@@ -6,6 +6,13 @@ const REVALIDATE = 60; // ISR: articles regenerate at most once a minute
 
 export type Ref = { name: string; slug: string; url: string };
 
+export type Thumb = {
+  url: string | null;
+  alt: string | null;
+  width: number | null;
+  height: number | null;
+} | null;
+
 export type ArticleSummary = {
   id: number;
   slug: string;
@@ -15,6 +22,8 @@ export type ArticleSummary = {
   excerpt: string | null;
   published_at: string | null;
   category: Ref | null;
+  categories: Ref[];
+  image: Thumb;
   author: Ref | null;
 };
 
