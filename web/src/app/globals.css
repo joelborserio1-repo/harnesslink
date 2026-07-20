@@ -3,13 +3,18 @@
 /* Fonts are loaded via <link> in layout.tsx (runtime), so they work for end
    users even though this build environment can't reach fonts.googleapis.com. */
 
-/* Harnesslink brand tokens, extracted from the live site. */
+/* Harnesslink brand tokens (homepage redesign spec). */
 @theme {
-  --color-navy: #0e2a6b;       /* brand royal navy (masthead / footer) */
-  --color-navy-deep: #0a2057;  /* darker shade for bands / hovers */
-  --color-accent: #e45637;     /* burnt-orange chevron / CTA accent */
-  --color-ink: #1a1a1a;
-  --color-muted: #6f6f6f;
+  --color-navy: #081F5B;       /* primary navy — masthead, nav, footer, headings */
+  --color-navy-deep: #06163f;  /* darker shade for bands / hovers */
+  --color-page: #F2F2F2;       /* page background behind the white cards */
+  --color-blue: #1f5bd0;       /* brighter interactive blue (widget, links) */
+  --color-amber: #e8a317;      /* CTA accent (The Insider) */
+  --color-accent: #e8a317;     /* alias -> amber */
+  --color-red: #d62828;        /* semantic: urgent countdowns / live */
+  --color-ink: #15181f;
+  --color-muted: #6b7280;
+  --color-line: #e7e8ec;
   --color-mist: #f4f5f7;
   --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
   --font-sans: "Source Sans 3", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
@@ -17,11 +22,22 @@
 }
 
 html {
-  background: #ffffff;
+  background: var(--color-page);
   color: var(--color-ink);
 }
 body {
   font-family: var(--font-sans);
+}
+/* White card surface used across the homepage + article/category pages. */
+.card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(8, 31, 91, 0.06), 0 6px 20px rgba(8, 31, 91, 0.08);
+}
+.eyebrow {
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--color-blue);
 }
 .font-headline {
   font-family: var(--font-serif);

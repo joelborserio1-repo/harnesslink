@@ -24,7 +24,7 @@ export default async function CategoryPage({ params }: Params) {
   if (!data) notFound();
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
+    <div className="card mx-auto my-8 max-w-3xl p-6 sm:p-9">
       <h1 className="font-headline border-b-2 border-accent pb-2 text-4xl font-extrabold tracking-tight text-navy-deep">
         {data.category.name}
       </h1>

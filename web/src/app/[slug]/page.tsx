@@ -79,7 +79,7 @@ export default async function ArticlePage({ params }: Params) {
   if (!article) notFound();
 
   return (
-    <article className="mx-auto max-w-3xl px-4 py-8">
+    <article className="card mx-auto my-8 max-w-3xl p-6 sm:p-10">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(newsArticleJsonLd(article)) }}

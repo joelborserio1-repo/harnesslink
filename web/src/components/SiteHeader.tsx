@@ -27,7 +27,7 @@ export default function SiteHeader() {
           </Link>
           <Link
             href="/"
-            className="hidden rounded bg-accent px-4 py-2 text-sm font-semibold text-white hover:brightness-110 sm:block"
+            className="hidden rounded bg-amber px-4 py-2 text-sm font-bold text-[#241a00] hover:brightness-105 sm:block"
           >
             The Insider
           </Link>
