@@ -68,6 +68,15 @@ module Sitemaps
       # the slug we're plucking rather than id.
       Author.where(merged_into_id: nil).joins(:article_authors).distinct.order(:slug).pluck(:slug).each { |s| paths << "/author/#{s}/" }
       Tag.joins(:article_tags).distinct.order(:slug).pluck(:slug).each { |s| paths << "/tag/#{s}/" }
+
+      # Directory — hub, type archives, and each listing profile (URL parity).
+      paths << "/directory/"
+      Directory::TypeRegistry.all.each do |t|
+        next unless DirectoryListing.exists?(directory_type: t[:key])
+        paths << "/directory/#{t[:url]}/"
+      end
+      DirectoryListing.find_each { |l| paths << l.path }
+
       urls = paths.uniq.map { |p| "<url><loc>#{site_url}#{p}</loc><changefreq>daily</changefreq></url>" }
       <<~XML
         <?xml version="1.0" encoding="UTF-8"?>

@@ -13,6 +13,11 @@ Rails.application.routes.draw do
       resources :authors, only: [:show], param: :slug
       resources :tags, only: [:show], param: :slug
 
+      # Directory — /directory hub, /directory/{type}, /directory/{type}/{id}.
+      get "directory", to: "directory#index"
+      get "directory/:type", to: "directory#type"
+      get "directory/:type/:id", to: "directory#show"
+
       get "redirects/resolve", to: "redirects#resolve"
       resources :missed_paths, only: [:create]
 

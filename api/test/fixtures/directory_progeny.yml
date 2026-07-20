@@ -1,0 +1,9 @@
+spankem:
+  directory_listing: bettors_delight
+  name: Spankem
+  country: NZ
+  prizemoney: "$1,240,000"
+  prizemoney_num: 1240000
+  starts: 62
+  wins: 24
+  sort_order: 0

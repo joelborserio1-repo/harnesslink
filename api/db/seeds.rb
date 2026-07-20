@@ -134,3 +134,41 @@ end
 
 puts "Done. #{Article.count} articles, #{Category.count} categories, " \
      "#{Author.count} authors, #{Redirect.count} redirects."
+
+puts "Seeding directory listings…"
+# Demo directory data (real stallion/stud names; placeholder contact + progeny)
+# so the /directory pages render before the live hld_* tables are migrated.
+DIR_LISTINGS = [
+  { directory_type: "stallion", name: "Bettor's Delight", stud_name: "Woodlands Stud", country: "New Zealand",
+    region: "Cambridge", gait: "Pacer", is_paying: true, is_featured: true, service_fee: "$12,000 + GST",
+    race_record: "1:47.4 — $2.1M", profile_bio: "The dominant sire of his generation, Bettor's Delight continues to top the pacing sire lists across the Southern Hemisphere.",
+    contact_phone: "+64 7 827 1234", contact_email: "studmaster@woodlands.example", contact_website: "https://example.com/woodlands",
+    progeny: [
+      { name: "Spankem", country: "NZ", sex: "Gelding", prizemoney: "$1,240,000", prizemoney_num: 1_240_000, starts: 62, wins: 24 },
+      { name: "Amazing Dream", country: "NZ", sex: "Mare", prizemoney: "$980,500", prizemoney_num: 980_500, starts: 41, wins: 19 }
+    ] },
+  { directory_type: "stallion", name: "Captaintreacherous", stud_name: "Diamond Creek Farm", country: "USA",
+    region: "Pennsylvania", gait: "Pacer", is_paying: true, is_featured: false, service_fee: "US$12,500",
+    race_record: "1:47.1 — $3.1M", profile_bio: "A Grand Circuit champion and a proven sire of Group 1 winners on both sides of the Pacific." },
+  { directory_type: "stallion", name: "Sweet Lou", stud_name: "Corcoran Pacing", country: "USA",
+    region: "New Jersey", gait: "Pacer", is_paying: false, is_featured: false,
+    race_record: "1:46.4 — $2.5M", profile_bio: "Free listing example — contact details are a paid-tier feature." },
+  { directory_type: "trainer", name: "All Stars Stables", stud_name: "", country: "New Zealand",
+    region: "Canterbury", is_paying: true, is_featured: true, profile_bio: "One of Australasia's most successful training partnerships." },
+  { directory_type: "driver", name: "Anthony Butt", country: "New Zealand", region: "Canterbury",
+    is_paying: false, profile_bio: "Champion reinsman." }
+]
+
+DIR_LISTINGS.each_with_index do |attrs, i|
+  progeny = attrs.delete(:progeny) || []
+  slug = attrs[:name].parameterize
+  listing = DirectoryListing.find_or_initialize_by(slug: slug, directory_type: attrs[:directory_type])
+  listing.assign_attributes(attrs.merge(slug: slug, legacy_id: 1000 + i))
+  listing.save!
+  progeny.each_with_index do |p, j|
+    rec = DirectoryProgeny.find_or_initialize_by(directory_listing: listing, name: p[:name])
+    rec.assign_attributes(p.merge(sort_order: j))
+    rec.save!
+  end
+end
+puts "  #{DirectoryListing.count} directory listings."

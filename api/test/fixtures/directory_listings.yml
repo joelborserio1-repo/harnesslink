@@ -1,0 +1,31 @@
+bettors_delight:
+  directory_type: stallion
+  name: Bettor's Delight
+  slug: bettors-delight
+  stud_name: Woodlands Stud
+  country: New Zealand
+  gait: Pacer
+  is_paying: true
+  is_featured: true
+  contact_email: studmaster@example.com
+  contact_phone: "+64 7 827 1234"
+  legacy_id: 1000
+
+sweet_lou:
+  directory_type: stallion
+  name: Sweet Lou
+  slug: sweet-lou
+  country: USA
+  gait: Pacer
+  is_paying: false
+  is_featured: false
+  contact_email: hidden@example.com
+  legacy_id: 1002
+
+all_stars:
+  directory_type: trainer
+  name: All Stars Stables
+  slug: all-stars-stables
+  country: New Zealand
+  is_paying: true
+  legacy_id: 1003

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_20_010010) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_20_020000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -155,6 +155,72 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_010010) do
     t.index ["slug"], name: "index_countries_on_slug", unique: true
   end
 
+  create_table "directory_enquiries", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "directory_listing_id"
+    t.string "email", default: "", null: false
+    t.string "listing_type", default: "", null: false
+    t.text "message"
+    t.string "name", default: "", null: false
+    t.string "phone", default: "", null: false
+    t.string "status", default: "new", null: false
+    t.datetime "updated_at", null: false
+    t.index ["directory_listing_id"], name: "index_directory_enquiries_on_directory_listing_id"
+    t.index ["status"], name: "index_directory_enquiries_on_status"
+  end
+
+  create_table "directory_listings", force: :cascade do |t|
+    t.text "contact_address"
+    t.string "contact_email", default: "", null: false
+    t.string "contact_phone", default: "", null: false
+    t.string "contact_website", default: "", null: false
+    t.string "country", default: "", null: false
+    t.text "coverage"
+    t.datetime "created_at", null: false
+    t.string "directory_type", default: "stallion", null: false
+    t.string "gait", default: "Pacer", null: false
+    t.string "industry", default: "", null: false
+    t.boolean "is_featured", default: false, null: false
+    t.boolean "is_paying", default: false, null: false
+    t.bigint "legacy_id"
+    t.string "name", null: false
+    t.text "profile_bio"
+    t.string "profile_image", default: "", null: false
+    t.text "progeny_note"
+    t.string "race_record", default: "", null: false
+    t.string "region", default: "", null: false
+    t.string "service_fee", default: "", null: false
+    t.string "slug", null: false
+    t.string "status_note", default: "", null: false
+    t.string "stud_master", default: "", null: false
+    t.string "stud_name", default: "", null: false
+    t.string "stud_website", default: "", null: false
+    t.string "suburb", default: "", null: false
+    t.datetime "updated_at", null: false
+    t.index ["country"], name: "index_directory_listings_on_country"
+    t.index ["directory_type", "is_featured"], name: "index_directory_listings_on_directory_type_and_is_featured"
+    t.index ["legacy_id"], name: "index_directory_listings_on_legacy_id", unique: true
+    t.index ["slug"], name: "index_directory_listings_on_slug"
+  end
+
+  create_table "directory_progeny", force: :cascade do |t|
+    t.string "broodmare_sire", default: "", null: false
+    t.string "country", default: "", null: false
+    t.string "dam", default: "", null: false
+    t.bigint "directory_listing_id", null: false
+    t.string "foaling_date", default: "", null: false
+    t.string "mile_rate", default: "", null: false
+    t.string "name", default: "", null: false
+    t.string "prizemoney", default: "", null: false
+    t.bigint "prizemoney_num", default: 0, null: false
+    t.string "sex", default: "", null: false
+    t.integer "sort_order", default: 0, null: false
+    t.integer "starts", default: 0, null: false
+    t.integer "wins", default: 0, null: false
+    t.index ["directory_listing_id", "prizemoney_num"], name: "idx_on_directory_listing_id_prizemoney_num_c2e2ed8718"
+    t.index ["directory_listing_id"], name: "index_directory_progeny_on_directory_listing_id"
+  end
+
   create_table "import_runs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "cursor_legacy_id", default: 0, null: false
@@ -246,4 +312,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_010010) do
   add_foreign_key "authors", "authors", column: "merged_into_id"
   add_foreign_key "categories", "categories", column: "parent_id"
   add_foreign_key "countries", "categories"
+  add_foreign_key "directory_enquiries", "directory_listings"
+  add_foreign_key "directory_progeny", "directory_listings"
 end

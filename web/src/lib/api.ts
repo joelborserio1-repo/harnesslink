@@ -110,3 +110,86 @@ export async function getTag(slug: string) {
     `/api/v1/tags/${encodeURIComponent(slug)}`
   );
 }
+
+// ---- Directory ----
+
+export type DirectoryType = {
+  key: string;
+  url: string;
+  singular: string;
+  plural: string;
+  org_label: string;
+  supports_gait?: boolean;
+  count: number;
+};
+
+export type DirectoryListingSummary = {
+  id: number;
+  slug: string;
+  name: string;
+  directory_type: string;
+  type_label: string;
+  org_label: string;
+  stud_name: string | null;
+  country: string | null;
+  region: string | null;
+  gait: string | null;
+  is_paying: boolean;
+  is_featured: boolean;
+  profile_image: string | null;
+  path: string;
+};
+
+export type DirectoryProgenyRow = {
+  name: string;
+  foaling_date: string | null;
+  country: string | null;
+  sex: string | null;
+  dam: string | null;
+  broodmare_sire: string | null;
+  prizemoney: string | null;
+  mile_rate: string | null;
+  starts: number;
+  wins: number;
+};
+
+export type DirectoryListingFull = DirectoryListingSummary & {
+  stud_master: string | null;
+  suburb: string | null;
+  industry: string | null;
+  coverage: string | null;
+  status_note: string | null;
+  profile_bio: string | null;
+  race_record: string | null;
+  service_fee: string | null;
+  progeny_note: string | null;
+  progeny: DirectoryProgenyRow[];
+  contact?: {
+    phone?: string;
+    email?: string;
+    website?: string;
+    stud_website?: string;
+    address?: string;
+  };
+};
+
+export async function getDirectoryHub() {
+  const data = await get<{ types: DirectoryType[]; total: number }>(`/api/v1/directory`);
+  return data ?? { types: [], total: 0 };
+}
+
+export async function getDirectoryType(typeUrl: string, country?: string) {
+  const q = country ? `?country=${encodeURIComponent(country)}` : "";
+  return get<{
+    type: Omit<DirectoryType, "count">;
+    countries: string[];
+    listings: DirectoryListingSummary[];
+  }>(`/api/v1/directory/${encodeURIComponent(typeUrl)}${q}`);
+}
+
+export async function getDirectoryListing(typeUrl: string, id: string) {
+  const data = await get<{ listing: DirectoryListingFull }>(
+    `/api/v1/directory/${encodeURIComponent(typeUrl)}/${encodeURIComponent(id)}`
+  );
+  return data?.listing ?? null;
+}
