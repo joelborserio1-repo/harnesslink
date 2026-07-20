@@ -18,6 +18,10 @@ Rails.application.routes.draw do
       get "directory/:type", to: "directory#type"
       get "directory/:type/:id", to: "directory#show"
 
+      # Ads — public delivery + click tracking.
+      get "ads", to: "ads#index"
+      get "ads/:id/click", to: "ads#click"
+
       get "redirects/resolve", to: "redirects#resolve"
       resources :missed_paths, only: [:create]
 
@@ -35,6 +39,7 @@ Rails.application.routes.draw do
         resources :directory_listings, only: [:index, :show, :create, :update, :destroy] do
           post :import, on: :collection
         end
+        resources :ads, only: [:index, :show, :create, :update, :destroy]
       end
     end
   end

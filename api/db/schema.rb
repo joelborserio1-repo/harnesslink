@@ -10,9 +10,28 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_20_020000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_20_030000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "ads", force: :cascade do |t|
+    t.string "alt", default: "", null: false
+    t.bigint "clicks", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "ends_at"
+    t.text "html"
+    t.string "image_url", default: "", null: false
+    t.bigint "impressions", default: 0, null: false
+    t.boolean "is_active", default: true, null: false
+    t.string "link_url", default: "", null: false
+    t.string "name", null: false
+    t.string "size", default: "mpu", null: false
+    t.datetime "starts_at"
+    t.datetime "updated_at", null: false
+    t.integer "weight", default: 1, null: false
+    t.string "zone", null: false
+    t.index ["zone", "is_active"], name: "index_ads_on_zone_and_is_active"
+  end
 
   create_table "article_authors", force: :cascade do |t|
     t.bigint "article_id", null: false

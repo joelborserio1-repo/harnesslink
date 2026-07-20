@@ -193,3 +193,22 @@ export async function getDirectoryListing(typeUrl: string, id: string) {
   );
   return data?.listing ?? null;
 }
+
+// ---- Ads ----
+
+export type AdCreative = {
+  id: number;
+  zone: string;
+  size: string;
+  image_url: string | null;
+  html: string | null;
+  alt: string;
+  click_url: string;
+};
+
+// Zone → creative map for every filled zone. Fetched once per request (Next
+// dedupes the fetch across all AdSlots on the page).
+export async function getAds(): Promise<Record<string, AdCreative>> {
+  const data = await get<{ ads: Record<string, AdCreative> }>(`/api/v1/ads`);
+  return data?.ads ?? {};
+}

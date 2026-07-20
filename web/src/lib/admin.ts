@@ -148,3 +148,48 @@ export async function importDirectoryCsv(form: FormData) {
   if (!res.ok) return { created: 0, updated: 0, skipped: 0, errors: ["Upload failed"] };
   return res.json() as Promise<{ created: number; updated: number; skipped: number; errors: string[] }>;
 }
+
+// ---- Ads admin ----
+
+export type AdZone = { key: string; size: string; label: string };
+export type AdminAd = {
+  id: number;
+  name: string;
+  zone: string;
+  size: string;
+  image_url: string;
+  link_url: string;
+  alt: string;
+  html: string | null;
+  is_active: boolean;
+  starts_at: string | null;
+  ends_at: string | null;
+  weight: number;
+  impressions: number;
+  clicks: number;
+};
+
+export async function listAds() {
+  const res = await adminFetch(`/ads`);
+  if (!res.ok) return { ads: [] as AdminAd[], zones: [] as AdZone[] };
+  return res.json() as Promise<{ ads: AdminAd[]; zones: AdZone[] }>;
+}
+
+export async function getAdAdmin(id: string) {
+  const res = await adminFetch(`/ads/${id}`);
+  if (!res.ok) return null;
+  return (await res.json() as { ad: AdminAd }).ad;
+}
+
+export async function saveAd(id: string | null, body: Record<string, unknown>) {
+  const res = await adminFetch(id ? `/ads/${id}` : `/ads`, {
+    method: id ? "PATCH" : "POST",
+    body: JSON.stringify({ ad: body }),
+  });
+  return res.ok;
+}
+
+export async function deleteAd(id: string) {
+  const res = await adminFetch(`/ads/${id}`, { method: "DELETE" });
+  return res.ok;
+}

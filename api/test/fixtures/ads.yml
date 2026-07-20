@@ -1,0 +1,23 @@
+leaderboard_a:
+  name: Leaderboard A
+  zone: home-top
+  size: leaderboard
+  image_url: "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4="
+  link_url: "https://example.com/promo"
+  is_active: true
+  weight: 1
+
+expired:
+  name: Expired ad
+  zone: home-top
+  size: leaderboard
+  is_active: true
+  ends_at: <%= 2.days.ago.to_fs(:db) %>
+  weight: 1
+
+paused:
+  name: Paused ad
+  zone: home-mid
+  size: leaderboard
+  is_active: false
+  weight: 1

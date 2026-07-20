@@ -19,6 +19,8 @@ const nextConfig: NextConfig = {
       { source: "/archives-sitemap.xml", destination: `${API_BASE}/api/v1/sitemap/archives` },
       // /feed needs the trailing slash because trailingSlash:true is on.
       { source: "/feed/", destination: `${API_BASE}/api/v1/feed` },
+      // Ad click tracking — counts then redirects to the creative's target.
+      { source: "/ad/:id/click", destination: `${API_BASE}/api/v1/ads/:id/click` },
     ];
   },
 };

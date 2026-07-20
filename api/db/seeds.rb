@@ -172,3 +172,28 @@ DIR_LISTINGS.each_with_index do |attrs, i|
   end
 end
 puts "  #{DirectoryListing.count} directory listings."
+
+puts "Seeding demo ads…"
+require "base64"
+demo_creative = lambda do |w, h, text|
+  svg = <<~SVG.strip
+    <svg xmlns="http://www.w3.org/2000/svg" width="#{w}" height="#{h}" viewBox="0 0 #{w} #{h}">
+      <rect width="#{w}" height="#{h}" fill="#081F5B"/>
+      <rect x="2" y="2" width="#{w - 4}" height="#{h - 4}" fill="none" stroke="#1f5bd0" stroke-width="2"/>
+      <text x="50%" y="50%" fill="#ffffff" font-family="Arial,Helvetica,sans-serif" font-size="16" font-weight="bold" text-anchor="middle" dominant-baseline="middle">#{text}</text>
+    </svg>
+  SVG
+  "data:image/svg+xml;base64," + Base64.strict_encode64(svg)
+end
+
+[
+  { name: "House — Insider leaderboard", zone: "home-top",      size: "leaderboard", w: 728, h: 90,  link: "/the-insider/", text: "Subscribe to The Insider — free" },
+  { name: "House — Directory MPU",       zone: "home-rail-2",   size: "mpu",         w: 300, h: 250, link: "/directory/",   text: "Harness Racing Directory" },
+  { name: "House — Article MPU",         zone: "article-rail-1", size: "mpu",        w: 300, h: 250, link: "/the-insider/", text: "The Insider — every Thursday" }
+].each do |a|
+  ad = Ad.find_or_initialize_by(name: a[:name])
+  ad.assign_attributes(zone: a[:zone], size: a[:size], link_url: a[:link], alt: a[:text],
+                       image_url: demo_creative.call(a[:w], a[:h], a[:text]), is_active: true, weight: 1)
+  ad.save!
+end
+puts "  #{Ad.count} ads."
