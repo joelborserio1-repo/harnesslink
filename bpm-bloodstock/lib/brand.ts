@@ -34,3 +34,16 @@ export function brandLogoSrc(): string | null {
   }
   return null;
 }
+
+/**
+ * The square icon mark (horse head only), for the favicon and small placements.
+ * Drop it at public/brand/icon.<ext>. Falls back to app/icon.svg / the SVG mark.
+ */
+export function brandIconSrc(): string | null {
+  const dir = path.join(process.cwd(), "public", "brand");
+  for (const e of EXTS) {
+    const file = `icon.${e}`;
+    if (fs.existsSync(path.join(dir, file))) return `/brand/${file}`;
+  }
+  return null;
+}

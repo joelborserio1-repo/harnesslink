@@ -2,13 +2,19 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
 import { LogoMark } from "@/components/Logo";
-import { brandLogoSrc } from "@/lib/brand";
+import { brandLogoSrc, brandIconSrc } from "@/lib/brand";
 
-export const metadata: Metadata = {
-  title: "BPM Bloodstock - Get Your Heart Racing",
-  description:
-    "Own a share of the action. Micro-shares in pacers and trotters - buy, follow, and share in the prizemoney.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const icon = brandIconSrc();
+  return {
+    title: "BPM Bloodstock - Get Your Heart Racing",
+    description:
+      "Own a share of the action. Micro-shares in pacers and trotters - buy, follow, and share in the prizemoney.",
+    // If you drop public/brand/icon.<ext> it becomes the favicon; otherwise the
+    // built-in app/icon.svg is used.
+    ...(icon ? { icons: { icon } } : {}),
+  };
+}
 
 export default function RootLayout({
   children,

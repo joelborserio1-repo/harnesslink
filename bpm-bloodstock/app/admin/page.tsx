@@ -4,6 +4,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AdminConsole } from "@/components/AdminConsole";
 import { formatCents } from "@/lib/money";
+import { brandLogoSrc } from "@/lib/brand";
+import { LogoMark } from "@/components/Logo";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +52,20 @@ export default async function AdminPage() {
 
   return (
     <div className="container-bpm py-12">
-      <p className="eyebrow">Admin console</p>
+      <div className="mb-6 flex items-center gap-3 border-b border-green-600 pb-6">
+        {brandLogoSrc() ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={brandLogoSrc()!} alt="BPM Bloodstock" className="h-11 w-auto" />
+        ) : (
+          <LogoMark className="h-11 w-11" />
+        )}
+        <span className="rounded-full border border-green-600 bg-green-800 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-sage">
+          Admin
+        </span>
+      </div>
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sage">
+        Admin console
+      </p>
       <h1 className="mt-1 font-heading text-4xl font-bold text-cream">
         Syndicate operations
       </h1>
