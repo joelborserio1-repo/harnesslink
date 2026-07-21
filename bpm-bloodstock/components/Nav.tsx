@@ -3,15 +3,24 @@ import { getCurrentUser } from "@/lib/auth";
 import { Wordmark } from "./Logo";
 import { formatCents } from "@/lib/money";
 import { LogoutButton } from "./LogoutButton";
+import { brandLogoSrc } from "@/lib/brand";
 
 export async function Nav() {
   const user = await getCurrentUser();
+  const logo = brandLogoSrc();
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-racing-950/80 backdrop-blur">
       <div className="container-bpm flex h-16 items-center justify-between">
         <div className="flex items-center gap-8">
-          <Wordmark />
+          {logo ? (
+            <Link href="/" className="flex items-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logo} alt="BPM Bloodstock" className="h-10 w-auto" />
+            </Link>
+          ) : (
+            <Wordmark />
+          )}
           <nav className="hidden items-center gap-6 md:flex">
             <Link href="/offerings" className="text-sm text-cream/75 hover:text-gold">
               Horses

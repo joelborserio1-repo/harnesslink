@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
 import { LogoMark } from "@/components/Logo";
+import { brandLogoSrc } from "@/lib/brand";
 
 export const metadata: Metadata = {
   title: "BPM Bloodstock - Get Your Heart Racing",
@@ -34,15 +35,31 @@ export default function RootLayout({
         <footer className="border-t border-white/10 bg-racing-975/60">
           <div className="container-bpm flex flex-col gap-6 py-10 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-3">
-              <LogoMark className="h-8 w-8" />
-              <div>
-                <p className="font-heading text-sm font-bold tracking-[0.18em] text-cream">
-                  BPM BLOODSTOCK
-                </p>
-                <p className="text-[11px] uppercase tracking-[0.3em] text-gold-300">
-                  Get Your Heart Racing
-                </p>
-              </div>
+              {brandLogoSrc() ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={brandLogoSrc()!}
+                    alt="BPM Bloodstock"
+                    className="h-10 w-auto"
+                  />
+                  <p className="text-[11px] uppercase tracking-[0.3em] text-gold-300">
+                    Get Your Heart Racing
+                  </p>
+                </>
+              ) : (
+                <>
+                  <LogoMark className="h-8 w-8" />
+                  <div>
+                    <p className="font-heading text-sm font-bold italic tracking-[0.02em] text-cream">
+                      BPM BLOODSTOCK
+                    </p>
+                    <p className="text-[11px] uppercase tracking-[0.3em] text-gold-300">
+                      Get Your Heart Racing
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
             <p className="max-w-md text-xs leading-relaxed text-cream/45">
               Scaffold / demonstration only. Fractional ownership involves risk;

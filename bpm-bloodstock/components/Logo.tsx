@@ -37,11 +37,11 @@ export function Wordmark({ compact = false }: { compact?: boolean }) {
     <Link href="/" className="group flex items-center gap-3">
       <LogoMark className="h-9 w-9 shrink-0" />
       <span className="flex flex-col leading-none">
-        <span className="font-heading text-lg font-bold tracking-[0.18em] text-cream group-hover:text-gold-100">
+        <span className="font-heading text-xl font-extrabold italic tracking-tight text-cream group-hover:text-gold-100">
           BPM
         </span>
         {!compact && (
-          <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.32em] text-gold-300">
+          <span className="mt-0.5 text-[9px] font-bold italic uppercase tracking-[0.2em] text-gold-300">
             Bloodstock
           </span>
         )}
