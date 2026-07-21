@@ -15,53 +15,58 @@ type OfferingLike = {
   status: string;
 };
 
+// Green surface with a gold icon watermark (the icon is the accent, not a fill).
 export function SilksTile({
-  heroColor,
   className = "",
   size = "h-14 w-14",
 }: {
-  heroColor: string;
+  heroColor?: string;
   className?: string;
   size?: string;
 }) {
-  const gold = heroColor !== "green";
   return (
     <div
-      className={`flex ${size} items-center justify-center rounded-lg ${
-        gold ? "bg-gold" : "bg-racing-900 ring-1 ring-gold/40"
-      } ${className}`}
+      className={`flex ${size} items-center justify-center rounded-lg border border-green-600 bg-green-900 ${className}`}
     >
-      <LogoMark
-        className={`h-3/5 w-3/5 ${gold ? "[&_path]:!fill-racing-950" : ""}`}
-      />
+      <LogoMark className="h-3/5 w-3/5" />
     </div>
   );
 }
 
+// Neutral (sage/green) status chips - gold is reserved for the price figure.
 function StatusBadge({ status }: { status: string }) {
-  if (status === "OPEN") return <span className="badge-open">Open</span>;
+  const base =
+    "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide";
+  if (status === "OPEN")
+    return (
+      <span className={`${base} border-green-600 bg-green-900/80 text-cream`}>
+        Open
+      </span>
+    );
   if (status === "CLOSED")
-    return <span className="badge-full">Fully subscribed</span>;
-  return <span className="badge-closed">{status.toLowerCase()}</span>;
+    return (
+      <span className={`${base} border-green-600 bg-green-900/80 text-sage`}>
+        Fully subscribed
+      </span>
+    );
+  return (
+    <span className={`${base} border-green-600 bg-green-900/80 text-sage`}>
+      {status.toLowerCase()}
+    </span>
+  );
 }
 
-export function ShareProgress({
-  sold,
-  total,
-}: {
-  sold: number;
-  total: number;
-}) {
+export function ShareProgress({ sold, total }: { sold: number; total: number }) {
   const p = Math.min(100, pct(sold, total));
   return (
     <div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-green-900">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-gold-500 to-gold-300"
+          className="h-full rounded-full bg-gold"
           style={{ width: `${p}%` }}
         />
       </div>
-      <div className="mt-1.5 flex justify-between text-[11px] text-cream/55">
+      <div className="mt-1.5 flex justify-between text-[11px] text-sage">
         <span>
           {sold.toLocaleString()} / {total.toLocaleString()} shares
         </span>
@@ -75,7 +80,7 @@ export function OfferingCard({ offering }: { offering: OfferingLike }) {
   return (
     <Link
       href={`/offerings/${offering.slug}`}
-      className="card group flex flex-col overflow-hidden p-0 transition hover:border-gold/40 hover:shadow-gold"
+      className="group flex flex-col overflow-hidden rounded-xl border border-green-600 bg-green-800 shadow-card transition hover:border-gold/60"
     >
       {offering.imageUrl ? (
         <div className="relative h-44 w-full overflow-hidden">
@@ -97,11 +102,13 @@ export function OfferingCard({ offering }: { offering: OfferingLike }) {
       )}
 
       <div className="mt-4 flex-1 px-5">
-        <p className="eyebrow">{offering.discipline}</p>
-        <h3 className="mt-1 font-heading text-xl font-bold text-cream group-hover:text-gold-100">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sage">
+          {offering.discipline}
+        </p>
+        <h3 className="mt-1 font-heading text-xl font-bold text-cream">
           {offering.name}
         </h3>
-        <p className="mt-1.5 line-clamp-2 text-sm text-cream/60">
+        <p className="mt-1.5 line-clamp-2 text-sm text-sage">
           {offering.tagline}
         </p>
       </div>
@@ -110,19 +117,17 @@ export function OfferingCard({ offering }: { offering: OfferingLike }) {
         <ShareProgress sold={offering.sharesSold} total={offering.totalShares} />
       </div>
 
-      <div className="mt-4 flex items-end justify-between border-t border-white/10 px-5 pb-5 pt-4">
+      <div className="mt-4 flex items-end justify-between border-t border-green-600 px-5 pb-5 pt-4">
         <div>
-          <p className="text-[11px] uppercase tracking-wide text-cream/45">
-            From
-          </p>
+          <p className="text-[11px] uppercase tracking-wide text-sage">From</p>
           <p className="font-heading text-lg font-bold text-gold">
             {formatCents(offering.sharePriceCents)}
-            <span className="ml-1 text-xs font-normal text-cream/50">
-              / share
-            </span>
+            <span className="ml-1 text-xs font-normal text-sage">/ share</span>
           </p>
         </div>
-        <span className="btn-outline px-4 py-2 text-xs">View horse →</span>
+        <span className="inline-flex items-center rounded-md border border-green-600 px-4 py-2 text-xs font-semibold text-cream transition group-hover:bg-white/5">
+          View horse →
+        </span>
       </div>
     </Link>
   );

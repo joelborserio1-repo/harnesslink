@@ -20,7 +20,6 @@ export type FeaturedOffering = {
 };
 
 function Poster({ o }: { o: FeaturedOffering }) {
-  const gold = o.heroColor !== "green";
   if (o.imageUrl) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
@@ -31,48 +30,26 @@ function Poster({ o }: { o: FeaturedOffering }) {
       />
     );
   }
-  // Branded graphic fallback when there's no photo yet.
+  // Branded graphic fallback when there's no photo yet: green surface, gold
+  // used only on the price figure and the icon watermark.
   return (
-    <div
-      className={`relative flex h-full w-full flex-col justify-between overflow-hidden rounded-xl p-7 ${
-        gold ? "bg-gradient-to-br from-gold-500 to-gold-700" : "bg-racing-900"
-      }`}
-    >
-      <div
-        aria-hidden
-        className="absolute -right-8 -top-8 opacity-20"
-      >
-        <LogoMark className="h-56 w-56 [&_path]:!fill-racing-950" />
+    <div className="relative flex h-full w-full flex-col justify-between overflow-hidden rounded-xl border border-green-600 bg-green-900 p-7">
+      <div aria-hidden className="absolute -right-8 -top-8 opacity-25">
+        <LogoMark className="h-56 w-56" />
       </div>
       <div className="relative">
-        <p
-          className={`text-xs font-bold uppercase tracking-widest ${
-            gold ? "text-racing-950/70" : "text-gold-300"
-          }`}
-        >
+        <p className="text-xs font-bold uppercase tracking-widest text-sage">
           {o.discipline}
         </p>
-        <p
-          className={`font-heading text-4xl font-bold leading-none ${
-            gold ? "text-racing-950" : "text-cream"
-          }`}
-        >
+        <p className="font-heading text-4xl font-bold leading-none text-cream">
           {o.name}
         </p>
       </div>
       <div className="relative">
-        <p
-          className={`font-heading text-5xl font-bold ${
-            gold ? "text-racing-950" : "text-gold"
-          }`}
-        >
+        <p className="font-heading text-5xl font-bold text-gold">
           {formatCents(o.sharePriceCents)}
         </p>
-        <p
-          className={`text-xs font-semibold uppercase tracking-widest ${
-            gold ? "text-racing-950/70" : "text-cream/60"
-          }`}
-        >
+        <p className="text-xs font-semibold uppercase tracking-widest text-sage">
           per share
         </p>
       </div>
@@ -91,19 +68,19 @@ export function FeaturedCarousel({ offerings }: { offerings: FeaturedOffering[] 
   const perks = [
     "Buy in from " + formatCents(o.sharePriceCents) + ", all training and care covered",
     "Owner updates, stable access and race-day invites",
-    "Prizemoney paid to your winnings, split by your shares",
+    "Prizemoney paid to your wallet, split by your shares",
   ];
 
   return (
-    <div className="rounded-2xl bg-racing-975/60 p-5 md:p-8">
+    <div className="rounded-2xl border border-green-600 bg-green-800 p-5 md:p-8">
       <div className="grid items-center gap-8 md:grid-cols-2">
         {/* left: details */}
         <div>
           <div className="flex items-center gap-3">
-            <span className="badge-open">
+            <span className="inline-flex items-center rounded-full border border-green-600 bg-green-900/80 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-cream">
               {o.status === "OPEN" ? "Open now" : o.status.toLowerCase()}
             </span>
-            <span className="text-xs font-semibold uppercase tracking-widest text-cream/45">
+            <span className="text-xs font-semibold uppercase tracking-widest text-sage">
               {String(i + 1).padStart(2, "0")} / {String(offerings.length).padStart(2, "0")}
             </span>
           </div>
@@ -113,17 +90,15 @@ export function FeaturedCarousel({ offerings }: { offerings: FeaturedOffering[] 
           </h3>
           <p className="mt-3 font-heading text-3xl font-bold text-gold">
             From {formatCents(o.sharePriceCents)}
-            <span className="ml-2 text-sm font-normal text-cream/50">
-              per share
-            </span>
+            <span className="ml-2 text-sm font-normal text-sage">per share</span>
           </p>
 
-          <p className="mt-4 text-cream/70">{o.tagline}</p>
+          <p className="mt-4 text-cream">{o.tagline}</p>
 
           <ul className="mt-5 space-y-2.5">
             {perks.map((p) => (
-              <li key={p} className="flex items-start gap-3 text-sm text-cream/75">
-                <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-gold/15 text-[11px] text-gold">
+              <li key={p} className="flex items-start gap-3 text-sm text-cream">
+                <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border border-green-600 bg-green-900 text-[11px] text-sage">
                   ✓
                 </span>
                 {p}
@@ -132,15 +107,21 @@ export function FeaturedCarousel({ offerings }: { offerings: FeaturedOffering[] 
           </ul>
 
           <div className="mt-6 flex items-center gap-3">
-            <Link href={`/offerings/${o.slug}`} className="btn-outline">
+            <Link
+              href={`/offerings/${o.slug}`}
+              className="inline-flex items-center justify-center rounded-md border border-green-600 px-5 py-2.5 text-sm font-semibold text-cream transition hover:bg-white/5"
+            >
               Learn more
             </Link>
-            <Link href={`/offerings/${o.slug}`} className="btn-gold">
+            <Link
+              href={`/offerings/${o.slug}`}
+              className="inline-flex items-center justify-center rounded-md bg-gold px-5 py-2.5 text-sm font-semibold text-[#2A2008] transition hover:bg-gold-deep"
+            >
               Buy now
             </Link>
           </div>
 
-          <div className="mt-4 text-xs text-cream/45">
+          <div className="mt-4 text-xs text-sage">
             {pct(o.sharesSold, o.totalShares).toFixed(0)}% subscribed ·{" "}
             {remaining.toLocaleString()} shares left
           </div>
@@ -156,14 +137,14 @@ export function FeaturedCarousel({ offerings }: { offerings: FeaturedOffering[] 
               <button
                 onClick={() => go(-1)}
                 aria-label="Previous"
-                className="absolute -left-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full border border-gold/40 bg-racing-950/80 text-gold hover:bg-gold hover:text-racing-950"
+                className="absolute -left-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full border border-green-600 bg-green-900/90 text-cream transition hover:border-gold hover:text-gold"
               >
                 ‹
               </button>
               <button
                 onClick={() => go(1)}
                 aria-label="Next"
-                className="absolute -right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full border border-gold/40 bg-racing-950/80 text-gold hover:bg-gold hover:text-racing-950"
+                className="absolute -right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full border border-green-600 bg-green-900/90 text-cream transition hover:border-gold hover:text-gold"
               >
                 ›
               </button>

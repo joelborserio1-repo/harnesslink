@@ -88,14 +88,17 @@ export default async function Home() {
       </section>
 
       {/* ============ THE BOOK / FEATURED ============ */}
-      <section className="container-bpm py-20">
+      <section className="border-y border-green-600 bg-green-900">
+        <div className="container-bpm py-20">
         <div className="mx-auto max-w-2xl text-center">
           <Reveal>
-            <p className="eyebrow">Open for ownership</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sage">
+              Open for ownership
+            </p>
             <h2 className="mt-2 font-heading text-4xl font-bold text-cream md:text-5xl">
               Start your stable
             </h2>
-            <p className="mt-3 text-cream/60">
+            <p className="mt-3 text-sage">
               Browse what we have open right now and find a horse that suits your
               appetite for a bit of thrill.
             </p>
@@ -116,9 +119,10 @@ export default async function Home() {
           </div>
         )}
         <div className="mt-8 text-center">
-          <Link href="/offerings" className="group text-sm font-semibold text-gold hover:text-gold-200">
+          <Link href="/offerings" className="group text-sm font-semibold text-sage hover:text-cream">
             See the whole book <span className="nudge inline-block">→</span>
           </Link>
+        </div>
         </div>
       </section>
 

@@ -16,7 +16,7 @@ export function LogoMark({ className = "h-9 w-9" }: { className?: string }) {
       {/* heartbeat lead-in */}
       <path
         d="M2 40h9l3-8 4 17 4-24 4 15h6"
-        stroke="#D4AF37"
+        stroke="#C09A45"
         strokeWidth="2.4"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -24,10 +24,10 @@ export function LogoMark({ className = "h-9 w-9" }: { className?: string }) {
       {/* horse head */}
       <path
         d="M31 40c-1-6 0-11 3-15 2-3 5-5 9-6 2-1 3-2 4-4 1 3 1 5 0 7 3 0 6 1 8 3-2 0-3 1-4 2 4 2 6 5 7 9-2-1-4-2-6-2 1 3 1 6 0 9-1-3-3-5-5-6 0 4-1 8-4 11l-2-6c-1 3-3 6-6 8 0-3 0-5 1-7-4 1-8 0-11-2 2 0 4-1 6-2-3-1-6-3-8-6 3 1 6 1 8 0z"
-        fill="#D4AF37"
+        fill="#C09A45"
       />
       {/* eye cut-out */}
-      <circle cx="45" cy="26" r="1.4" fill="#0B3D2E" />
+      <circle cx="45" cy="26" r="1.4" fill="#0E2A22" />
     </svg>
   );
 }

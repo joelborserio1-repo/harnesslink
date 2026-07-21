@@ -1,13 +1,16 @@
 import type { Config } from "tailwindcss";
 
 /**
- * BPM Bloodstock brand system.
- * Source of truth: brand sheet — "Get Your Heart Racing".
- *   Heritage Gold  #D4AF37
- *   Racing Green   #0B3D2E
- *   Cream          #F5F2E9
- *   Primary type   Archivo (headings, heavy weights, modern grotesque)
- *   Secondary type Montserrat (body/UI)
+ * BPM Bloodstock brand system - green-dominant, gold as accent only.
+ * Tokens mirrored in lib/brand.ts (brandColors) as the single source of truth.
+ *   green-900 #0E2A22  page background
+ *   green-800 #1B4536  cards / surfaces (sit above the page bg)
+ *   green-600 #2E5A4B  borders / hairlines
+ *   gold      #C09A45  accent (primary CTA, price figure, icon) - never a fill
+ *   gold-deep #A8862F  gold hover / active
+ *   cream     #F3EBD8  primary body text on green
+ *   sage      #A9BBB0  secondary / muted text, captions
+ *   Type: Archivo (headings), Montserrat (body).
  */
 const config: Config = {
   content: [
@@ -17,8 +20,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Accent only - primary CTA, price figures, icon. Never a background fill.
         gold: {
-          DEFAULT: "#D4AF37",
+          DEFAULT: "#C09A45",
+          deep: "#A8862F", // hover / active
+          // legacy tints retained for not-yet-migrated views
           50: "#FBF6E4",
           100: "#F5E9BF",
           200: "#EBD588",
@@ -28,6 +34,13 @@ const config: Config = {
           600: "#977721",
           700: "#75591a",
         },
+        // Green carries the weight.
+        green: {
+          900: "#0E2A22", // page background
+          800: "#1B4536", // cards / surfaces
+          600: "#2E5A4B", // borders / hairlines
+        },
+        // Legacy green scale, kept so unmigrated views still render.
         racing: {
           DEFAULT: "#0B3D2E",
           50: "#E7F0EC",
@@ -37,8 +50,11 @@ const config: Config = {
           975: "#05201A",
         },
         cream: {
-          DEFAULT: "#F5F2E9",
+          DEFAULT: "#F3EBD8",
           200: "#EFE9D8",
+        },
+        sage: {
+          DEFAULT: "#A9BBB0", // secondary / muted text
         },
       },
       fontFamily: {
