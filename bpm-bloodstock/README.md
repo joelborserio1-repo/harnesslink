@@ -30,7 +30,13 @@ Money is stored **everywhere as integer cents (AUD)** — no floats touch a bala
 
 ---
 
-## Quick start
+## Deploying
+
+To put this live on a server (e.g. `admin.jtbassetgroup.com` on Onidel), see
+**[`DEPLOY.md`](./DEPLOY.md)** — Node + PM2 + Nginx reverse proxy runbook, plus
+config files under `deploy/`.
+
+## Quick start (local dev)
 
 ```bash
 cd bpm-bloodstock
