@@ -54,13 +54,6 @@ export default async function Home() {
         <div className="absolute inset-0 bg-gradient-to-t from-racing-950 via-racing-950/30 to-racing-950/60" />
 
         <div className="container-bpm relative z-10 py-24 text-center">
-          <Reveal>
-            <span className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-racing-950/50 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-gold-200 backdrop-blur">
-              <span className="live-dot inline-block h-2 w-2 rounded-full bg-gold" />
-              Small shares. Big races.
-            </span>
-          </Reveal>
-
           <Reveal delay={80}>
             <h1 className="mx-auto mt-6 max-w-4xl font-heading text-5xl font-bold uppercase leading-[0.95] text-cream sm:text-6xl md:text-7xl">
               Get your heart racing
