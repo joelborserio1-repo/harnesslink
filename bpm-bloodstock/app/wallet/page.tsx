@@ -38,7 +38,7 @@ export default async function WalletPage() {
           <div className="card overflow-hidden">
             <div className="bg-gradient-to-br from-gold-500 to-gold-300 p-6 text-racing-950">
               <p className="text-xs font-semibold uppercase tracking-widest opacity-70">
-                Winnings balance
+                Wallet
               </p>
               <p className="mt-2 font-heading text-4xl font-bold">
                 {formatCents(user.walletBalanceCents)}
