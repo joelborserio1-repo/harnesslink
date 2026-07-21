@@ -81,7 +81,7 @@ function PrizeMoneyForm({ offerings }: { offerings: OfferingLite[] }) {
           >
             {offerings.map((o) => (
               <option key={o.id} value={o.id}>
-                {o.name} — {o.sharesSold}/{o.totalShares} shares sold
+                {o.name} - {o.sharesSold}/{o.totalShares} shares sold
               </option>
             ))}
           </select>

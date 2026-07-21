@@ -31,9 +31,9 @@ export default async function OfferingDetail({
 
   const facts = [
     ["Discipline", offering.discipline],
-    ["Trainer", offering.trainer || "—"],
-    ["Sire", offering.sire || "—"],
-    ["Dam", offering.dam || "—"],
+    ["Trainer", offering.trainer || " - "],
+    ["Sire", offering.sire || " - "],
+    ["Dam", offering.dam || " - "],
     ["Total shares", offering.totalShares.toLocaleString()],
     ["Management fee", `${(offering.mgmtFeeBps / 100).toFixed(0)}%`],
   ] as const;
@@ -131,7 +131,7 @@ export default async function OfferingDetail({
           </div>
         </div>
 
-        {/* RIGHT — sticky buy widget */}
+        {/* RIGHT - sticky buy widget */}
         <div className="lg:sticky lg:top-24 lg:self-start">
           <BuyWidget
             slug={offering.slug}

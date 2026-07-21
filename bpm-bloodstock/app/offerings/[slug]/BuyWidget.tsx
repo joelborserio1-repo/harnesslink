@@ -140,7 +140,7 @@ export function BuyWidget({
         )}
       </div>
       <p className="mt-3 text-center text-[11px] text-cream/45">
-        Secure card checkout. No account balance needed — pay once, own your
+        Secure card checkout. No account balance needed - pay once, own your
         shares.
       </p>
     </div>

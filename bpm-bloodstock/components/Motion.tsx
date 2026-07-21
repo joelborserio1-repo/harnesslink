@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Scroll-reveal wrapper — fades/slides children in when they enter the viewport.
+ * Scroll-reveal wrapper - fades/slides children in when they enter the viewport.
  * Dependency-free (IntersectionObserver). Respects prefers-reduced-motion.
  */
 export function Reveal({

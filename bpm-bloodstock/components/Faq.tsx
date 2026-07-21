@@ -5,26 +5,26 @@ import { useState } from "react";
 const FAQS = [
   {
     q: "Do I actually own the horse?",
-    a: "Yep. You hold real micro-shares in a named, registered racehorse — your name goes on the ownership records. It's not a fantasy team or a punt.",
+    a: "Yep. You hold real micro-shares in a named, registered racehorse - your name goes on the ownership records. It's not a fantasy team or a punt.",
   },
   {
     q: "How does the prizemoney work?",
-    a: "When your horse earns, we take a small management fee off the top and split the rest across shareholders by exactly how many shares you hold — down to the cent. It drops straight into your BPM wallet.",
+    a: "When your horse earns, we take a small management fee off the top and split the rest across shareholders by exactly how many shares you hold - down to the cent. It drops straight into your BPM wallet.",
   },
   {
     q: "Are there surprise bills or ongoing costs?",
-    a: "No nasty letters. Training, feed and care are covered by the syndicate. You buy your shares and that's your lot — the rest is upside.",
+    a: "No nasty letters. Training, feed and care are covered by the syndicate. You buy your shares and that's your lot - the rest is upside.",
   },
   {
     q: "How little can I start with?",
-    a: "Shares start around $40. Grab one, grab ten, grab $200 worth — completely your call. You pay by card at checkout, like any online purchase. No deposits, no balance to load.",
+    a: "Shares start around $40. Grab one, grab ten, grab $200 worth - completely your call. You pay by card at checkout, like any online purchase. No deposits, no balance to load.",
   },
   {
     q: "How do I get my winnings out?",
-    a: "Prizemoney lands in your winnings balance automatically. Withdraw it to your bank anytime — the shares you already own stay yours.",
+    a: "Prizemoney lands in your winnings balance automatically. Withdraw it to your bank anytime - the shares you already own stay yours.",
   },
   {
-    q: "Pacers and trotters — what even is that?",
+    q: "Pacers and trotters - what even is that?",
     a: "Harness racing: standardbreds racing in a sulky. Fast, frequent, huge nights under lights, and a community that actually wants you there.",
   },
 ];

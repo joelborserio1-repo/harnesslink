@@ -1,6 +1,6 @@
 /**
  * Lightweight assertions for the distribution engine. Run: npx tsx lib/distribution.test.ts
- * (No test framework needed — keeps the scaffold dependency-light.)
+ * (No test framework needed - keeps the scaffold dependency-light.)
  */
 import { computeDistribution } from "./distribution";
 
@@ -55,7 +55,7 @@ function assert(cond: boolean, msg: string) {
   );
 }
 
-// 4. Indivisible amounts — every cent accounted for via largest remainder.
+// 4. Indivisible amounts - every cent accounted for via largest remainder.
 {
   const r = computeDistribution({
     grossCents: 10000, // $100
@@ -76,7 +76,7 @@ function assert(cond: boolean, msg: string) {
   );
 }
 
-// 5. Weighted + fee + partial, big numbers — invariant must hold.
+// 5. Weighted + fee + partial, big numbers - invariant must hold.
 {
   const r = computeDistribution({
     grossCents: 123457,

@@ -96,7 +96,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
         {!isRegister && (
           <div className="mt-6 rounded-lg border border-gold/20 bg-gold/5 p-3 text-center text-xs text-cream/60">
-            Demo login — <span className="text-gold-200">alex@example.com</span> /
+            Demo login - <span className="text-gold-200">alex@example.com</span> /
             password123 · admin@bpmbloodstock.com / password123
           </div>
         )}

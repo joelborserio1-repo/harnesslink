@@ -73,7 +73,7 @@ async function main() {
         heroColor: "green",
         tagline: "Squaregaiter with a huge motor and a calm head.",
         description:
-          "A beautifully bred trotter showing genuine staying ability. Consistent, tough and honest — the kind of horse that racks up prizemoney across a long preparation.",
+          "A beautifully bred trotter showing genuine staying ability. Consistent, tough and honest - the kind of horse that racks up prizemoney across a long preparation.",
         trainer: "A. Turnbull",
         sire: "Muscle Hill",
         dam: "Grace Kelly",
@@ -90,7 +90,7 @@ async function main() {
         name: "Heart of Gold",
         discipline: "Pacer",
         heroColor: "gold",
-        tagline: "Low entry point — own a slice of a metro pacer for $40.",
+        tagline: "Low entry point - own a slice of a metro pacer for $40.",
         description:
           "Micro-shares make ownership accessible: Heart of Gold is a well-related 2yo pacer bought at the sales and offered in small parcels so anyone can experience the thrill of a Saturday night runner at Menangle or Melton.",
         trainer: "C. Alford",

@@ -45,7 +45,7 @@ cd bpm-bloodstock
 cp deploy/.env.production.example .env
 # Generate a session secret:
 openssl rand -base64 48
-# Edit .env — paste the secret, set NEXT_PUBLIC_APP_URL, add Stripe keys later.
+# Edit .env - paste the secret, set NEXT_PUBLIC_APP_URL, add Stripe keys later.
 nano .env
 chmod 600 .env
 ```
@@ -79,7 +79,7 @@ The panel owns the Nginx `server{}` block + SSL, so **don't** paste the whole
   Nginx config.
 
 Reload Nginx (panel button or `sudo nginx -s reload`), then visit
-**https://admin.jtbassetgroup.com** — you should see the BPM landing page.
+**https://admin.jtbassetgroup.com** - you should see the BPM landing page.
 
 Seeded logins (if you ran the seed): `admin@bpmbloodstock.com` / `password123`.
 **Change or remove these before any real use.**
@@ -104,7 +104,7 @@ That pulls, installs, migrates, rebuilds, and reloads PM2 with zero-ish downtime
    `https://admin.jtbassetgroup.com/api/stripe/webhook`, subscribe to
    `payment_intent.succeeded`, and put its signing secret in `STRIPE_WEBHOOK_SECRET`.
 3. Replace the withdrawal stub with real **Stripe Connect** payouts (see README).
-4. **Compliance before taking public money** — fractional racehorse ownership is
+4. **Compliance before taking public money** - fractional racehorse ownership is
    typically a regulated financial product (AFSL/PDS) plus racing-authority
    syndication rules and AML/KYC. Get advice first.
 

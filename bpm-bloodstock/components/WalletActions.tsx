@@ -6,7 +6,7 @@ import { formatCents, dollarsToCents } from "@/lib/money";
 
 /**
  * Winnings wallet: prizemoney lands here automatically. Members can withdraw to
- * their bank. (No deposits — shares are bought directly via card checkout.)
+ * their bank. (No deposits - shares are bought directly via card checkout.)
  */
 export function WalletActions({ balanceCents }: { balanceCents: number }) {
   const router = useRouter();

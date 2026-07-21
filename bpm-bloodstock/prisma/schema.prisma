@@ -1,4 +1,4 @@
-// BPM Bloodstock — micro-shares syndication data model.
+// BPM Bloodstock - micro-shares syndication data model.
 // Money is stored as integer cents (AUD). SQLite for the scaffold; switch the
 // provider to postgresql for production (no model changes required).
 
@@ -77,7 +77,7 @@ model ShareHolding {
 }
 
 // A completed share purchase. Paid directly via Stripe Checkout (e-commerce
-// style) — stripeSessionId is unique so a replayed webhook can't double-allocate.
+// style) - stripeSessionId is unique so a replayed webhook can't double-allocate.
 model Order {
   id             String   @id @default(cuid())
   userId         String

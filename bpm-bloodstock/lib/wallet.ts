@@ -170,7 +170,7 @@ export async function purchaseShares(args: {
 
 /**
  * Allocate shares that were paid for DIRECTLY via Stripe Checkout (e-commerce
- * flow) — no wallet debit involved. Atomic and idempotent by stripeSessionId,
+ * flow) - no wallet debit involved. Atomic and idempotent by stripeSessionId,
  * so a replayed webhook (or the success page + webhook racing) can't
  * double-allocate. Returns the Order (existing one if already allocated).
  */
@@ -187,7 +187,7 @@ export async function allocateSharesFromPayment(args: {
 
   return prisma.$transaction(async (tx) => {
     const existing = await tx.order.findUnique({ where: { stripeSessionId } });
-    if (existing) return existing; // already allocated — idempotent
+    if (existing) return existing; // already allocated - idempotent
 
     const offering = await tx.offering.findUnique({ where: { id: offeringId } });
     if (!offering) throw new WalletError("Offering not found");

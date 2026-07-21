@@ -4,7 +4,7 @@
 
 :root {
   color-scheme: dark;
-  /* Brand typography — loaded via <link> in the root layout. */
+  /* Brand typography - loaded via <link> in the root layout. */
   --font-cinzel: "Cinzel", Georgia, serif;
   --font-montserrat: "Montserrat", system-ui, sans-serif;
 }
@@ -120,7 +120,7 @@ body {
   animation-play-state: paused;
 }
 
-/* Heartbeat pulse — on-brand (BPM) */
+/* Heartbeat pulse - on-brand (BPM) */
 @keyframes heartbeat {
   0%,
   100% {

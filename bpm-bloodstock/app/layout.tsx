@@ -4,9 +4,9 @@ import { Nav } from "@/components/Nav";
 import { LogoMark } from "@/components/Logo";
 
 export const metadata: Metadata = {
-  title: "BPM Bloodstock — Get Your Heart Racing",
+  title: "BPM Bloodstock - Get Your Heart Racing",
   description:
-    "Own a share of the action. Micro-shares in pacers and trotters — buy, follow, and share in the prizemoney.",
+    "Own a share of the action. Micro-shares in pacers and trotters - buy, follow, and share in the prizemoney.",
 };
 
 export default function RootLayout({

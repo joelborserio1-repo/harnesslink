@@ -113,7 +113,7 @@ export default async function Home() {
             </Reveal>
           </div>
 
-          {/* hero visual — a tilted "ownership pass" */}
+          {/* hero visual - a tilted "ownership pass" */}
           <Reveal delay={200} className="relative hidden md:block">
             <div className="relative mx-auto max-w-sm">
               <div
@@ -198,7 +198,7 @@ export default async function Home() {
             },
             {
               t: "Prizemoney in your wallet",
-              d: "It wins, you get paid — split by the shares you hold, to the cent.",
+              d: "It wins, you get paid - split by the shares you hold, to the cent.",
               e: "💸",
             },
             {
@@ -266,7 +266,7 @@ export default async function Home() {
             },
             {
               n: "02",
-              t: "Buy now — card checkout",
+              t: "Buy now - card checkout",
               d: "Hit buy, pay by card, done. No deposits, no balances. You're an owner in seconds.",
             },
             {

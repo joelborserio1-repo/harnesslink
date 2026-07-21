@@ -73,7 +73,7 @@ export default async function PurchaseSuccess({
               You&apos;re an owner. 🏇
             </h1>
             <p className="mt-3 text-cream/70">
-              Payment confirmed — your shares in{" "}
+              Payment confirmed - your shares in{" "}
               <span className="font-semibold text-gold">{offering.name}</span>{" "}
               are locked in.
             </p>
@@ -110,10 +110,10 @@ export default async function PurchaseSuccess({
         ) : (
           <>
             <h1 className="mt-6 font-heading text-3xl font-bold text-cream">
-              Payment received — finalising your shares…
+              Payment received - finalising your shares…
             </h1>
             <p className="mt-3 text-cream/70">
-              This takes a moment. Refresh this page, or head to your stable —
+              This takes a moment. Refresh this page, or head to your stable - 
               your shares will appear as soon as the payment clears.
             </p>
             <div className="mt-8 flex justify-center gap-3">

@@ -4,7 +4,7 @@
  * The core is a PURE function so it can be unit-tested and reasoned about in
  * isolation from the database. Given a gross prize (in cents), a management fee
  * (basis points), the total shares issued and the public shareholders' current
- * holdings, it returns exactly how many cents each shareholder receives — with
+ * holdings, it returns exactly how many cents each shareholder receives - with
  * every cent accounted for.
  *
  * Design decisions (the tricky bits):
@@ -12,7 +12,7 @@
  *  1. Integer cents only. No floats touch a balance.
  *  2. Management fee is skimmed off the GROSS first (syndicate revenue).
  *  3. The net is split across ALL issued shares, not just sold ones. Shares the
- *     syndicate still holds (unsold) earn their pro-rata slice too — that slice
+ *     syndicate still holds (unsold) earn their pro-rata slice too - that slice
  *     is "retained" (house money), NOT silently redistributed to the public.
  *     This keeps per-share value constant regardless of how much has sold, which
  *     is the correct and fair behaviour for a partially-subscribed offering.
@@ -55,7 +55,7 @@ export function computeDistribution(params: {
   if (grossCents < 0) throw new Error("grossCents must be >= 0");
   if (totalShares <= 0) throw new Error("totalShares must be > 0");
 
-  // 1. Management fee off the top (floor — syndicate never over-collects).
+  // 1. Management fee off the top (floor - syndicate never over-collects).
   const feeCents = Math.floor((grossCents * mgmtFeeBps) / 10000);
   const netCents = grossCents - feeCents;
 
