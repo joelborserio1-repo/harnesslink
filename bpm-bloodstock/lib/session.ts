@@ -32,12 +32,20 @@ function verify(signed: string): string | null {
   return value;
 }
 
+// Cookies are `secure` in production so they only travel over HTTPS. Set
+// ALLOW_INSECURE_COOKIES=1 to disable that — ONLY for testing over plain http://
+// (e.g. hitting the server's IP:port directly before a domain + TLS are set up).
+function cookieSecure() {
+  if (process.env.ALLOW_INSECURE_COOKIES === "1") return false;
+  return process.env.NODE_ENV === "production";
+}
+
 /** Set the signed session cookie for a user id. */
 export function setSession(userId: string) {
   cookies().set(COOKIE, sign(userId), {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: cookieSecure(),
     path: "/",
     maxAge: MAX_AGE,
   });
