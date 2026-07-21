@@ -42,6 +42,9 @@ model Offering {
   trainer     String   @default("")
   sire        String   @default("")
   dam         String   @default("")
+  // Optional horse photo / poster (path under /public or an https URL).
+  // Falls back to a branded graphic when empty.
+  imageUrl    String   @default("")
 
   totalShares     Int // total micro-shares issued for this horse
   sharePriceCents Int // price per single share
