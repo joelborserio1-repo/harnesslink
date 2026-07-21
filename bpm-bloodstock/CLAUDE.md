@@ -18,7 +18,7 @@ UI copy, code comments, docs, commit messages.
 ## Brand
 
 - Colours: Heritage Gold `#D4AF37`, Racing Green `#0B3D2E`, Cream `#F5F2E9`.
-- Type: Cinzel (headings), Montserrat (body). Tokens live in
+- Type: Archivo (headings, heavy weights), Montserrat (body). Tokens live in
   `tailwind.config.ts` and `components/Logo.tsx`.
 
 ## Design references

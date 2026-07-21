@@ -6,7 +6,7 @@ import type { Config } from "tailwindcss";
  *   Heritage Gold  #D4AF37
  *   Racing Green   #0B3D2E
  *   Cream          #F5F2E9
- *   Primary type   Cinzel (headings)
+ *   Primary type   Archivo (headings, heavy weights, modern grotesque)
  *   Secondary type Montserrat (body/UI)
  */
 const config: Config = {
@@ -42,7 +42,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        heading: ["var(--font-cinzel)", "Georgia", "serif"],
+        heading: ["var(--font-heading)", "Helvetica Neue", "Arial", "sans-serif"],
         body: ["var(--font-montserrat)", "system-ui", "sans-serif"],
       },
       boxShadow: {
