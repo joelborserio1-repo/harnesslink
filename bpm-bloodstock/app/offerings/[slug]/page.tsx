@@ -44,6 +44,17 @@ export default async function OfferingDetail({
         ← All horses
       </Link>
 
+      {offering.imageUrl && (
+        <div className="mt-6 h-72 w-full overflow-hidden rounded-2xl md:h-96">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={offering.imageUrl}
+            alt={offering.name}
+            className="h-full w-full object-cover"
+          />
+        </div>
+      )}
+
       <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_380px]">
         {/* LEFT */}
         <div>

@@ -8,6 +8,7 @@ type OfferingLike = {
   discipline: string;
   tagline: string;
   heroColor: string;
+  imageUrl?: string;
   totalShares: number;
   sharesSold: number;
   sharePriceCents: number;
@@ -74,14 +75,28 @@ export function OfferingCard({ offering }: { offering: OfferingLike }) {
   return (
     <Link
       href={`/offerings/${offering.slug}`}
-      className="card group flex flex-col p-5 transition hover:border-gold/40 hover:shadow-gold"
+      className="card group flex flex-col overflow-hidden p-0 transition hover:border-gold/40 hover:shadow-gold"
     >
-      <div className="flex items-start justify-between">
-        <SilksTile heroColor={offering.heroColor} />
-        <StatusBadge status={offering.status} />
-      </div>
+      {offering.imageUrl ? (
+        <div className="relative h-44 w-full overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={offering.imageUrl}
+            alt={offering.name}
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+          />
+          <div className="absolute right-3 top-3">
+            <StatusBadge status={offering.status} />
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-start justify-between p-5 pb-0">
+          <SilksTile heroColor={offering.heroColor} />
+          <StatusBadge status={offering.status} />
+        </div>
+      )}
 
-      <div className="mt-4 flex-1">
+      <div className="mt-4 flex-1 px-5">
         <p className="eyebrow">{offering.discipline}</p>
         <h3 className="mt-1 font-heading text-xl font-bold text-cream group-hover:text-gold-100">
           {offering.name}
@@ -91,11 +106,11 @@ export function OfferingCard({ offering }: { offering: OfferingLike }) {
         </p>
       </div>
 
-      <div className="mt-5">
+      <div className="mt-5 px-5">
         <ShareProgress sold={offering.sharesSold} total={offering.totalShares} />
       </div>
 
-      <div className="mt-4 flex items-end justify-between border-t border-white/10 pt-4">
+      <div className="mt-4 flex items-end justify-between border-t border-white/10 px-5 pb-5 pt-4">
         <div>
           <p className="text-[11px] uppercase tracking-wide text-cream/45">
             From
