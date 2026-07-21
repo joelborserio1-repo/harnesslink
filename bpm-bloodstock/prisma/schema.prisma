@@ -76,7 +76,8 @@ model ShareHolding {
   @@index([offeringId])
 }
 
-// A completed share purchase (debited from wallet).
+// A completed share purchase. Paid directly via Stripe Checkout (e-commerce
+// style) — stripeSessionId is unique so a replayed webhook can't double-allocate.
 model Order {
   id             String   @id @default(cuid())
   userId         String
@@ -84,7 +85,9 @@ model Order {
   shares         Int
   unitPriceCents Int
   totalCents     Int
-  status         String   @default("COMPLETED") // COMPLETED | REFUNDED
+  status         String   @default("COMPLETED") // PENDING | COMPLETED | REFUNDED
+  // Stripe Checkout Session id (or "demo_*" in demo mode). Idempotency key.
+  stripeSessionId String? @unique
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   offering Offering @relation(fields: [offeringId], references: [id], onDelete: Cascade)

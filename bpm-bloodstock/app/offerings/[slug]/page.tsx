@@ -139,7 +139,6 @@ export default async function OfferingDetail({
             remaining={remaining}
             isOpen={offering.status === "OPEN" && remaining > 0}
             signedIn={!!user}
-            walletBalanceCents={user?.walletBalanceCents ?? 0}
           />
           <p className="mt-4 px-2 text-center text-[11px] leading-relaxed text-cream/40">
             Shares are paid for from your BPM wallet. Prizemoney is distributed

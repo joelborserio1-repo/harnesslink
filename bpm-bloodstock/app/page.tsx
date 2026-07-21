@@ -69,15 +69,15 @@ export default async function Home() {
             <Reveal>
               <span className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-gold-200">
                 <span className="live-dot inline-block h-2 w-2 rounded-full bg-gold" />
-                Own a racehorse. Yes, really.
+                Micro-share ownership
               </span>
             </Reveal>
 
             <Reveal delay={80}>
-              <h1 className="mt-6 font-heading text-6xl font-bold leading-[0.92] text-cream sm:text-7xl md:text-8xl">
-                Fuck it.
+              <h1 className="mt-6 font-heading text-5xl font-bold leading-[0.95] text-cream sm:text-6xl md:text-7xl">
+                Own a real
                 <br />
-                It&apos;s{" "}
+                racehorse. From{" "}
                 <span className="shimmer-gold">
                   $<CountUp to={200} />
                 </span>
@@ -87,10 +87,9 @@ export default async function Home() {
 
             <Reveal delay={160}>
               <p className="mt-7 max-w-xl text-lg leading-relaxed text-cream/75 md:text-xl">
-                Grab shares in a real pacer or trotter for about the price of a
-                night out. Watch it race under our green-and-gold, follow every
-                step, and split the prizemoney — straight to your wallet.
-                That&apos;s the whole pitch.
+                Buy shares in our pacers and trotters, follow every run under the
+                BPM green-and-gold, and share in the prizemoney. Real ownership,
+                without the six-figure buy-in.
               </p>
             </Reveal>
 
@@ -262,18 +261,18 @@ export default async function Home() {
           {[
             {
               n: "01",
-              t: "Load your wallet",
-              d: "Chuck in $200 (or whatever). Card payment, done in seconds.",
+              t: "Pick your horse",
+              d: "Scroll the book, find your pony. From $40 a share, buy as much or as little as you like.",
             },
             {
               n: "02",
-              t: "Pick a horse, buy shares",
-              d: "Scroll the book, find your pony, grab your shares. You're an owner.",
+              t: "Buy now — card checkout",
+              d: "Hit buy, pay by card, done. No deposits, no balances. You're an owner in seconds.",
             },
             {
               n: "03",
               t: "Get paid when it runs",
-              d: "Prizemoney lands in your wallet, split by your shares. Withdraw whenever.",
+              d: "Prizemoney lands in your winnings, split by your shares. Cash out whenever.",
             },
           ].map((step, i) => (
             <Reveal key={step.n} delay={i * 110}>
@@ -379,8 +378,8 @@ export default async function Home() {
           </Reveal>
           <Reveal delay={160}>
             <p className="mx-auto mt-5 max-w-lg text-lg text-cream/70">
-              Everyone&apos;s got that mate who says they&apos;ll get into
-              racehorses one day. Be the one who actually did — for $200.
+              Real ownership in a real racehorse, from $200. Follow every run,
+              share in the prizemoney, and enjoy the ride.
             </p>
           </Reveal>
           <Reveal delay={240}>
@@ -388,7 +387,7 @@ export default async function Home() {
               href="/register"
               className="group btn-gold mt-9 px-9 py-4 text-lg"
             >
-              Fuck it, I&apos;m in <span className="nudge">→</span>
+              Get involved <span className="nudge">→</span>
             </Link>
           </Reveal>
           <Reveal delay={320}>

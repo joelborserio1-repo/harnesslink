@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { formatCents } from "@/lib/money";
 
 export function BuyWidget({
@@ -10,44 +9,39 @@ export function BuyWidget({
   remaining,
   isOpen,
   signedIn,
-  walletBalanceCents,
 }: {
   slug: string;
   sharePriceCents: number;
   remaining: number;
   isOpen: boolean;
   signedIn: boolean;
-  walletBalanceCents: number;
 }) {
-  const router = useRouter();
   const [shares, setShares] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
 
   const totalCents = shares * sharePriceCents;
-  const insufficient = totalCents > walletBalanceCents;
-  const canBuy =
-    signedIn && isOpen && shares > 0 && shares <= remaining && !insufficient;
 
-  const ownershipPct = useMemo(() => shares, [shares]);
+  // Quick "spend this much" buttons → snap to whole shares.
+  const tiers = [50, 100, 200, 500]
+    .map((d) => Math.max(1, Math.round((d * 100) / sharePriceCents)))
+    .filter((s, i, arr) => s <= remaining && arr.indexOf(s) === i);
 
-  async function buy() {
+  async function buyNow() {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch(`/api/offerings/${slug}/purchase`, {
+      const res = await fetch(`/api/offerings/${slug}/checkout`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ shares }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Purchase failed");
-      setDone(true);
-      router.refresh();
+      if (!res.ok) throw new Error(data.error || "Checkout failed");
+      // Stripe hosted checkout, or the demo success redirect.
+      window.location.href = data.url || data.redirect;
     } catch (e: any) {
       setError(e.message);
-    } finally {
       setBusy(false);
     }
   }
@@ -57,8 +51,7 @@ export function BuyWidget({
       <div className="card p-6">
         <p className="badge-full">Fully subscribed</p>
         <p className="mt-3 text-sm text-cream/60">
-          This horse is fully owned. Browse other horses currently open for
-          ownership.
+          This horse is fully owned. Browse other horses open for ownership.
         </p>
       </div>
     );
@@ -108,73 +101,48 @@ export function BuyWidget({
         </p>
       </div>
 
-      <div className="mt-5 space-y-2 rounded-lg border border-white/10 bg-racing-975/50 p-4 text-sm">
-        <Row label="Shares" value={ownershipPct.toLocaleString()} />
-        <Row label="Total" value={formatCents(totalCents)} strong />
-        {signedIn && (
-          <Row
-            label="Wallet balance"
-            value={formatCents(walletBalanceCents)}
-            muted
-          />
-        )}
+      {tiers.length > 0 && (
+        <div className="mt-4 grid grid-cols-4 gap-2">
+          {tiers.map((s) => (
+            <button
+              key={s}
+              onClick={() => setShares(s)}
+              className={`rounded-md border py-2 text-xs font-semibold transition ${
+                shares === s
+                  ? "border-gold bg-gold/10 text-gold"
+                  : "border-white/10 text-cream/70 hover:border-gold/40 hover:text-gold"
+              }`}
+            >
+              {formatCents(s * sharePriceCents).replace(".00", "")}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-5 flex items-center justify-between rounded-lg border border-white/10 bg-racing-975/50 p-4">
+        <span className="text-sm text-cream/55">Total</span>
+        <span className="font-heading text-xl font-bold text-gold">
+          {formatCents(totalCents)}
+        </span>
       </div>
 
       {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
-      {done && (
-        <p className="mt-3 text-sm text-emerald-300">
-          Shares purchased — see them in your Stable.
-        </p>
-      )}
 
       <div className="mt-5">
         {!signedIn ? (
-          <a href="/login" className="btn-gold w-full">
-            Sign in to invest
-          </a>
-        ) : insufficient ? (
-          <a href="/wallet" className="btn-gold w-full">
-            Top up wallet to continue
+          <a href={`/login?next=/offerings/${slug}`} className="btn-gold w-full">
+            Sign in to buy
           </a>
         ) : (
-          <button
-            onClick={buy}
-            disabled={!canBuy || busy}
-            className="btn-gold w-full"
-          >
-            {busy ? "Processing…" : `Buy ${shares} share${shares === 1 ? "" : "s"}`}
+          <button onClick={buyNow} disabled={busy} className="btn-gold w-full">
+            {busy ? "Taking you to checkout…" : `Buy now · ${formatCents(totalCents)}`}
           </button>
         )}
       </div>
-    </div>
-  );
-}
-
-function Row({
-  label,
-  value,
-  strong,
-  muted,
-}: {
-  label: string;
-  value: string;
-  strong?: boolean;
-  muted?: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-cream/55">{label}</span>
-      <span
-        className={
-          strong
-            ? "font-heading text-base font-bold text-gold"
-            : muted
-            ? "text-cream/50"
-            : "text-cream"
-        }
-      >
-        {value}
-      </span>
+      <p className="mt-3 text-center text-[11px] text-cream/45">
+        Secure card checkout. No account balance needed — pay once, own your
+        shares.
+      </p>
     </div>
   );
 }

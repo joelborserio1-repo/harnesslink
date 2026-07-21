@@ -17,11 +17,11 @@ const FAQS = [
   },
   {
     q: "How little can I start with?",
-    a: "Shares start around $40. Grab one, grab ten, grab $200 worth — completely your call. Start small, top up whenever.",
+    a: "Shares start around $40. Grab one, grab ten, grab $200 worth — completely your call. You pay by card at checkout, like any online purchase. No deposits, no balance to load.",
   },
   {
-    q: "Can I get my money out?",
-    a: "Anytime. Your wallet holds your deposits and your winnings — withdraw the balance whenever you want.",
+    q: "How do I get my winnings out?",
+    a: "Prizemoney lands in your winnings balance automatically. Withdraw it to your bank anytime — the shares you already own stay yours.",
   },
   {
     q: "Pacers and trotters — what even is that?",

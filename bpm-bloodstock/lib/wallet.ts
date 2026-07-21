@@ -169,6 +169,67 @@ export async function purchaseShares(args: {
 }
 
 /**
+ * Allocate shares that were paid for DIRECTLY via Stripe Checkout (e-commerce
+ * flow) — no wallet debit involved. Atomic and idempotent by stripeSessionId,
+ * so a replayed webhook (or the success page + webhook racing) can't
+ * double-allocate. Returns the Order (existing one if already allocated).
+ */
+export async function allocateSharesFromPayment(args: {
+  userId: string;
+  offeringId: string;
+  shares: number;
+  stripeSessionId: string;
+}) {
+  const { userId, offeringId, shares, stripeSessionId } = args;
+  if (!Number.isInteger(shares) || shares <= 0) {
+    throw new WalletError("Share quantity must be a positive whole number");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.order.findUnique({ where: { stripeSessionId } });
+    if (existing) return existing; // already allocated — idempotent
+
+    const offering = await tx.offering.findUnique({ where: { id: offeringId } });
+    if (!offering) throw new WalletError("Offering not found");
+    const remaining = offering.totalShares - offering.sharesSold;
+    if (shares > remaining) {
+      throw new WalletError(`Only ${remaining} shares remaining`);
+    }
+
+    const order = await tx.order.create({
+      data: {
+        userId,
+        offeringId,
+        shares,
+        unitPriceCents: offering.sharePriceCents,
+        totalCents: shares * offering.sharePriceCents,
+        status: "COMPLETED",
+        stripeSessionId,
+      },
+    });
+
+    await tx.offering.update({
+      where: { id: offeringId },
+      data: {
+        sharesSold: offering.sharesSold + shares,
+        status:
+          offering.sharesSold + shares >= offering.totalShares
+            ? "CLOSED"
+            : offering.status,
+      },
+    });
+
+    await tx.shareHolding.upsert({
+      where: { userId_offeringId: { userId, offeringId } },
+      create: { userId, offeringId, shares },
+      update: { shares: { increment: shares } },
+    });
+
+    return order;
+  });
+}
+
+/**
  * Record a prizemoney event and distribute it pro-rata across current
  * shareholders in one atomic transaction. Idempotent-ish: each call creates one
  * PrizeEvent; caller decides when to record.

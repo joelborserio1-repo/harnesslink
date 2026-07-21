@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { isDemoMode } from "@/lib/stripe";
 import { WalletActions } from "@/components/WalletActions";
 import { formatCents } from "@/lib/money";
 
@@ -26,17 +25,20 @@ export default async function WalletPage() {
 
   return (
     <div className="container-bpm py-12">
-      <p className="eyebrow">Wallet</p>
+      <p className="eyebrow">Earnings</p>
       <h1 className="mt-1 font-heading text-4xl font-bold text-cream">
-        Your BPM wallet
+        Your winnings
       </h1>
+      <p className="mt-2 text-cream/60">
+        Prizemoney from your horses lands here. Cash out whenever you like.
+      </p>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[380px_1fr]">
         <div className="space-y-6">
           <div className="card overflow-hidden">
             <div className="bg-gradient-to-br from-gold-500 to-gold-300 p-6 text-racing-950">
               <p className="text-xs font-semibold uppercase tracking-widest opacity-70">
-                Available balance
+                Winnings balance
               </p>
               <p className="mt-2 font-heading text-4xl font-bold">
                 {formatCents(user.walletBalanceCents)}
@@ -45,10 +47,7 @@ export default async function WalletPage() {
             </div>
           </div>
 
-          <WalletActions
-            balanceCents={user.walletBalanceCents}
-            demoMode={isDemoMode()}
-          />
+          <WalletActions balanceCents={user.walletBalanceCents} />
         </div>
 
         {/* ledger */}
