@@ -25,9 +25,9 @@ export default async function WalletPage() {
 
   return (
     <div className="container-bpm py-12">
-      <p className="eyebrow">Earnings</p>
+      <p className="eyebrow">Wallet</p>
       <h1 className="mt-1 font-heading text-4xl font-bold text-cream">
-        Your winnings
+        Your wallet
       </h1>
       <p className="mt-2 text-cream/60">
         Prizemoney from your horses lands here. Cash out whenever you like.

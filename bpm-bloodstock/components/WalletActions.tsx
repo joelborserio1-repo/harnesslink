@@ -43,7 +43,7 @@ export function WalletActions({ balanceCents }: { balanceCents: number }) {
   return (
     <div className="card p-6">
       <h2 className="font-heading text-lg font-bold text-cream">
-        Withdraw your winnings
+        Withdraw from your wallet
       </h2>
       <p className="mt-1 text-sm text-cream/55">
         Prizemoney lands here automatically. Cash out to your bank whenever.

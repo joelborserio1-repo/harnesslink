@@ -39,7 +39,7 @@ export async function Nav() {
                 href="/wallet"
                 className="hidden items-center gap-2 rounded-full border border-gold/30 bg-gold/5 px-3.5 py-1.5 text-sm text-gold-100 hover:bg-gold/10 sm:flex"
               >
-                <span className="text-cream/50">Winnings</span>
+                <span className="text-cream/50">Wallet</span>
                 <span className="font-semibold">
                   {formatCents(user.walletBalanceCents)}
                 </span>
