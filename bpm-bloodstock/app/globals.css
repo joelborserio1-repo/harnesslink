@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  /* Brand typography — loaded via <link> in the root layout. */
+  --font-cinzel: "Cinzel", Georgia, serif;
+  --font-montserrat: "Montserrat", system-ui, sans-serif;
+}
+
+body {
+  @apply bg-racing-950 text-cream font-body antialiased;
+  background-image: radial-gradient(
+      1100px 520px at 82% -12%,
+      rgba(212, 175, 55, 0.1),
+      transparent 60%
+    ),
+    linear-gradient(180deg, #0b3d2e 0%, #072a20 55%, #05201a 100%);
+  background-attachment: fixed;
+}
+
+@layer components {
+  .container-bpm {
+    @apply mx-auto w-full max-w-6xl px-5;
+  }
+
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.25em] text-gold-300;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-5 py-2.5 text-sm font-semibold
+      transition focus:outline-none focus:ring-2 focus:ring-gold/60 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-gold {
+    @apply btn bg-gold text-racing-950 hover:bg-gold-300 shadow-gold;
+  }
+  .btn-outline {
+    @apply btn border border-gold/40 text-gold hover:bg-gold/10;
+  }
+  .btn-ghost {
+    @apply btn text-cream/80 hover:text-cream hover:bg-white/5;
+  }
+
+  .card {
+    @apply rounded-xl border border-white/10 bg-racing-900/70 shadow-card backdrop-blur;
+  }
+
+  .field-label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wider text-cream/60;
+  }
+  .field {
+    @apply w-full rounded-md border border-white/10 bg-racing-975/70 px-3.5 py-2.5 text-sm text-cream
+      placeholder:text-cream/30 focus:border-gold/50 focus:outline-none focus:ring-1 focus:ring-gold/40;
+  }
+
+  .heading-display {
+    @apply font-heading font-bold tracking-tight text-cream;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide;
+  }
+  .badge-open {
+    @apply badge border-gold/40 bg-gold/10 text-gold-200;
+  }
+  .badge-closed {
+    @apply badge border-white/15 bg-white/5 text-cream/60;
+  }
+  .badge-full {
+    @apply badge border-emerald-400/30 bg-emerald-400/10 text-emerald-300;
+  }
+}
+
+/* Thin gold rule used under section headings on the brand sheet. */
+.brand-rule {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(212, 175, 55, 0.6),
+    transparent
+  );
+}
