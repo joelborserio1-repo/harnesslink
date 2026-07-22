@@ -65,6 +65,7 @@ class HLD_Post_Types {
             }
             // Make the record available to the template under both names.
             $stallion = $listing;
+            self::mark_ok_query();
             include HLD_PLUGIN_DIR . 'templates/stallion-profile.php';
             exit;
         }
@@ -79,15 +80,33 @@ class HLD_Post_Types {
                 return;
             }
             $hld_active_type = $resolved;
+            self::mark_ok_query();
             include HLD_PLUGIN_DIR . 'templates/directory-page.php';
             exit;
         }
 
         /* ── Main hub (/directory) ── */
         if ( $directory ) {
+            self::mark_ok_query();
             include HLD_PLUGIN_DIR . 'templates/directory-page.php';
             exit;
         }
+    }
+
+    /**
+     * These directory URLs are virtual (no post backs them), so WordPress'
+     * main query would otherwise flag them as 404. That makes Elementor
+     * (and other Theme Builders) skip enqueueing the header/footer template
+     * CSS for the request — so the footer renders unstyled on the single
+     * stallion page. Force a clean 200 context before rendering so Theme
+     * Builder location conditions ("Entire site") resolve and their CSS loads.
+     */
+    private static function mark_ok_query() {
+        global $wp_query;
+        if ( $wp_query ) {
+            $wp_query->is_404 = false;
+        }
+        status_header( 200 );
     }
 }
 
