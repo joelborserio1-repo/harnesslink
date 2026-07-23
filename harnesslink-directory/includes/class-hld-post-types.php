@@ -3,10 +3,17 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 class HLD_Post_Types {
 
+    /** Set true once we know we're rendering a plugin (virtual) directory URL. */
+    private static $rendering = false;
+
     public static function init() {
         add_action( 'init',                  array( __CLASS__, 'add_rewrite_rules' ) );
         add_filter( 'query_vars',            array( __CLASS__, 'query_vars' ) );
         add_action( 'template_redirect',     array( __CLASS__, 'template_redirect' ) );
+        // Runs during get_header() → wp_head → wp_enqueue_scripts, after
+        // template_redirect has flagged the render. Priority 20 so it lands
+        // after Elementor's own enqueues.
+        add_action( 'wp_enqueue_scripts',    array( __CLASS__, 'enqueue_theme_builder_css' ), 20 );
     }
 
     public static function add_rewrite_rules() {
@@ -102,11 +109,54 @@ class HLD_Post_Types {
      * Builder location conditions ("Entire site") resolve and their CSS loads.
      */
     private static function mark_ok_query() {
+        self::$rendering = true;
         global $wp_query;
         if ( $wp_query ) {
             $wp_query->is_404 = false;
         }
         status_header( 200 );
+    }
+
+    /**
+     * Explicitly enqueue the Elementor Theme Builder header/footer template
+     * CSS for our virtual URLs.
+     *
+     * The footer renders at wp_footer (after <head>), so Elementor must enqueue
+     * its CSS during wp_enqueue_scripts. On these post-less virtual URLs its
+     * automatic condition detection doesn't fire, leaving the footer unstyled.
+     * We ask Elementor Pro which documents answer the header/footer locations
+     * and enqueue their CSS ourselves. Fully guarded so non-Elementor / Free
+     * setups are unaffected.
+     */
+    public static function enqueue_theme_builder_css() {
+        if ( ! self::$rendering ) return;
+        if ( ! class_exists( '\ElementorPro\Modules\ThemeBuilder\Module' ) ) return;
+        if ( ! class_exists( '\Elementor\Core\Files\CSS\Post' ) ) return;
+
+        $module = \ElementorPro\Modules\ThemeBuilder\Module::instance();
+        if ( ! is_object( $module ) || ! method_exists( $module, 'get_conditions_manager' ) ) return;
+
+        $conditions = $module->get_conditions_manager();
+        if ( ! is_object( $conditions ) || ! method_exists( $conditions, 'get_documents_for_location' ) ) return;
+
+        foreach ( array( 'header', 'footer' ) as $location ) {
+            $documents = $conditions->get_documents_for_location( $location );
+            if ( empty( $documents ) || ! is_array( $documents ) ) continue;
+
+            foreach ( $documents as $document ) {
+                if ( ! is_object( $document ) || ! method_exists( $document, 'get_main_id' ) ) continue;
+                $post_id = (int) $document->get_main_id();
+                if ( ! $post_id ) continue;
+                try {
+                    $css = \Elementor\Core\Files\CSS\Post::create( $post_id );
+                    if ( is_object( $css ) && method_exists( $css, 'enqueue' ) ) {
+                        $css->enqueue();
+                    }
+                } catch ( \Throwable $e ) {
+                    // Elementor API changed — fail silently, footer degrades but site stays up.
+                }
+            }
+        }
     }
 }
 
