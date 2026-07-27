@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AdminConsole } from "@/components/AdminConsole";
+import { ManageOfferings } from "@/components/ManageOfferings";
 import { formatCents } from "@/lib/money";
 import { brandLogoSrc } from "@/lib/brand";
 import { LogoMark } from "@/components/Logo";
@@ -85,6 +86,39 @@ export default async function AdminPage() {
 
       <div className="mt-10">
         <AdminConsole offerings={offerings} />
+      </div>
+
+      <div className="mt-10">
+        <h2 className="font-heading text-xl font-bold text-cream">
+          Manage horses
+        </h2>
+        <p className="mt-1 text-sm text-sage">
+          Edit price, shares, status and description, upload a photo, or remove a
+          horse.
+        </p>
+        <div className="brand-rule mt-3 max-w-[120px]" />
+        <div className="mt-5">
+          <ManageOfferings
+            offerings={offerings.map((o) => ({
+              id: o.id,
+              name: o.name,
+              slug: o.slug,
+              discipline: o.discipline,
+              tagline: o.tagline,
+              description: o.description,
+              trainer: o.trainer,
+              sire: o.sire,
+              dam: o.dam,
+              heroColor: o.heroColor,
+              sharePriceCents: o.sharePriceCents,
+              totalShares: o.totalShares,
+              sharesSold: o.sharesSold,
+              mgmtFeeBps: o.mgmtFeeBps,
+              status: o.status,
+              imageUrl: o.imageUrl,
+            }))}
+          />
+        </div>
       </div>
 
       <div className="mt-10">
