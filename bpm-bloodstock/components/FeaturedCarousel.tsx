@@ -19,6 +19,7 @@ export type FeaturedOffering = {
   status: string;
 };
 
+// Bold dark poster (contrasts the light section). Uses the photo when present.
 function Poster({ o }: { o: FeaturedOffering }) {
   if (o.imageUrl) {
     return (
@@ -30,11 +31,9 @@ function Poster({ o }: { o: FeaturedOffering }) {
       />
     );
   }
-  // Branded graphic fallback when there's no photo yet: green surface, gold
-  // used only on the price figure and the icon watermark.
   return (
-    <div className="relative flex h-full w-full flex-col justify-between overflow-hidden rounded-xl border border-green-600 bg-green-900 p-7">
-      <div aria-hidden className="absolute -right-8 -top-8 opacity-25">
+    <div className="relative flex h-full w-full flex-col justify-between overflow-hidden rounded-xl bg-green-900 p-7">
+      <div aria-hidden className="absolute -right-8 -top-8 opacity-30">
         <LogoMark className="h-56 w-56" />
       </div>
       <div className="relative">
@@ -72,33 +71,33 @@ export function FeaturedCarousel({ offerings }: { offerings: FeaturedOffering[] 
   ];
 
   return (
-    <div className="rounded-2xl border border-green-600 bg-green-800 p-5 md:p-8">
+    <div className="rounded-2xl border border-paper-200 bg-white p-5 shadow-sm md:p-8">
       <div className="grid items-center gap-8 md:grid-cols-2">
-        {/* left: details */}
+        {/* left: details (dark text on white) */}
         <div>
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center rounded-full border border-green-600 bg-green-900/80 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-cream">
+            <span className="inline-flex items-center rounded-full border border-green-600/40 bg-green-800/5 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-green-800">
               {o.status === "OPEN" ? "Open now" : o.status.toLowerCase()}
             </span>
-            <span className="text-xs font-semibold uppercase tracking-widest text-sage">
+            <span className="text-xs font-semibold uppercase tracking-widest text-green-600">
               {String(i + 1).padStart(2, "0")} / {String(offerings.length).padStart(2, "0")}
             </span>
           </div>
 
-          <h3 className="mt-4 font-heading text-4xl font-bold text-cream">
+          <h3 className="mt-4 font-heading text-4xl font-bold tracking-tight text-green-900">
             {o.name}
           </h3>
           <p className="mt-3 font-heading text-3xl font-bold text-gold">
             From {formatCents(o.sharePriceCents)}
-            <span className="ml-2 text-sm font-normal text-sage">per share</span>
+            <span className="ml-2 text-sm font-normal text-green-600">per share</span>
           </p>
 
-          <p className="mt-4 text-cream">{o.tagline}</p>
+          <p className="mt-4 text-green-800">{o.tagline}</p>
 
           <ul className="mt-5 space-y-2.5">
             {perks.map((p) => (
-              <li key={p} className="flex items-start gap-3 text-sm text-cream">
-                <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border border-green-600 bg-green-900 text-[11px] text-sage">
+              <li key={p} className="flex items-start gap-3 text-sm text-green-800">
+                <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-green-800 text-[11px] text-gold">
                   ✓
                 </span>
                 {p}
@@ -109,7 +108,7 @@ export function FeaturedCarousel({ offerings }: { offerings: FeaturedOffering[] 
           <div className="mt-6 flex items-center gap-3">
             <Link
               href={`/offerings/${o.slug}`}
-              className="inline-flex items-center justify-center rounded-md border border-green-600 px-5 py-2.5 text-sm font-semibold text-cream transition hover:bg-white/5"
+              className="inline-flex items-center justify-center rounded-md border border-green-600 px-5 py-2.5 text-sm font-semibold text-green-900 transition hover:bg-green-800/5"
             >
               Learn more
             </Link>
@@ -121,7 +120,7 @@ export function FeaturedCarousel({ offerings }: { offerings: FeaturedOffering[] 
             </Link>
           </div>
 
-          <div className="mt-4 text-xs text-sage">
+          <div className="mt-4 text-xs text-green-600">
             {pct(o.sharesSold, o.totalShares).toFixed(0)}% subscribed ·{" "}
             {remaining.toLocaleString()} shares left
           </div>
@@ -137,14 +136,14 @@ export function FeaturedCarousel({ offerings }: { offerings: FeaturedOffering[] 
               <button
                 onClick={() => go(-1)}
                 aria-label="Previous"
-                className="absolute -left-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full border border-green-600 bg-green-900/90 text-cream transition hover:border-gold hover:text-gold"
+                className="absolute -left-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full border border-green-600 bg-white text-green-900 shadow-sm transition hover:bg-green-800 hover:text-cream"
               >
                 ‹
               </button>
               <button
                 onClick={() => go(1)}
                 aria-label="Next"
-                className="absolute -right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full border border-green-600 bg-green-900/90 text-cream transition hover:border-gold hover:text-gold"
+                className="absolute -right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full border border-green-600 bg-white text-green-900 shadow-sm transition hover:bg-green-800 hover:text-cream"
               >
                 ›
               </button>

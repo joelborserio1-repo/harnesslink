@@ -5,8 +5,8 @@
 :root {
   color-scheme: dark;
   /* Brand typography - loaded via <link> in the root layout. */
-  --font-heading: "Archivo", "Helvetica Neue", Arial, sans-serif;
-  --font-montserrat: "Montserrat", system-ui, sans-serif;
+  --font-heading: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
 }
 
 body {

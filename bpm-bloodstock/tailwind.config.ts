@@ -54,12 +54,17 @@ const config: Config = {
           200: "#EFE9D8",
         },
         sage: {
-          DEFAULT: "#A9BBB0", // secondary / muted text
+          DEFAULT: "#A9BBB0", // secondary / muted text on dark
+        },
+        // Light-section surfaces (MUSTR-style light/dark rhythm).
+        paper: {
+          DEFAULT: "#F5F3EC", // warm near-white light-section background
+          200: "#EAE7DA", // light hairline / border on paper
         },
       },
       fontFamily: {
         heading: ["var(--font-heading)", "Helvetica Neue", "Arial", "sans-serif"],
-        body: ["var(--font-montserrat)", "system-ui", "sans-serif"],
+        body: ["var(--font-body)", "system-ui", "sans-serif"],
       },
       boxShadow: {
         card: "0 10px 30px -12px rgba(0,0,0,0.45)",

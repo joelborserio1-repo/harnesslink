@@ -18,8 +18,11 @@ UI copy, code comments, docs, commit messages.
 ## Brand
 
 - Colours: Heritage Gold `#D4AF37`, Racing Green `#0B3D2E`, Cream `#F5F2E9`.
-- Type: Archivo (headings, heavy weights), Montserrat (body). Tokens live in
+- Type: Space Grotesk (headings), Inter (body). Tokens live in
   `tailwind.config.ts` and `components/Logo.tsx`.
+- Layout: MUSTR-style light/dark rhythm. Dark sections use green bg + cream/sage
+  text; light sections use `bg-paper` + green-900/700 text. Green is the punchy
+  accent; gold is used sparingly (primary CTA, price figures, icon).
 
 ## Design references
 
