@@ -5,7 +5,6 @@ import { getCurrentUser } from "@/lib/auth";
 import { getStripe } from "@/lib/stripe";
 import { allocateSharesFromPayment } from "@/lib/wallet";
 import { SilksTile } from "@/components/Offering";
-import { LogoMark } from "@/components/Logo";
 import { formatCents, pct } from "@/lib/money";
 
 export const dynamic = "force-dynamic";
@@ -65,7 +64,9 @@ export default async function PurchaseSuccess({
   return (
     <div className="container-bpm py-20">
       <div className="mx-auto max-w-lg text-center">
-        <LogoMark className="heartbeat mx-auto h-16 w-16" />
+        <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-gold text-2xl text-[#2A2008]">
+          ✓
+        </div>
 
         {order ? (
           <>

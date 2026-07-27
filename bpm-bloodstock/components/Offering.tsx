@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { LogoMark } from "./Logo";
 import { formatCents, pct } from "@/lib/money";
 
 type OfferingLike = {
@@ -28,7 +27,7 @@ export function SilksTile({
     <div
       className={`flex ${size} items-center justify-center rounded-lg border border-green-600 bg-green-900 ${className}`}
     >
-      <LogoMark className="h-3/5 w-3/5" />
+      <span className="font-heading text-base tracking-tight text-gold">BPM</span>
     </div>
   );
 }

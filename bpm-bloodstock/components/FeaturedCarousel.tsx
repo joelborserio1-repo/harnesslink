@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { LogoMark } from "./Logo";
 import { formatCents, pct } from "@/lib/money";
 
 export type FeaturedOffering = {
@@ -32,10 +31,11 @@ function Poster({ o }: { o: FeaturedOffering }) {
     );
   }
   return (
-    <div className="relative flex h-full w-full flex-col justify-between overflow-hidden rounded-xl bg-green-900 p-7">
-      <div aria-hidden className="absolute -right-8 -top-8 opacity-30">
-        <LogoMark className="h-56 w-56" />
-      </div>
+    <div className="relative flex h-full w-full flex-col justify-between overflow-hidden rounded-xl bg-gradient-to-br from-green-800 to-green-900 p-7">
+      <div
+        aria-hidden
+        className="absolute -right-10 top-6 h-40 w-40 rounded-full bg-gold/10 blur-2xl"
+      />
       <div className="relative">
         <p className="text-xs font-bold uppercase tracking-widest text-sage">
           {o.discipline}

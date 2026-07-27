@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { LogoMark } from "@/components/Logo";
 import { formatCentsCompact } from "@/lib/money";
 import { Reveal, CountUp } from "@/components/Motion";
 import { Faq } from "@/components/Faq";
 import { FeaturedCarousel } from "@/components/FeaturedCarousel";
+import { brandPromoSrc } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +26,11 @@ export default async function Home() {
     sharesSold: o.sharesSold,
     status: o.status,
   }));
+  // Promo/lifestyle image for the brand panel (drop public/brand/promo.jpg);
+  // falls back to the featured horse's photo.
+  const promo = brandPromoSrc();
+  const heroPhoto = featured[0]?.imageUrl || "";
+  const panelImg = promo || heroPhoto;
 
   const [horses, invested, shareholders] = await Promise.all([
     prisma.offering.count(),
@@ -47,12 +52,13 @@ export default async function Home() {
         >
           <source src="/hero.mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-green-900/70" />
-        <div className="absolute inset-0 bg-gradient-to-t from-green-900 via-green-900/30 to-green-900/60" />
+        {/* Lighter overlay so the video reads through - just enough for text legibility. */}
+        <div className="absolute inset-0 bg-green-900/35" />
+        <div className="absolute inset-0 bg-gradient-to-t from-green-900 via-green-900/5 to-green-900/25" />
 
         <div className="container-bpm relative z-10 py-24 text-center">
           <Reveal delay={80}>
-            <h1 className="mx-auto max-w-4xl font-heading text-5xl font-bold leading-[0.98] tracking-tight text-cream sm:text-6xl md:text-7xl">
+            <h1 className="mx-auto max-w-5xl font-heading text-6xl uppercase leading-[0.9] tracking-tight text-cream drop-shadow-[0_4px_24px_rgba(0,0,0,0.5)] sm:text-7xl md:text-8xl">
               Get your heart racing
             </h1>
           </Reveal>
@@ -167,15 +173,24 @@ export default async function Home() {
             </Reveal>
             <Reveal delay={120}>
               <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-green-900 ring-1 ring-green-600">
-                <div className="absolute inset-0 grid place-items-center">
-                  <LogoMark className="heartbeat h-40 w-40 opacity-90" />
-                </div>
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-green-900 to-transparent p-6">
-                  <p className="font-heading text-xl font-bold text-cream">
-                    Strength. Rhythm. Heart.
-                  </p>
-                  <p className="text-sm text-gold">Get Your Heart Racing</p>
-                </div>
+                {panelImg ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={panelImg}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                ) : null}
+                {/* The promo image has its own baked-in text; only add our
+                    caption when we're falling back to a plain horse photo. */}
+                {!promo && (
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-green-900 via-green-900/40 to-transparent p-6">
+                    <p className="font-heading text-2xl font-bold uppercase tracking-tight text-cream">
+                      Strength. Rhythm. Heart.
+                    </p>
+                    <p className="text-sm text-gold">Get Your Heart Racing</p>
+                  </div>
+                )}
               </div>
             </Reveal>
           </div>
@@ -256,11 +271,8 @@ export default async function Home() {
       {/* ============ CLOSING CTA (dark) ============ */}
       <section className="relative overflow-hidden border-t border-gold/20 bg-racing-gradient">
         <div className="container-bpm relative py-20 text-center">
-          <Reveal>
-            <LogoMark className="heartbeat mx-auto h-16 w-16" />
-          </Reveal>
           <Reveal delay={80}>
-            <h2 className="mt-6 font-heading text-5xl font-bold leading-tight tracking-tight text-cream md:text-6xl">
+            <h2 className="font-heading text-5xl font-bold uppercase leading-[0.95] tracking-tight text-cream md:text-7xl">
               Stop watching.
               <br />
               <span className="text-gold">Start owning.</span>

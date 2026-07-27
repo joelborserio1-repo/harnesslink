@@ -47,3 +47,17 @@ export function brandIconSrc(): string | null {
   }
   return null;
 }
+
+/**
+ * A promo/lifestyle image for the landing + about "Strength. Rhythm. Heart."
+ * panels. Drop it at public/brand/promo.<ext>. Falls back to the featured
+ * horse photo, then a plain green panel.
+ */
+export function brandPromoSrc(): string | null {
+  const dir = path.join(process.cwd(), "public", "brand");
+  for (const e of EXTS) {
+    const file = `promo.${e}`;
+    if (fs.existsSync(path.join(dir, file))) return `/brand/${file}`;
+  }
+  return null;
+}
