@@ -4,8 +4,9 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AdminConsole } from "@/components/AdminConsole";
 import { ManageOfferings } from "@/components/ManageOfferings";
+import { MediaManager } from "@/components/MediaManager";
 import { formatCents } from "@/lib/money";
-import { brandLogoSrc } from "@/lib/brand";
+import { brandLogoSrc, brandIconSrc, brandPromoSrc } from "@/lib/brand";
 import { LogoMark } from "@/components/Logo";
 
 export const dynamic = "force-dynamic";
@@ -86,6 +87,38 @@ export default async function AdminPage() {
 
       <div className="mt-10">
         <AdminConsole offerings={offerings} />
+      </div>
+
+      <div className="mt-10">
+        <h2 className="font-heading text-xl font-bold text-cream">Site media</h2>
+        <p className="mt-1 text-sm text-sage">
+          Upload and replace the brand images. Changes publish immediately.
+        </p>
+        <div className="brand-rule mt-3 max-w-[120px]" />
+        <div className="mt-5">
+          <MediaManager
+            slots={[
+              {
+                key: "logo",
+                label: "Logo",
+                hint: "Nav + footer. Transparent PNG or SVG works best.",
+                src: brandLogoSrc(),
+              },
+              {
+                key: "icon",
+                label: "Favicon icon",
+                hint: "Browser-tab icon. Square image.",
+                src: brandIconSrc(),
+              },
+              {
+                key: "promo",
+                label: "Promo image",
+                hint: "Landing + about panel. Portrait (4:5) looks best.",
+                src: brandPromoSrc(),
+              },
+            ]}
+          />
+        </div>
       </div>
 
       <div className="mt-10">

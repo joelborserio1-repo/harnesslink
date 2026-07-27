@@ -26,38 +26,35 @@ export const brandColors = {
  */
 const EXTS = ["svg", "png", "webp", "jpg", "jpeg"];
 
+/**
+ * Find a brand asset (public/brand/<base>.<ext>) and return its public path with
+ * a cache-busting ?v=<mtime> so re-uploads show immediately, or null if absent.
+ */
+export function findBrandAsset(base: string): string | null {
+  const dir = path.join(process.cwd(), "public", "brand");
+  for (const e of EXTS) {
+    const p = path.join(dir, `${base}.${e}`);
+    try {
+      const st = fs.statSync(p);
+      return `/brand/${base}.${e}?v=${Math.round(st.mtimeMs)}`;
+    } catch {
+      /* not this extension */
+    }
+  }
+  return null;
+}
+
+/** Logo image for the nav/footer. Drop at public/brand/logo.<ext>. */
 export function brandLogoSrc(): string | null {
-  const dir = path.join(process.cwd(), "public", "brand");
-  for (const e of EXTS) {
-    const file = `logo.${e}`;
-    if (fs.existsSync(path.join(dir, file))) return `/brand/${file}`;
-  }
-  return null;
+  return findBrandAsset("logo");
 }
 
-/**
- * The square icon mark (horse head only), for the favicon and small placements.
- * Drop it at public/brand/icon.<ext>. Falls back to app/icon.svg / the SVG mark.
- */
+/** Square icon for the favicon + small placements. public/brand/icon.<ext>. */
 export function brandIconSrc(): string | null {
-  const dir = path.join(process.cwd(), "public", "brand");
-  for (const e of EXTS) {
-    const file = `icon.${e}`;
-    if (fs.existsSync(path.join(dir, file))) return `/brand/${file}`;
-  }
-  return null;
+  return findBrandAsset("icon");
 }
 
-/**
- * A promo/lifestyle image for the landing + about "Strength. Rhythm. Heart."
- * panels. Drop it at public/brand/promo.<ext>. Falls back to the featured
- * horse photo, then a plain green panel.
- */
+/** Promo/lifestyle image for the landing + about panels. public/brand/promo.<ext>. */
 export function brandPromoSrc(): string | null {
-  const dir = path.join(process.cwd(), "public", "brand");
-  for (const e of EXTS) {
-    const file = `promo.${e}`;
-    if (fs.existsSync(path.join(dir, file))) return `/brand/${file}`;
-  }
-  return null;
+  return findBrandAsset("promo");
 }
