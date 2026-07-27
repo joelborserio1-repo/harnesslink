@@ -56,10 +56,10 @@ const config: Config = {
         sage: {
           DEFAULT: "#A9BBB0", // secondary / muted text on dark
         },
-        // Light-section surfaces (MUSTR-style light/dark rhythm).
+        // Light-section surfaces - brand cream (warmer than near-white).
         paper: {
-          DEFAULT: "#F5F3EC", // warm near-white light-section background
-          200: "#EAE7DA", // light hairline / border on paper
+          DEFAULT: "#F3EBD8", // brand cream light-section background
+          200: "#E6DCC4", // cream hairline / border
         },
       },
       fontFamily: {

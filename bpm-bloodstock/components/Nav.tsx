@@ -85,9 +85,9 @@ export async function Nav() {
                 </Link>
                 <Link
                   href="/offerings"
-                  className="group inline-flex items-center gap-2 rounded-md bg-gold px-6 py-3 font-heading text-[13px] uppercase tracking-wider text-[#2A2008] shadow-[0_0_0_1px_rgba(192,154,69,0.5),0_10px_30px_-8px_rgba(192,154,69,0.6)] transition hover:bg-gold-deep hover:shadow-[0_0_0_1px_rgba(192,154,69,0.7),0_14px_36px_-8px_rgba(192,154,69,0.8)]"
+                  className="inline-flex items-center rounded-md bg-gold px-6 py-3 font-heading text-[13px] uppercase tracking-wider text-[#2A2008] shadow-[0_0_0_1px_rgba(192,154,69,0.5),0_10px_30px_-8px_rgba(192,154,69,0.6)] transition hover:bg-gold-deep hover:shadow-[0_0_0_1px_rgba(192,154,69,0.7),0_14px_36px_-8px_rgba(192,154,69,0.8)]"
                 >
-                  Own a horse <span className="nudge">→</span>
+                  Own a horse
                 </Link>
               </>
             )}

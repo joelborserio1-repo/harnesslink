@@ -53,9 +53,9 @@ export default async function Home() {
         >
           <source src="/hero.mp4" type="video/mp4" />
         </video>
-        {/* Lighter overlay so the video reads through - just enough for text legibility. */}
-        <div className="absolute inset-0 bg-green-900/35" />
-        <div className="absolute inset-0 bg-gradient-to-t from-green-900 via-green-900/5 to-green-900/25" />
+        {/* No flat tint - let the video play clean. Only a soft bottom fade so
+            the headline stays legible where it sits. */}
+        <div className="absolute inset-0 bg-gradient-to-t from-green-900/85 via-transparent to-transparent" />
 
         <div className="container-bpm relative z-10 py-24 text-center">
           <Reveal delay={80}>
