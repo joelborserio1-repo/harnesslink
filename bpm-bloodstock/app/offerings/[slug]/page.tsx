@@ -45,12 +45,12 @@ export default async function OfferingDetail({
       </Link>
 
       {offering.imageUrl && (
-        <div className="mt-6 h-72 w-full overflow-hidden rounded-2xl md:h-96">
+        <div className="mt-6 overflow-hidden rounded-2xl border border-green-600 bg-green-900">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={offering.imageUrl}
             alt={offering.name}
-            className="h-full w-full object-cover"
+            className="mx-auto max-h-[75vh] w-auto object-contain"
           />
         </div>
       )}

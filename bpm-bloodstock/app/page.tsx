@@ -83,18 +83,18 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ============ BUILD YOUR STABLE (light) ============ */}
-      <section className="bg-paper text-green-900">
+      {/* ============ BUILD YOUR STABLE (dark, matches individual pages) ============ */}
+      <section className="border-b border-green-600 bg-green-900">
         <div className="container-bpm py-20 md:py-24">
           <div className="mx-auto max-w-2xl text-center">
             <Reveal>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-green-600">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sage">
                 Open for ownership
               </p>
-              <h2 className="mt-2 font-heading text-4xl font-bold tracking-tight md:text-5xl">
+              <h2 className="mt-2 font-heading text-4xl font-bold tracking-tight text-cream md:text-5xl">
                 Build your stable
               </h2>
-              <p className="mt-3 text-green-700">
+              <p className="mt-3 text-sage">
                 Our current runner. Grab your shares and you are an owner, on the
                 slip and in on the prizemoney.
               </p>
