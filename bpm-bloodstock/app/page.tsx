@@ -58,16 +58,21 @@ export default async function Home() {
         <div className="absolute inset-0 bg-gradient-to-t from-green-900/85 via-transparent to-transparent" />
 
         <div className="container-bpm relative z-10 py-24 text-center">
+          <Reveal>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-gold drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]">
+              StrideShares by BPM Bloodstock
+            </p>
+          </Reveal>
           <Reveal delay={80}>
-            <h1 className="mx-auto max-w-5xl font-heading text-6xl uppercase leading-[0.9] tracking-tight text-cream drop-shadow-[0_4px_24px_rgba(0,0,0,0.5)] sm:text-7xl md:text-8xl">
+            <h1 className="mx-auto mt-4 max-w-5xl font-heading text-6xl uppercase leading-[0.9] tracking-tight text-cream drop-shadow-[0_4px_24px_rgba(0,0,0,0.5)] sm:text-7xl md:text-8xl">
               Get your heart racing
             </h1>
           </Reveal>
           <Reveal delay={160}>
             <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-cream/80">
-              Own a real slice of our pacers and trotters. Buy shares from the
-              price of a night out, follow every run, and share in the
-              prizemoney.
+              StrideShares is micro-share racehorse ownership by BPM Bloodstock.
+              Own a real share of a pacer or trotter from the price of a night
+              out, follow every run, and share in the prizemoney.
             </p>
           </Reveal>
           <Reveal delay={240}>
@@ -121,7 +126,7 @@ export default async function Home() {
           </div>
           <div className="mt-14 grid gap-6 md:grid-cols-4">
             {[
-              ["01", "We buy the horse", "BPM secures a pacer or trotter and splits it into thousands of small shares."],
+              ["01", "We buy the horse", "BPM Bloodstock secures a pacer or trotter and splits it into thousands of small shares."],
               ["02", "You pick your slice", "Buy from around $50 a share. One share or a few hundred, your call."],
               ["03", "You own your %", "Your shares are your stake. The more you hold, the bigger your cut."],
               ["04", "You share the winnings", "When the horse earns, prizemoney is split by shares held, to the cent."],

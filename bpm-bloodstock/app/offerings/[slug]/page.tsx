@@ -161,9 +161,9 @@ export default async function OfferingDetail({
             signedIn={!!user}
           />
           <p className="mt-4 px-2 text-center text-[11px] leading-relaxed text-cream/40">
-            Shares are paid for from your BPM wallet. Prizemoney is distributed
+            Shares are paid for by card at checkout. Prizemoney is distributed
             pro-rata to shareholders after a {(offering.mgmtFeeBps / 100).toFixed(0)}%
-            management fee.
+            management fee and lands in your StrideShares wallet.
           </p>
         </div>
       </div>

@@ -33,11 +33,16 @@ export async function Nav() {
               <Link href="/" className="flex items-center">
                 <SafeImg
                   src={logo}
-                  alt="BPM Bloodstock"
+                  alt="StrideShares by BPM Bloodstock"
                   className="h-10 w-auto"
                   fallback={
-                    <span className="font-heading text-lg uppercase tracking-tight text-cream">
-                      BPM Bloodstock
+                    <span className="flex flex-col leading-none">
+                      <span className="font-heading text-lg uppercase tracking-tight text-cream">
+                        StrideShares
+                      </span>
+                      <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-gold-300">
+                        by BPM Bloodstock
+                      </span>
                     </span>
                   }
                 />

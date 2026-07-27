@@ -4,12 +4,16 @@ import { useState } from "react";
 
 const FAQS = [
   {
+    q: "What is StrideShares?",
+    a: "StrideShares is BPM Bloodstock's micro-share racehorse ownership offering. You buy shares in a named pacer or trotter, follow every run, and share in the prizemoney. Same team, same horses, just an easier way in.",
+  },
+  {
     q: "Do I actually own the horse?",
     a: "Yep. You hold real micro-shares in a named, registered racehorse - your name goes on the ownership records. It's not a fantasy team or a punt.",
   },
   {
     q: "How does the prizemoney work?",
-    a: "When your horse earns, we take a small management fee off the top and split the rest across shareholders by exactly how many shares you hold - down to the cent. It drops straight into your BPM wallet.",
+    a: "When your horse earns, we take a small management fee off the top and split the rest across shareholders by exactly how many shares you hold - down to the cent. It drops straight into your StrideShares wallet.",
   },
   {
     q: "Are there surprise bills or ongoing costs?",

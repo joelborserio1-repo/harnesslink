@@ -7,9 +7,9 @@ import { brandLogoSrc, brandIconSrc } from "@/lib/brand";
 export async function generateMetadata(): Promise<Metadata> {
   const icon = brandIconSrc();
   return {
-    title: "BPM Bloodstock - Get Your Heart Racing",
+    title: "StrideShares by BPM Bloodstock | Get Your Heart Racing",
     description:
-      "Own a share of the action. Micro-shares in pacers and trotters - buy, follow, and share in the prizemoney.",
+      "StrideShares is micro-share racehorse ownership by BPM Bloodstock. Own a real share of a pacer or trotter, follow every run, and share in the prizemoney.",
     // If you drop public/brand/icon.<ext> it becomes the favicon; otherwise the
     // built-in app/icon.svg is used.
     ...(icon ? { icons: { icon } } : {}),
@@ -46,32 +46,45 @@ export default function RootLayout({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={brandLogoSrc()!}
-                    alt="BPM Bloodstock"
+                    alt="StrideShares by BPM Bloodstock"
                     className="h-10 w-auto"
                   />
-                  <p className="text-[11px] uppercase tracking-[0.3em] text-gold-300">
-                    Get Your Heart Racing
-                  </p>
+                  <div>
+                    <p className="font-heading text-sm font-bold italic tracking-[0.02em] text-cream">
+                      StrideShares
+                    </p>
+                    <p className="text-[11px] uppercase tracking-[0.3em] text-gold-300">
+                      by BPM Bloodstock
+                    </p>
+                  </div>
                 </>
               ) : (
                 <>
                   <LogoMark className="h-8 w-8" />
                   <div>
                     <p className="font-heading text-sm font-bold italic tracking-[0.02em] text-cream">
-                      BPM BLOODSTOCK
+                      STRIDESHARES
                     </p>
                     <p className="text-[11px] uppercase tracking-[0.3em] text-gold-300">
-                      Get Your Heart Racing
+                      by BPM Bloodstock
                     </p>
                   </div>
                 </>
               )}
             </div>
-            <p className="max-w-md text-xs leading-relaxed text-cream/45">
-              Scaffold / demonstration only. Fractional ownership involves risk;
-              prizemoney is never guaranteed. Any live version would require the
-              appropriate racing, AFSL/financial-product and AML/KYC approvals.
-            </p>
+            <div className="max-w-md space-y-2">
+              <p className="text-xs leading-relaxed text-cream/60">
+                StrideShares by BPM Bloodstock. Micro-share racehorse ownership
+                in pacers and trotters. Get Your Heart Racing.
+              </p>
+              <p className="text-xs leading-relaxed text-cream/45">
+                Scaffold / demonstration only. Micro-share ownership involves
+                risk; prizemoney is never guaranteed. StrideShares is a
+                customer-facing brand of BPM Bloodstock, which operates the
+                offering. Any live version would require the appropriate racing,
+                AFSL/financial-product and AML/KYC approvals.
+              </p>
+            </div>
           </div>
         </footer>
       </body>

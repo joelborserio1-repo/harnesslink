@@ -17,6 +17,19 @@ UI copy, code comments, docs, commit messages.
 
 ## Brand
 
+- **Name / hierarchy:** the customer-facing brand is **StrideShares**. **BPM
+  Bloodstock** is the parent / endorser / legal entity (the syndicator that
+  actually owns the horses and processes payments) - always subordinate, shown
+  as "by BPM Bloodstock". **Get Your Heart Racing** is the tagline. Use the full
+  lockup "StrideShares by BPM Bloodstock" once per page/journey (hero, footer,
+  checkout, metadata, About), then go short ("StrideShares") everywhere else.
+  Never retire BPM Bloodstock; never imply StrideShares is a separate company
+  that holds the horse or the money.
+- **Terminology:** owners / members / part-owners (never "investors" or
+  "punters"); shares / micro-shares (never "units", "tokens", "equity");
+  "Buy a share" / "Own a share" / "Become an owner" (never "invest", "deposit").
+  Prizemoney is "applicable", never guaranteed. It is not gambling, crypto or a
+  financial product.
 - Colours: Heritage Gold `#D4AF37`, Racing Green `#0B3D2E`, Cream `#F5F2E9`.
 - Type: Space Grotesk (headings), Inter (body). Tokens live in
   `tailwind.config.ts` and `components/Logo.tsx`.

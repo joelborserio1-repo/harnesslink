@@ -57,7 +57,7 @@ export default async function AdminPage() {
       <div className="mb-6 flex items-center gap-3 border-b border-green-600 pb-6">
         {brandLogoSrc() ? (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={brandLogoSrc()!} alt="BPM Bloodstock" className="h-11 w-auto" />
+          <img src={brandLogoSrc()!} alt="StrideShares by BPM Bloodstock" className="h-11 w-auto" />
         ) : (
           <LogoMark className="h-11 w-11" />
         )}

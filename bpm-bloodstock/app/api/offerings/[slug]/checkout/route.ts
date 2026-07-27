@@ -89,7 +89,7 @@ export async function POST(
         price_data: {
           currency: "aud",
           product_data: {
-            name: `${offering.name} - micro-shares`,
+            name: `StrideShares - ${offering.name}`,
             description: `${shares} share${shares === 1 ? "" : "s"} of ${offering.name}`,
           },
           unit_amount: offering.sharePriceCents,

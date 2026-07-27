@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Seeding BPM Bloodstock…");
+  console.log("Seeding StrideShares by BPM Bloodstock…");
 
   // Wipe (dev only) so the seed is idempotent.
   await prisma.prizeDistribution.deleteMany();
@@ -55,7 +55,7 @@ async function main() {
       imageUrl: "/horses/scar-struck.png", // committed in public/horses
       tagline: "Our flagship pacer. Grab a share and get your heart racing.",
       description:
-        "Scar Struck is a strong, honest pacer built for the big metropolitan nights. Offered as micro-shares so anyone can own a piece, follow every run, and share in the prizemoney. This is the whole point of BPM Bloodstock: real ownership, no six-figure buy-in.",
+        "Scar Struck is a strong, honest pacer built for the big metropolitan nights. Offered as micro-shares so anyone can own a piece, follow every run, and share in the prizemoney. This is the whole point of StrideShares: real ownership, no six-figure buy-in.",
       trainer: "TBC",
       sire: "TBC",
       dam: "TBC",

@@ -74,7 +74,7 @@ export default async function PurchaseSuccess({
               You&apos;re an owner. 🏇
             </h1>
             <p className="mt-3 text-cream/70">
-              Payment confirmed - your shares in{" "}
+              Payment confirmed. Your StrideShares in{" "}
               <span className="font-semibold text-gold">{offering.name}</span>{" "}
               are locked in.
             </p>

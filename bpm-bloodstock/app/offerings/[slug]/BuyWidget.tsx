@@ -135,7 +135,9 @@ export function BuyWidget({
           </a>
         ) : (
           <button onClick={buyNow} disabled={busy} className="btn-gold w-full">
-            {busy ? "Taking you to checkout…" : `Buy now · ${formatCents(totalCents)}`}
+            {busy
+              ? "Taking you to checkout…"
+              : `Buy ${shares === 1 ? "a share" : `${shares} shares`} · ${formatCents(totalCents)}`}
           </button>
         )}
       </div>

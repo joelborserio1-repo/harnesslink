@@ -35,7 +35,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   return (
     <div className="mx-auto max-w-md px-5 py-20">
       <div className="card p-8">
-        <p className="eyebrow">{isRegister ? "Join BPM" : "Welcome back"}</p>
+        <p className="eyebrow">{isRegister ? "Become an owner" : "Welcome back"}</p>
         <h1 className="mt-2 font-heading text-3xl font-bold text-cream">
           {isRegister ? "Create your account" : "Sign in"}
         </h1>
@@ -86,7 +86,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             </>
           ) : (
             <>
-              New to BPM?{" "}
+              New to StrideShares?{" "}
               <Link href="/register" className="text-gold hover:underline">
                 Create an account
               </Link>

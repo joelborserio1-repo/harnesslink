@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 /**
- * BPM Bloodstock mark: a heartbeat pulse that flows into a stylised horse head,
+ * StrideShares mark: a heartbeat pulse that flows into a stylised horse head,
  * rendered in Heritage Gold. Simplified vector interpretation of the brand sheet.
  */
 export function LogoMark({ className = "h-9 w-9" }: { className?: string }) {
@@ -10,7 +10,7 @@ export function LogoMark({ className = "h-9 w-9" }: { className?: string }) {
       viewBox="0 0 64 64"
       className={className}
       role="img"
-      aria-label="BPM Bloodstock"
+      aria-label="StrideShares by BPM Bloodstock"
       fill="none"
     >
       {/* heartbeat lead-in */}
@@ -38,11 +38,11 @@ export function Wordmark({ compact = false }: { compact?: boolean }) {
       <LogoMark className="h-9 w-9 shrink-0" />
       <span className="flex flex-col leading-none">
         <span className="font-heading text-xl font-extrabold italic tracking-tight text-cream group-hover:text-gold-100">
-          BPM
+          StrideShares
         </span>
         {!compact && (
           <span className="mt-0.5 text-[9px] font-bold italic uppercase tracking-[0.2em] text-gold-300">
-            Bloodstock
+            by BPM Bloodstock
           </span>
         )}
       </span>

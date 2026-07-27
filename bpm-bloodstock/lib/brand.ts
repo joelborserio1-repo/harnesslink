@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 
 /**
- * BPM Bloodstock colour tokens - single source of truth, mirrored in
+ * StrideShares (by BPM Bloodstock) colour tokens - single source of truth, mirrored in
  * tailwind.config.ts. Green-dominant; gold is an accent only (primary CTA,
  * price figures, icon) and is never used as a background fill.
  */

@@ -7,9 +7,9 @@ import { brandPromoSrc } from "@/lib/brand";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "About - BPM Bloodstock",
+  title: "About StrideShares by BPM Bloodstock",
   description:
-    "BPM Bloodstock is built on heart, driven by passion and defined by performance. We open harness racehorse ownership to everyone through micro-shares.",
+    "StrideShares is BPM Bloodstock's micro-share racehorse ownership offering. Built on heart, driven by passion, it opens harness racehorse ownership to everyone.",
 };
 
 export default async function AboutPage() {
@@ -33,8 +33,8 @@ export default async function AboutPage() {
             </h1>
             <p className="mx-auto mt-5 max-w-xl text-lg text-cream/75">
               BPM Bloodstock is built on heart, driven by passion and defined by
-              performance. We take the thrill of owning a racehorse and make it
-              something anyone can be part of.
+              performance. StrideShares is how we take the thrill of owning a
+              racehorse and make it something anyone can be part of.
             </p>
           </Reveal>
         </div>
@@ -63,9 +63,10 @@ export default async function AboutPage() {
                 The ownership shouldn&apos;t be locked away from it.
               </p>
               <p>
-                So we broke ownership into micro-shares. A share in one of our
-                horses costs about the same as a night out. You get the runs, the
-                results and a real cut of the prizemoney, without the barriers.
+                So we built StrideShares, breaking ownership into micro-shares.
+                A share in one of our horses costs about the same as a night out.
+                You get the runs, the results and a real cut of the prizemoney,
+                without the barriers.
               </p>
             </div>
           </Reveal>
@@ -73,7 +74,7 @@ export default async function AboutPage() {
             <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-green-900 ring-1 ring-green-600">
               <SafeImg
                 src={photo}
-                alt={withPhoto?.name || "BPM Bloodstock"}
+                alt={withPhoto?.name || "StrideShares by BPM Bloodstock"}
                 className="absolute inset-0 h-full w-full object-cover"
               />
               {!promo && (
@@ -81,7 +82,7 @@ export default async function AboutPage() {
                   <p className="font-heading text-xl font-bold text-cream">
                     Get Your Heart Racing
                   </p>
-                  <p className="text-sm text-gold">BPM Bloodstock</p>
+                  <p className="text-sm text-gold">StrideShares by BPM Bloodstock</p>
                 </div>
               )}
             </div>
@@ -165,7 +166,7 @@ export default async function AboutPage() {
                 See the current runner <span className="nudge">→</span>
               </Link>
               <Link href="/register" className="btn-outline px-8 py-3.5 text-base">
-                Join BPM
+                Become an owner
               </Link>
             </div>
           </Reveal>

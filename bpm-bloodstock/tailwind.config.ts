@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 /**
- * BPM Bloodstock brand system - green-dominant, gold as accent only.
+ * StrideShares (by BPM Bloodstock) brand system - green-dominant, gold as accent only.
  * Tokens mirrored in lib/brand.ts (brandColors) as the single source of truth.
  *   green-900 #0E2A22  page background
  *   green-800 #1B4536  cards / surfaces (sit above the page bg)

@@ -118,7 +118,7 @@ export function FeaturedCarousel({ offerings }: { offerings: FeaturedOffering[] 
               href={`/offerings/${o.slug}`}
               className="inline-flex items-center justify-center rounded-md bg-gold px-5 py-2.5 text-sm font-semibold text-[#2A2008] transition hover:bg-gold-deep"
             >
-              Buy now
+              Buy a share
             </Link>
           </div>
 
