@@ -58,3 +58,21 @@ export function brandIconSrc(): string | null {
 export function brandPromoSrc(): string | null {
   return findBrandAsset("promo");
 }
+
+/**
+ * Find a horse image in public/horses/<slug><suffix>.<ext>, cache-busted by
+ * mtime. Use suffix "-landscape" for a wide banner variant on the detail page.
+ */
+export function horseImageSrc(slug: string, suffix = ""): string | null {
+  const dir = path.join(process.cwd(), "public", "horses");
+  for (const e of EXTS) {
+    const p = path.join(dir, `${slug}${suffix}.${e}`);
+    try {
+      const st = fs.statSync(p);
+      return `/horses/${slug}${suffix}.${e}?v=${Math.round(st.mtimeMs)}`;
+    } catch {
+      /* not this extension */
+    }
+  }
+  return null;
+}

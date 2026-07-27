@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { SilksTile, ShareProgress } from "@/components/Offering";
 import { formatCents } from "@/lib/money";
+import { horseImageSrc } from "@/lib/brand";
 import { BuyWidget } from "./BuyWidget";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +24,10 @@ export default async function OfferingDetail({
   if (!offering) notFound();
 
   const user = await getCurrentUser();
+  // Prefer a wide banner variant (public/horses/<slug>-landscape.<ext>) for the
+  // hero; fall back to the square image.
+  const landscape = horseImageSrc(offering.slug, "-landscape");
+  const banner = landscape || offering.imageUrl;
   const remaining = offering.totalShares - offering.sharesSold;
   const totalPrize = offering.prizeEvents.reduce(
     (s, e) => s + e.grossCents,
@@ -44,13 +49,17 @@ export default async function OfferingDetail({
         ← All horses
       </Link>
 
-      {offering.imageUrl && (
+      {banner && (
         <div className="mt-6 overflow-hidden rounded-2xl border border-green-600 bg-green-900">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={offering.imageUrl}
+            src={banner}
             alt={offering.name}
-            className="mx-auto max-h-[75vh] w-auto object-contain"
+            className={
+              landscape
+                ? "h-64 w-full object-cover sm:h-80 md:h-[440px]"
+                : "mx-auto max-h-[75vh] w-auto object-contain"
+            }
           />
         </div>
       )}
