@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { Wordmark } from "./Logo";
 import { formatCents } from "@/lib/money";
 import { LogoutButton } from "./LogoutButton";
+import { SafeImg } from "./SafeImg";
 import { brandLogoSrc } from "@/lib/brand";
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
@@ -30,8 +31,16 @@ export async function Nav() {
           <div className="flex items-center gap-9">
             {logo ? (
               <Link href="/" className="flex items-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={logo} alt="BPM Bloodstock" className="h-10 w-auto rounded" />
+                <SafeImg
+                  src={logo}
+                  alt="BPM Bloodstock"
+                  className="h-10 w-auto"
+                  fallback={
+                    <span className="font-heading text-lg uppercase tracking-tight text-cream">
+                      BPM Bloodstock
+                    </span>
+                  }
+                />
               </Link>
             ) : (
               <Wordmark />

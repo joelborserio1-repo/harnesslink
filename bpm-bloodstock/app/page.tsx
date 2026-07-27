@@ -4,6 +4,7 @@ import { formatCentsCompact } from "@/lib/money";
 import { Reveal, CountUp } from "@/components/Motion";
 import { Faq } from "@/components/Faq";
 import { FeaturedCarousel } from "@/components/FeaturedCarousel";
+import { SafeImg } from "@/components/SafeImg";
 import { brandPromoSrc } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
@@ -173,14 +174,10 @@ export default async function Home() {
             </Reveal>
             <Reveal delay={120}>
               <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-green-900 ring-1 ring-green-600">
-                {panelImg ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={panelImg}
-                    alt=""
-                    className="absolute inset-0 h-full w-full object-cover"
-                  />
-                ) : null}
+                <SafeImg
+                  src={panelImg}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
                 {/* The promo image has its own baked-in text; only add our
                     caption when we're falling back to a plain horse photo. */}
                 {!promo && (

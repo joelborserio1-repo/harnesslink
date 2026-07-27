@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { SafeImg } from "./SafeImg";
 import { formatCents, pct } from "@/lib/money";
 
 export type FeaturedOffering = {
@@ -18,18 +19,20 @@ export type FeaturedOffering = {
   status: string;
 };
 
-// Bold dark poster (contrasts the light section). Uses the photo when present.
+// Bold dark poster (contrasts the light section). Uses the photo when present,
+// falling back to the branded green card if there's no photo (or it 404s).
 function Poster({ o }: { o: FeaturedOffering }) {
-  if (o.imageUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={o.imageUrl}
-        alt={o.name}
-        className="h-full w-full rounded-xl object-cover"
-      />
-    );
-  }
+  return (
+    <SafeImg
+      src={o.imageUrl}
+      alt={o.name}
+      className="h-full w-full rounded-xl object-cover"
+      fallback={<GraphicPoster o={o} />}
+    />
+  );
+}
+
+function GraphicPoster({ o }: { o: FeaturedOffering }) {
   return (
     <div className="relative flex h-full w-full flex-col justify-between overflow-hidden rounded-xl bg-gradient-to-br from-green-800 to-green-900 p-7">
       <div

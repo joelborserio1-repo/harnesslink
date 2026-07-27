@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SafeImg } from "./SafeImg";
 import { formatCents, pct } from "@/lib/money";
 
 type OfferingLike = {
@@ -82,12 +83,16 @@ export function OfferingCard({ offering }: { offering: OfferingLike }) {
       className="group flex flex-col overflow-hidden rounded-xl border border-green-600 bg-green-800 shadow-card transition hover:border-gold/60"
     >
       {offering.imageUrl ? (
-        <div className="relative h-44 w-full overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+        <div className="relative h-44 w-full overflow-hidden bg-green-900">
+          <SafeImg
             src={offering.imageUrl}
             alt={offering.name}
             className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+            fallback={
+              <div className="grid h-full w-full place-items-center">
+                <span className="font-heading text-xl text-gold">BPM</span>
+              </div>
+            }
           />
           <div className="absolute right-3 top-3">
             <StatusBadge status={offering.status} />

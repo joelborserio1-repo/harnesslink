@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { Reveal } from "@/components/Motion";
+import { SafeImg } from "@/components/SafeImg";
 import { brandPromoSrc } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
@@ -70,14 +71,11 @@ export default async function AboutPage() {
           </Reveal>
           <Reveal delay={120}>
             <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-green-900 ring-1 ring-green-600">
-              {photo ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={photo}
-                  alt={withPhoto?.name || "BPM Bloodstock"}
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              ) : null}
+              <SafeImg
+                src={photo}
+                alt={withPhoto?.name || "BPM Bloodstock"}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
               {!promo && (
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-green-900 via-green-900/40 to-transparent p-6">
                   <p className="font-heading text-xl font-bold text-cream">
