@@ -4,6 +4,7 @@ import { formatCentsCompact } from "@/lib/money";
 import { Reveal, CountUp } from "@/components/Motion";
 import { Faq } from "@/components/Faq";
 import { FeaturedCarousel } from "@/components/FeaturedCarousel";
+import { BuyPreview } from "@/components/BuyPreview";
 import { SafeImg } from "@/components/SafeImg";
 import { brandPromoSrc } from "@/lib/brand";
 
@@ -216,44 +217,56 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ============ REVIEWS (light) ============ */}
-      <section className="bg-paper text-green-900">
-        <div className="container-bpm py-20">
-          <div className="grid gap-10 md:grid-cols-[300px_1fr] md:items-center">
-            <Reveal>
-              <div className="text-center md:text-left">
+      {/* ============ HOW BUYING WORKS - product preview (light) ============ */}
+      {featured[0] && (
+        <section className="bg-paper text-green-900">
+          <div className="container-bpm py-20">
+            <div className="grid items-center gap-12 md:grid-cols-2">
+              <Reveal>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-green-600">
-                  Reviews
+                  How buying works
                 </p>
-                <p className="mt-2 font-heading text-6xl font-bold text-green-900">4.8</p>
-                <p className="mt-1 text-lg text-gold">★★★★★</p>
-                <p className="mt-2 text-sm text-green-700">
-                  From owners who have taken the plunge
+                <h2 className="mt-2 font-heading text-4xl font-bold tracking-tight md:text-5xl">
+                  Own a share in under a minute
+                </h2>
+                <p className="mt-4 max-w-md text-green-700">
+                  No paperwork, no waiting room. Pick your horse, choose how many
+                  shares you want, and pay by card. You are an owner before the
+                  kettle boils.
                 </p>
-              </div>
-            </Reveal>
-            <div className="grid gap-4 sm:grid-cols-3">
-              {[
-                ["Bought in on a whim and watched my horse win a fortnight later. Best money I have spent all year.", "Jordan, Sydney"],
-                ["Always thought owning a racehorse was out of reach. Turns out it is the price of a good night out.", "Priya, Melbourne"],
-                ["Seeing the prizemoney land in my account after a win is a feeling like no other.", "Mitch, Newcastle"],
-              ].map(([q, n], i) => (
-                <Reveal key={i} delay={i * 90}>
-                  <figure className="h-full rounded-2xl border border-paper-200 bg-white p-5">
-                    <p className="text-gold">★★★★★</p>
-                    <blockquote className="mt-2 text-sm text-green-800">
-                      &ldquo;{q}&rdquo;
-                    </blockquote>
-                    <figcaption className="mt-3 text-xs uppercase tracking-wide text-green-600">
-                      {n}
-                    </figcaption>
-                  </figure>
-                </Reveal>
-              ))}
+                <ol className="mt-7 space-y-4">
+                  {[
+                    ["Pick a horse", "Browse the current book and open the runner you like."],
+                    ["Choose your shares", "One share or a hundred. The total updates as you go."],
+                    ["Pay by card", "Secure checkout. No wallet to load, no minimum."],
+                    ["You're an owner", "Your shares are logged to your name, ready to follow."],
+                  ].map(([t, d], i) => (
+                    <li key={t} className="flex gap-4">
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-green-800 font-heading text-xs text-gold">
+                        {i + 1}
+                      </span>
+                      <div>
+                        <p className="font-heading font-bold">{t}</p>
+                        <p className="text-sm text-green-700">{d}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+                <Link href="/offerings" className="btn-gold mt-8 inline-flex px-7 py-3">
+                  Buy a share <span className="nudge">→</span>
+                </Link>
+              </Reveal>
+              <Reveal delay={120}>
+                <BuyPreview
+                  name={featured[0].name}
+                  discipline={featured[0].discipline}
+                  sharePriceCents={featured[0].sharePriceCents}
+                />
+              </Reveal>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ============ FAQ (dark) ============ */}
       <section className="border-t border-green-600 bg-green-900">
