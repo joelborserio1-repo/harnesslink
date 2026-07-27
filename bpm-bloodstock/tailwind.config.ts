@@ -67,7 +67,7 @@ const config: Config = {
       },
       backgroundImage: {
         "racing-gradient":
-          "radial-gradient(1200px 600px at 80% -10%, rgba(212,175,55,0.10), transparent 60%), linear-gradient(180deg, #0B3D2E 0%, #072A20 100%)",
+          "linear-gradient(180deg, #1B4536 0%, #0E2A22 100%)",
       },
     },
   },

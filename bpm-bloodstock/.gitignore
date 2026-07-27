@@ -11,3 +11,6 @@ next-env.d.ts
 
 # TS build info
 tsconfig.tsbuildinfo
+
+# test db
+prisma/test.db*

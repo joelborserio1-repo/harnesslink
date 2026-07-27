@@ -9,6 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "test": "npm run typecheck && tsx lib/distribution.test.ts && npm run test:flows",
+    "test:flows": "rm -f prisma/test.db* && DATABASE_URL=\"file:./test.db\" prisma migrate deploy && DATABASE_URL=\"file:./test.db\" tsx scripts/test-flows.ts && rm -f prisma/test.db*",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
