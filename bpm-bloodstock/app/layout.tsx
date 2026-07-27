@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { LogoMark } from "@/components/Logo";
 import { brandLogoSrc, brandIconSrc } from "@/lib/brand";
 
@@ -36,6 +37,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <AnnouncementBanner />
         <Nav />
         <main className="min-h-[calc(100vh-4rem-1px)]">{children}</main>
         <footer className="border-t border-white/10 bg-racing-975/60">
