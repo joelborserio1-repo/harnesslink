@@ -35,6 +35,7 @@
     profile_bio:     $('#hld-profile_bio'),
     profile_image:   $('#hld-profile_image'),
     race_record:     $('#hld-race_record'),
+    career_earnings: $('#hld-career_earnings'),
     progeny_note:    $('#hld-progeny_note'),
     tagline:         $('#hld-tagline'),
     short_summary:   $('#hld-short_summary'),
@@ -94,7 +95,6 @@
     progenyReset();
     crossesReset();
     relatedReset();
-    bannerReset();
   }
 
   $(document).on('change', '#hld-directory_type', function () {
@@ -108,7 +108,6 @@
     mediaReset();
     crossesReset();
     relatedReset();
-    bannerReset();
   }
 
   function resetForm() {
@@ -326,7 +325,7 @@
     const tab = $(this).data('tab');
     switchTab(tab);
     if (tab === 'progeny') progenyOnOpen();
-    if (tab === 'images')  { imagesOnOpen(); bannerOnOpen(); }
+    if (tab === 'images')  imagesOnOpen();
     if (tab === 'media')   mediaOnOpen();
     if (tab === 'content') crossesOnOpen();
     if (tab === 'related') relatedOnOpen();
@@ -957,128 +956,6 @@
     relatedSelected.push({ id: id, name: name, stud_name: stud });
     renderRelatedSelected();
     $(this).remove();
-  });
-
-  /* ══════════════════════════════════════════
-     PROMOTIONAL BANNERS (repeatable, rotating)
-  ══════════════════════════════════════════ */
-
-  let bannerLoadedForId = 0;
-  let bannerMediaFrame  = null;
-  const $bannersList  = $('#hld-banners-list');
-  const $bannersEmpty = $('#hld-banners-empty');
-  const $bannersNeedsSave = $('#hld-banners-needs-save');
-
-  function bannerReset() {
-    bannerLoadedForId = 0;
-    $bannersList.empty();
-    $bannersEmpty.show();
-    $bannersNeedsSave.hide();
-  }
-
-  function bannerOnOpen() {
-    const id = currentHorseId();
-    if (!id) { $bannersNeedsSave.show(); $bannersEmpty.hide(); return; }
-    $bannersNeedsSave.hide();
-    if (id !== bannerLoadedForId) bannerLoad(id);
-  }
-
-  function bannerLoad(id) {
-    bannerLoadedForId = id;
-    $bannersList.empty();
-    $.post(ajax, { action: 'hld_get_banners', nonce, stallion_id: id }, function (res) {
-      if (!res.success) return;
-      const items = res.data || [];
-      if (!items.length) { $bannersEmpty.show(); return; }
-      $bannersEmpty.hide();
-      items.forEach(bannerAddCard);
-      bannerInitSortable();
-    });
-  }
-
-  function bannerAddCard(item) {
-    const thumbUrl = item.image_url || '';
-    const card = $(
-      '<div class="hld-banner-card" data-id="' + item.id + '">' +
-        '<button type="button" class="hld-banner-card__del" title="Remove">&#10005;</button>' +
-        '<div class="hld-banner-card__thumb">' + (thumbUrl ? '<img src="' + escHtml(thumbUrl) + '" alt="" />' : '<span>1360 &times; 150</span>') + '</div>' +
-        '<div class="hld-banner-card__fields">' +
-          '<div class="hld-field"><label>Alt Text</label><input type="text" class="hld-banner-alt" value="' + escHtml(item.alt_text || '') + '" placeholder="Describe the banner for screen readers" /></div>' +
-          '<div class="hld-field"><label>Link URL</label><input type="url" class="hld-banner-url" value="' + escHtml(item.url || '') + '" placeholder="https://..." /></div>' +
-          '<div class="hld-field"><label>Open Link In</label><select class="hld-banner-target">' +
-            '<option value="_self"' + (item.target !== '_blank' ? ' selected' : '') + '>Same tab</option>' +
-            '<option value="_blank"' + (item.target === '_blank' ? ' selected' : '') + '>New tab</option>' +
-          '</select></div>' +
-          '<div class="hld-field"><label>Start Date</label><input type="date" class="hld-banner-start" value="' + escHtml(item.start_date || '') + '" /></div>' +
-          '<div class="hld-field"><label>End Date</label><input type="date" class="hld-banner-end" value="' + escHtml(item.end_date || '') + '" /></div>' +
-        '</div>' +
-      '</div>'
-    );
-    $bannersList.append(card);
-  }
-
-  function bannerInitSortable() {
-    if ($bannersList.hasClass('ui-sortable')) $bannersList.sortable('destroy');
-    $bannersList.sortable({
-      items: '.hld-banner-card',
-      handle: '.hld-banner-card__thumb',
-      placeholder: 'hld-banner-card ui-sortable-placeholder',
-      tolerance: 'pointer',
-      stop: function () {
-        const order = [];
-        $bannersList.find('.hld-banner-card').each(function () { order.push($(this).data('id')); });
-        $.post(ajax, { action: 'hld_reorder_banners', nonce, stallion_id: bannerLoadedForId, order: order });
-      }
-    });
-  }
-
-  $('#hld-banner-add').on('click', function () {
-    const id = currentHorseId();
-    if (!id) return alert('Save the horse first before adding a banner.');
-
-    if (bannerMediaFrame) { bannerMediaFrame.open(); return; }
-    bannerMediaFrame = wp.media({
-      title: 'Choose Banner Image (recommended 1360 × 150px)',
-      button: { text: 'Use this image' },
-      library: { type: 'image' },
-      multiple: false,
-    });
-    bannerMediaFrame.on('select', function () {
-      const attachment = bannerMediaFrame.state().get('selection').first().toJSON();
-      $.post(ajax, {
-        action: 'hld_add_banner', nonce, stallion_id: id, image_id: attachment.id,
-      }, function (res) {
-        if (!res.success) return alert(res.data || 'Failed to add banner.');
-        $bannersEmpty.hide();
-        bannerAddCard($.extend({}, res.data, { image_url: attachment.url }));
-        bannerInitSortable();
-      });
-    });
-    bannerMediaFrame.open();
-  });
-
-  $(document).on('click', '.hld-banner-card__del', function () {
-    const $card = $(this).closest('.hld-banner-card');
-    const id    = $card.data('id');
-    if (!confirm('Remove this banner?')) return;
-    $.post(ajax, { action: 'hld_delete_banner', nonce, id }, function (res) {
-      if (!res.success) return;
-      $card.remove();
-      if (!$bannersList.find('.hld-banner-card').length) $bannersEmpty.show();
-    });
-  });
-
-  $(document).on('blur change', '.hld-banner-alt, .hld-banner-url, .hld-banner-target, .hld-banner-start, .hld-banner-end', function () {
-    const $card = $(this).closest('.hld-banner-card');
-    const id    = $card.data('id');
-    $.post(ajax, {
-      action: 'hld_update_banner', nonce, id,
-      alt_text:   $card.find('.hld-banner-alt').val(),
-      url:        $card.find('.hld-banner-url').val(),
-      target:     $card.find('.hld-banner-target').val(),
-      start_date: $card.find('.hld-banner-start').val(),
-      end_date:   $card.find('.hld-banner-end').val(),
-    });
   });
 
   /* ══════════════════════════════════════════

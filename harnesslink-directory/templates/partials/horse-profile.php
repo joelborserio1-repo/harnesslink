@@ -15,7 +15,6 @@ $hero_slides    = hld_hero_slides( $stallion, $gallery_images );
 $pedigree_tree  = hld_pedigree_tree( $stallion );
 $crosses        = HLD_DB::get_crosses( $stallion->id );
 $related        = HLD_DB::get_related_listings( HLD_DB::decode_related_ids( $stallion->related_ids ), 4 );
-$banners        = HLD_DB::get_active_banners( $stallion->id );
 
 $booking_url   = $stallion->booking_url ?: '';
 $booking_label = $stallion->booking_label ?: 'Enquire Now';
@@ -26,12 +25,16 @@ $ped_name = function ( $raw ) {
     return trim( $lines[0] );
 };
 
+/* Unlabelled "By Sire × Dam · Career Earnings · Fastest Mile" line shown under the horse's name. */
+$sire_name = $ped_name( $stallion->ped_sire );
+$dam_name  = $ped_name( $stallion->ped_dam );
+$parentage = trim( implode( ' × ', array_filter( array( $sire_name, $dam_name ) ) ) );
+$vitals    = array_filter( array( $parentage, $stallion->career_earnings, $stallion->race_record ) );
+
 $quick_facts = array_filter( array(
     'Year of Birth' => $stallion->year_of_birth,
     'Colour'        => $stallion->colour,
     'Sex'           => $stallion->sex,
-    'Sire'          => $ped_name( $stallion->ped_sire ),
-    'Dam'           => $ped_name( $stallion->ped_dam ),
     'Standing Farm' => $stallion->stud_name,
 ) );
 ?>
@@ -40,6 +43,7 @@ $quick_facts = array_filter( array(
 <header class="hld-horse-titlebar">
   <?php if ( $featured ): ?><div class="hld-profile-featured-badge">Featured</div><?php endif; ?>
   <h1 class="hld-horse-name"><?= esc_html( $stallion->name ) ?></h1>
+  <?php if ( $vitals ): ?><p class="hld-horse-vitals"><?= esc_html( implode( '  ·  ', $vitals ) ) ?></p><?php endif; ?>
   <?php if ( $stallion->tagline ): ?><p class="hld-horse-tagline"><?= esc_html( $stallion->tagline ) ?></p><?php endif; ?>
   <div class="hld-horse-tags">
     <?php if ( $supports_gait && $stallion->type ): ?>
@@ -54,64 +58,58 @@ $quick_facts = array_filter( array(
   <?php endif; ?>
 </header>
 
-<div class="hld-hero-grid">
-
-  <!-- Photo: single hero image, or a featured image + thumbnail grid when there are gallery photos too. No carousel/swipe — click any photo to view full-size. -->
-  <div class="hld-hero-gallery">
-    <?php if ( count( $hero_slides ) > 1 ): ?>
-      <div class="hld-gallery-layout">
-        <div class="hld-gallery-featured">
-          <a href="<?= esc_url( $hero_slides[0]['full'] ) ?>" class="hld-lightbox-trigger" data-caption="<?= esc_attr( $hero_slides[0]['alt'] ) ?>" data-type="image">
-            <img class="hld-gallery-featured__img" src="<?= esc_url( $hero_slides[0]['full'] ) ?>" alt="<?= esc_attr( $hero_slides[0]['alt'] ) ?>" />
-            <span class="hld-gallery-zoom" aria-hidden="true">⤢</span>
+<!-- Photo: single hero image, or a featured image + thumbnail grid when there are gallery photos too. No carousel/swipe — click any photo to view full-size. -->
+<div class="hld-hero-gallery">
+  <?php if ( count( $hero_slides ) > 1 ): ?>
+    <div class="hld-gallery-layout">
+      <div class="hld-gallery-featured">
+        <a href="<?= esc_url( $hero_slides[0]['full'] ) ?>" class="hld-lightbox-trigger" data-caption="<?= esc_attr( $hero_slides[0]['alt'] ) ?>" data-type="image">
+          <img class="hld-gallery-featured__img" src="<?= esc_url( $hero_slides[0]['full'] ) ?>" alt="<?= esc_attr( $hero_slides[0]['alt'] ) ?>" />
+          <span class="hld-gallery-zoom" aria-hidden="true">⤢</span>
+        </a>
+      </div>
+      <div class="hld-gallery-grid-pub">
+        <?php foreach ( array_slice( $hero_slides, 1 ) as $slide ): ?>
+          <a href="<?= esc_url( $slide['full'] ) ?>" class="hld-gallery-thumb hld-lightbox-trigger" data-caption="<?= esc_attr( $slide['alt'] ) ?>" data-type="image">
+            <img src="<?= esc_url( $slide['thumb'] ) ?>" alt="<?= esc_attr( $slide['alt'] ) ?>" loading="lazy" />
+            <span class="hld-gallery-zoom-sm" aria-hidden="true">⤢</span>
           </a>
-        </div>
-        <div class="hld-gallery-grid-pub">
-          <?php foreach ( array_slice( $hero_slides, 1 ) as $slide ): ?>
-            <a href="<?= esc_url( $slide['full'] ) ?>" class="hld-gallery-thumb hld-lightbox-trigger" data-caption="<?= esc_attr( $slide['alt'] ) ?>" data-type="image">
-              <img src="<?= esc_url( $slide['thumb'] ) ?>" alt="<?= esc_attr( $slide['alt'] ) ?>" loading="lazy" />
-              <span class="hld-gallery-zoom-sm" aria-hidden="true">⤢</span>
-            </a>
-          <?php endforeach; ?>
-        </div>
+        <?php endforeach; ?>
       </div>
+    </div>
 
-      <div id="hld-lightbox" class="hld-lightbox" style="display:none;" role="dialog" aria-modal="true" aria-label="Photo viewer">
-        <div class="hld-lightbox__backdrop"></div>
-        <div class="hld-lightbox__content">
-          <img class="hld-lightbox__img" src="" alt="" />
-          <video class="hld-lightbox__video" style="display:none;" controls></video>
-          <div class="hld-lightbox__caption"></div>
-        </div>
-        <button type="button" class="hld-lightbox__close" aria-label="Close photo viewer">✕</button>
-        <button type="button" class="hld-lightbox__prev" aria-label="Previous photo">‹</button>
-        <button type="button" class="hld-lightbox__next" aria-label="Next photo">›</button>
+    <div id="hld-lightbox" class="hld-lightbox" style="display:none;" role="dialog" aria-modal="true" aria-label="Photo viewer">
+      <div class="hld-lightbox__backdrop"></div>
+      <div class="hld-lightbox__content">
+        <img class="hld-lightbox__img" src="" alt="" />
+        <video class="hld-lightbox__video" style="display:none;" controls></video>
+        <div class="hld-lightbox__caption"></div>
       </div>
-    <?php elseif ( count( $hero_slides ) === 1 ): ?>
-      <div class="hld-horse-photo">
-        <img src="<?= esc_url( $hero_slides[0]['full'] ) ?>" alt="<?= esc_attr( $hero_slides[0]['alt'] ) ?>" />
-      </div>
-    <?php else: ?>
-      <div class="hld-horse-photo hld-horse-photo--empty">
-        <div class="hld-profile-placeholder-text"><?= esc_html( strtoupper( substr( $stallion->name, 0, 2 ) ) ) ?></div>
-      </div>
-    <?php endif; ?>
-  </div>
+      <button type="button" class="hld-lightbox__close" aria-label="Close photo viewer">✕</button>
+      <button type="button" class="hld-lightbox__prev" aria-label="Previous photo">‹</button>
+      <button type="button" class="hld-lightbox__next" aria-label="Next photo">›</button>
+    </div>
+  <?php elseif ( count( $hero_slides ) === 1 ): ?>
+    <div class="hld-horse-photo">
+      <img src="<?= esc_url( $hero_slides[0]['full'] ) ?>" alt="<?= esc_attr( $hero_slides[0]['alt'] ) ?>" />
+    </div>
+  <?php else: ?>
+    <div class="hld-horse-photo hld-horse-photo--empty">
+      <div class="hld-profile-placeholder-text"><?= esc_html( strtoupper( substr( $stallion->name, 0, 2 ) ) ) ?></div>
+    </div>
+  <?php endif; ?>
+</div>
 
-  <!-- Pedigree panel -->
-  <div class="hld-hero-pedigree">
-    <h2 class="hld-ped-heading">Pedigree</h2>
-    <?php if ( $pedigree_tree && ! empty( $pedigree_tree['children'] ) ): ?>
-      <div class="hld-ped-scroll">
-        <div class="hld-ped-tree">
-          <?php hld_render_pedigree_node( $pedigree_tree, true ); ?>
-        </div>
-      </div>
-    <?php else: ?>
-      <p class="hld-ped-empty">Pedigree details coming soon.</p>
-    <?php endif; ?>
-  </div>
-
+<!-- Pedigree: full page width so the three-generation tree has room to breathe — no horizontal scroll. -->
+<div class="hld-hero-pedigree">
+  <h2 class="hld-ped-heading">Pedigree</h2>
+  <?php if ( $pedigree_tree && ! empty( $pedigree_tree['children'] ) ): ?>
+    <div class="hld-ped-tree">
+      <?php hld_render_pedigree_node( $pedigree_tree, true ); ?>
+    </div>
+  <?php else: ?>
+    <p class="hld-ped-empty">Pedigree details coming soon.</p>
+  <?php endif; ?>
 </div>
 
 <div class="hld-profile-body">
@@ -129,44 +127,6 @@ $quick_facts = array_filter( array(
             <span class="hld-profile-meta-label"><?= esc_html( $label ) ?></span>
             <span class="hld-profile-meta-val"><?= esc_html( $value ) ?></span>
           </div>
-        <?php endforeach; ?>
-      </div>
-    <?php endif; ?>
-  </div>
-<?php endif; ?>
-
-<!-- ═══ PROMOTIONAL BANNER (rotates automatically when more than one is active) ═══ -->
-<?php if ( ! empty( $banners ) ): ?>
-  <div class="hld-horse-banner<?= count( $banners ) > 1 ? ' hld-horse-banner--carousel' : '' ?>" <?= count( $banners ) > 1 ? 'data-hld-banner-carousel' : '' ?>>
-    <?php foreach ( $banners as $i => $banner ): ?>
-      <?php
-        $banner_img_html = wp_get_attachment_image( absint( $banner->image_id ), 'full', false, array(
-            'class'   => 'hld-horse-banner__img',
-            'alt'     => $banner->alt_text ?: $stallion->name,
-            'loading' => $i === 0 ? 'eager' : 'lazy',
-        ) );
-      ?>
-      <div class="hld-horse-banner__slide<?= $i === 0 ? ' is-active' : '' ?>" data-index="<?= (int) $i ?>">
-        <?php if ( $banner->url ): ?>
-          <a href="<?= esc_url( $banner->url ) ?>" target="<?= $banner->target === '_blank' ? '_blank' : '_self' ?>" <?= $banner->target === '_blank' ? 'rel="noopener"' : '' ?>>
-            <?= $banner_img_html ?>
-          </a>
-        <?php else: ?>
-          <?= $banner_img_html ?>
-        <?php endif; ?>
-      </div>
-    <?php endforeach; ?>
-    <?php if ( count( $banners ) > 1 ): ?>
-      <div class="hld-horse-banner__dots" role="tablist" aria-label="Banner selector">
-        <?php foreach ( $banners as $i => $banner ): ?>
-          <button
-            type="button"
-            class="hld-horse-banner__dot<?= $i === 0 ? ' is-active' : '' ?>"
-            data-index="<?= (int) $i ?>"
-            role="tab"
-            aria-selected="<?= $i === 0 ? 'true' : 'false' ?>"
-            aria-label="Show banner <?= (int) $i + 1 ?> of <?= count( $banners ) ?>"
-          ></button>
         <?php endforeach; ?>
       </div>
     <?php endif; ?>

@@ -119,30 +119,12 @@ class HLD_DB {
             KEY idx_sort (stallion_id, sort_order)
         ) {$charset};";
 
-        /* ── Promotional banners (repeatable, rotates on the front-end) ── */
-        $sql_banners = "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}hld_banners (
-            id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            stallion_id  BIGINT UNSIGNED NOT NULL,
-            image_id     BIGINT UNSIGNED NOT NULL DEFAULT 0,
-            url          VARCHAR(255)    NOT NULL DEFAULT '',
-            target       VARCHAR(10)     NOT NULL DEFAULT '_self',
-            alt_text     VARCHAR(255)    NOT NULL DEFAULT '',
-            start_date   DATE            NULL,
-            end_date     DATE            NULL,
-            sort_order   INT             NOT NULL DEFAULT 0,
-            created_at   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            KEY idx_stallion (stallion_id),
-            KEY idx_sort (stallion_id, sort_order)
-        ) {$charset};";
-
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta( $sql_stallions );
         dbDelta( $sql_enquiries );
         dbDelta( $sql_gallery );
         dbDelta( $sql_progeny );
         dbDelta( $sql_crosses );
-        dbDelta( $sql_banners );
         self::ensure_columns();
         self::dedupe_stallions();
 
@@ -252,6 +234,7 @@ class HLD_DB {
             'booking_url'    => "ALTER TABLE {$table} ADD booking_url VARCHAR(255) NOT NULL DEFAULT ''",
             'booking_label'  => "ALTER TABLE {$table} ADD booking_label VARCHAR(100) NOT NULL DEFAULT ''",
             'hero_image_id'  => "ALTER TABLE {$table} ADD hero_image_id BIGINT UNSIGNED NOT NULL DEFAULT 0",
+            'career_earnings' => "ALTER TABLE {$table} ADD career_earnings VARCHAR(100) NOT NULL DEFAULT ''",
 
             /* ── Crosses of Gold intro + related horses ── */
             'crosses_intro' => "ALTER TABLE {$table} ADD crosses_intro TEXT",
@@ -566,7 +549,6 @@ class HLD_DB {
         self::delete_gallery_for_stallion( $id );
         self::delete_progeny( $id );
         self::delete_crosses_for_stallion( $id );
-        self::delete_banners_for_stallion( $id );
         return $wpdb->delete( $wpdb->prefix . 'hld_stallions', array( 'id' => $id ) );
     }
 
@@ -712,6 +694,7 @@ class HLD_DB {
             'profile_bio'     => wp_kses_post( $data['profile_bio'] ?? '' ),
             'profile_image'   => sanitize_text_field( $data['profile_image'] ?? '' ),
             'race_record'     => sanitize_text_field( $data['race_record'] ?? '' ),
+            'career_earnings' => sanitize_text_field( $data['career_earnings'] ?? '' ),
             'service_fee'     => sanitize_text_field( $data['service_fee'] ?? '' ),
             'progeny_note'    => sanitize_textarea_field( $data['progeny_note'] ?? '' ),
 
@@ -757,13 +740,6 @@ class HLD_DB {
         $value = sanitize_textarea_field( $value );
         $lines = array_slice( array_map( 'trim', explode( "\n", $value ) ), 0, 2 );
         return implode( "\n", array_filter( $lines, 'strlen' ) );
-    }
-
-    /** 'YYYY-MM-DD' or empty; anything else is discarded rather than blocking save. */
-    private static function sanitize_date( $value ) {
-        $value = sanitize_text_field( $value );
-        if ( $value === '' ) return null;
-        return preg_match( '/^\d{4}-\d{2}-\d{2}$/', $value ) ? $value : null;
     }
 
     /** Accepts a JSON string or an array of listing IDs; stores a clean JSON array. */
@@ -1196,84 +1172,4 @@ class HLD_DB {
         return $wpdb->delete( $wpdb->prefix . 'hld_crosses', array( 'stallion_id' => absint( $stallion_id ) ) );
     }
 
-    /* ════════════════════════════════════
-       PROMOTIONAL BANNERS (repeatable, rotates on the front-end)
-    ════════════════════════════════════ */
-
-    public static function get_banners( $stallion_id ) {
-        global $wpdb;
-        return $wpdb->get_results( $wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}hld_banners WHERE stallion_id = %d ORDER BY sort_order ASC, id ASC",
-            absint( $stallion_id )
-        ) );
-    }
-
-    /** Banners that have an image and, if dated, fall within their active window — in display order. */
-    public static function get_active_banners( $stallion_id ) {
-        $today = current_time( 'Y-m-d' );
-        $out   = array();
-        foreach ( self::get_banners( $stallion_id ) as $b ) {
-            if ( empty( $b->image_id ) ) continue;
-            if ( ! empty( $b->start_date ) && $today < $b->start_date ) continue;
-            if ( ! empty( $b->end_date ) && $today > $b->end_date ) continue;
-            $out[] = $b;
-        }
-        return $out;
-    }
-
-    private static function sanitize_banner( $stallion_id, $data ) {
-        return array(
-            'stallion_id' => absint( $stallion_id ),
-            'image_id'    => absint( $data['image_id'] ?? 0 ),
-            'url'         => esc_url_raw( $data['url'] ?? '' ),
-            'target'      => ( $data['target'] ?? '_self' ) === '_blank' ? '_blank' : '_self',
-            'alt_text'    => sanitize_text_field( $data['alt_text'] ?? '' ),
-            'start_date'  => self::sanitize_date( $data['start_date'] ?? '' ),
-            'end_date'    => self::sanitize_date( $data['end_date'] ?? '' ),
-        );
-    }
-
-    public static function add_banner( $stallion_id, $data ) {
-        global $wpdb;
-        $existing = self::get_banners( $stallion_id );
-        $record   = self::sanitize_banner( $stallion_id, $data );
-        $record['sort_order'] = count( $existing );
-        $wpdb->insert( $wpdb->prefix . 'hld_banners', $record );
-        return $wpdb->insert_id;
-    }
-
-    public static function update_banner( $id, $data ) {
-        global $wpdb;
-        $update = array();
-        if ( isset( $data['image_id'] ) )   $update['image_id']   = absint( $data['image_id'] );
-        if ( isset( $data['url'] ) )        $update['url']        = esc_url_raw( $data['url'] );
-        if ( isset( $data['target'] ) )     $update['target']     = $data['target'] === '_blank' ? '_blank' : '_self';
-        if ( isset( $data['alt_text'] ) )   $update['alt_text']   = sanitize_text_field( $data['alt_text'] );
-        if ( array_key_exists( 'start_date', $data ) ) $update['start_date'] = self::sanitize_date( $data['start_date'] );
-        if ( array_key_exists( 'end_date', $data ) )   $update['end_date']   = self::sanitize_date( $data['end_date'] );
-        if ( isset( $data['sort_order'] ) ) $update['sort_order'] = absint( $data['sort_order'] );
-        if ( ! $update ) return false;
-        return $wpdb->update( $wpdb->prefix . 'hld_banners', $update, array( 'id' => absint( $id ) ) );
-    }
-
-    public static function delete_banner( $id ) {
-        global $wpdb;
-        return $wpdb->delete( $wpdb->prefix . 'hld_banners', array( 'id' => absint( $id ) ) );
-    }
-
-    public static function reorder_banners( $stallion_id, $ordered_ids ) {
-        global $wpdb;
-        foreach ( $ordered_ids as $sort => $item_id ) {
-            $wpdb->update(
-                $wpdb->prefix . 'hld_banners',
-                array( 'sort_order' => absint( $sort ) ),
-                array( 'id' => absint( $item_id ), 'stallion_id' => absint( $stallion_id ) )
-            );
-        }
-    }
-
-    public static function delete_banners_for_stallion( $stallion_id ) {
-        global $wpdb;
-        return $wpdb->delete( $wpdb->prefix . 'hld_banners', array( 'stallion_id' => absint( $stallion_id ) ) );
-    }
 }

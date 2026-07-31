@@ -39,12 +39,6 @@ class HLD_Ajax {
         add_action( 'wp_ajax_hld_reorder_crosses',        array( __CLASS__, 'reorder_crosses' ) );
         // Related horses (search-as-you-type picker)
         add_action( 'wp_ajax_hld_search_horses',          array( __CLASS__, 'search_horses' ) );
-        // Promotional banners (repeatable, rotating)
-        add_action( 'wp_ajax_hld_get_banners',            array( __CLASS__, 'get_banners' ) );
-        add_action( 'wp_ajax_hld_add_banner',             array( __CLASS__, 'add_banner' ) );
-        add_action( 'wp_ajax_hld_update_banner',          array( __CLASS__, 'update_banner' ) );
-        add_action( 'wp_ajax_hld_delete_banner',          array( __CLASS__, 'delete_banner' ) );
-        add_action( 'wp_ajax_hld_reorder_banners',        array( __CLASS__, 'reorder_banners' ) );
     }
 
     /* ── Public: live search / filter ── */
@@ -804,73 +798,5 @@ class HLD_Ajax {
         $rows      = $params ? $wpdb->get_results( $wpdb->prepare( $sql, $params ) ) : $wpdb->get_results( $sql );
 
         wp_send_json_success( $rows );
-    }
-
-    /* ════════════════════════════════════
-       PROMOTIONAL BANNERS
-    ════════════════════════════════════ */
-
-    public static function get_banners() {
-        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
-        check_ajax_referer( 'hld_admin_nonce', 'nonce' );
-        $stallion_id = absint( $_POST['stallion_id'] ?? 0 );
-        wp_send_json_success( HLD_DB::get_banners( $stallion_id ) );
-    }
-
-    public static function add_banner() {
-        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
-        check_ajax_referer( 'hld_admin_nonce', 'nonce' );
-        $stallion_id = absint( $_POST['stallion_id'] ?? 0 );
-        if ( ! $stallion_id ) wp_send_json_error( 'Save the horse first, then add a banner.' );
-
-        $image_id = absint( $_POST['image_id'] ?? 0 );
-        if ( ! $image_id ) wp_send_json_error( 'Choose a banner image first.' );
-
-        $data = array(
-            'image_id'   => $image_id,
-            'url'        => wp_unslash( $_POST['url'] ?? '' ),
-            'target'     => wp_unslash( $_POST['target'] ?? '_self' ),
-            'alt_text'   => wp_unslash( $_POST['alt_text'] ?? '' ),
-            'start_date' => wp_unslash( $_POST['start_date'] ?? '' ),
-            'end_date'   => wp_unslash( $_POST['end_date'] ?? '' ),
-        );
-        $id = HLD_DB::add_banner( $stallion_id, $data );
-        $banner = $id ? HLD_DB::get_banners( $stallion_id ) : array();
-        $saved  = null;
-        foreach ( $banner as $b ) { if ( (int) $b->id === (int) $id ) { $saved = $b; break; } }
-
-        wp_send_json_success( $saved ?: array( 'id' => $id, 'stallion_id' => $stallion_id ) );
-    }
-
-    public static function update_banner() {
-        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
-        check_ajax_referer( 'hld_admin_nonce', 'nonce' );
-        $id   = absint( $_POST['id'] ?? 0 );
-        $data = array();
-        foreach ( array( 'url', 'target', 'alt_text', 'start_date', 'end_date' ) as $key ) {
-            if ( isset( $_POST[ $key ] ) ) $data[ $key ] = wp_unslash( $_POST[ $key ] );
-        }
-        if ( isset( $_POST['image_id'] ) ) $data['image_id'] = $_POST['image_id'];
-        HLD_DB::update_banner( $id, $data );
-        wp_send_json_success( array( 'message' => 'Saved.' ) );
-    }
-
-    public static function delete_banner() {
-        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
-        check_ajax_referer( 'hld_admin_nonce', 'nonce' );
-        $id = absint( $_POST['id'] ?? 0 );
-        HLD_DB::delete_banner( $id );
-        wp_send_json_success( array( 'message' => 'Removed.' ) );
-    }
-
-    public static function reorder_banners() {
-        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
-        check_ajax_referer( 'hld_admin_nonce', 'nonce' );
-        $stallion_id = absint( $_POST['stallion_id'] ?? 0 );
-        $order       = array_map( 'absint', $_POST['order'] ?? array() );
-        if ( $stallion_id && $order ) {
-            HLD_DB::reorder_banners( $stallion_id, $order );
-        }
-        wp_send_json_success();
     }
 }

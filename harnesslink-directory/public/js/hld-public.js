@@ -287,38 +287,4 @@
     if (e.key === 'ArrowRight') { if (lbIndex < lbItems.length - 1) { lbIndex++; lbShow(); } }
   });
 
-  /* ══════════════════════════════════════════
-     PROMOTIONAL BANNER CAROUSEL (horse profile)
-     Auto-rotates when there's more than one active banner; pauses on
-     hover/focus, dots give manual control.
-  ══════════════════════════════════════════ */
-  $('[data-hld-banner-carousel]').each(function () {
-    const $carousel = $(this);
-    const $slides   = $carousel.find('.hld-horse-banner__slide');
-    const $dots     = $carousel.find('.hld-horse-banner__dot');
-    let index   = 0;
-    let timer   = null;
-
-    function show(i) {
-      index = ((i % $slides.length) + $slides.length) % $slides.length;
-      $slides.removeClass('is-active').eq(index).addClass('is-active');
-      $dots.removeClass('is-active').attr('aria-selected', 'false')
-        .eq(index).addClass('is-active').attr('aria-selected', 'true');
-    }
-
-    function start() {
-      stop();
-      timer = setInterval(function () { show(index + 1); }, 6000);
-    }
-    function stop() {
-      if (timer) clearInterval(timer);
-      timer = null;
-    }
-
-    $dots.on('click', function () { show($(this).data('index')); start(); });
-    $carousel.on('mouseenter focusin', stop).on('mouseleave focusout', start);
-
-    start();
-  });
-
 })(jQuery);

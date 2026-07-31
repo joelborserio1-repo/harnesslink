@@ -182,7 +182,7 @@ function hld_listing_url( $listing ) {
 }
 
 /* ──────────────────────────────────────────────
-   HORSE PROFILE HELPERS (hero, pedigree, banner, video)
+   HORSE PROFILE HELPERS (hero, pedigree, video)
 ────────────────────────────────────────────── */
 
 /**

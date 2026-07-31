@@ -366,8 +366,14 @@ $plural        = wp_strip_all_tags( $type_meta['plural'] );
             </div>
           </div>
           <div class="hld-field" data-stallion-only="1">
-            <label>Race Record</label>
+            <label>Race Record / Fastest Mile Rate</label>
+            <p class="hld-field-hint">Shown under the horse's name on the profile, and in the pedigree box.</p>
             <input type="text" id="hld-race_record" placeholder="e.g. 1:46.4 | 3,4 (1:46)" />
+          </div>
+          <div class="hld-field" data-stallion-only="1">
+            <label>Career Prize Money</label>
+            <p class="hld-field-hint">Shown under the horse's name on the profile. Leave blank to omit.</p>
+            <input type="text" id="hld-career_earnings" placeholder="e.g. $1,203,073" />
           </div>
           <div class="hld-field hld-field--full" data-stallion-only="1">
             <label>Progeny Note (fallback text)</label>
@@ -378,7 +384,7 @@ $plural        = wp_strip_all_tags( $type_meta['plural'] );
 
       <!-- TAB: Images -->
       <div class="hld-tab-panel" id="hld-tab-images">
-        <p class="hld-tab-note">The Hero Image is the large image at the top of the profile. Gallery images appear as additional carousel/thumbnail photos. Upload a wide promotional banner if you want one — leave it blank to show nothing.</p>
+        <p class="hld-tab-note">The Hero Image is the large image at the top of the profile. Gallery images appear alongside it as a thumbnail grid — each opens full-size on click.</p>
 
         <h3 class="hld-panel-heading">Hero Image</h3>
         <div class="hld-form-grid">
@@ -409,13 +415,6 @@ $plural        = wp_strip_all_tags( $type_meta['plural'] );
         <p class="hld-gallery-note" id="hld-gallery-empty-note">No gallery images added yet.</p>
         <p class="hld-gallery-hint" id="hld-gallery-hint" style="display:none;">Drag cards to reorder. The first image doubles as the fallback if no Hero Image is set.</p>
         <div class="hld-gallery-grid" id="hld-gallery-grid"></div>
-
-        <h3 class="hld-panel-heading">Promotional Banner</h3>
-        <p class="hld-field-hint">Shown full-width, directly above "About the Horse". <strong>Recommended image size: 1360 &times; 150px.</strong> Add more than one to rotate them automatically on the profile — each can have its own link and optional on/off dates. Leave empty to show nothing.</p>
-        <div id="hld-banners-needs-save" class="hld-tab-note" style="display:none;color:#B45309;">Save the horse first, then return to this tab to add banners.</div>
-        <p class="hld-gallery-note" id="hld-banners-empty">No banners added yet.</p>
-        <div id="hld-banners-list" class="hld-banners-list"></div>
-        <button type="button" class="hld-btn hld-btn--secondary" id="hld-banner-add">+ Add Banner Image</button>
       </div>
 
       <!-- TAB: Pedigree -->
