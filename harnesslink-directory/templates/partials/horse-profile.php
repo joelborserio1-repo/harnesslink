@@ -58,58 +58,63 @@ $quick_facts = array_filter( array(
   <?php endif; ?>
 </header>
 
-<!-- Photo: single hero image, or a featured image + thumbnail grid when there are gallery photos too. No carousel/swipe — click any photo to view full-size. -->
-<div class="hld-hero-gallery">
-  <?php if ( count( $hero_slides ) > 1 ): ?>
-    <div class="hld-gallery-layout">
-      <div class="hld-gallery-featured">
-        <a href="<?= esc_url( $hero_slides[0]['full'] ) ?>" class="hld-lightbox-trigger" data-caption="<?= esc_attr( $hero_slides[0]['alt'] ) ?>" data-type="image">
-          <img class="hld-gallery-featured__img" src="<?= esc_url( $hero_slides[0]['full'] ) ?>" alt="<?= esc_attr( $hero_slides[0]['alt'] ) ?>" />
-          <span class="hld-gallery-zoom" aria-hidden="true">⤢</span>
-        </a>
-      </div>
-      <div class="hld-gallery-grid-pub">
-        <?php foreach ( array_slice( $hero_slides, 1 ) as $slide ): ?>
-          <a href="<?= esc_url( $slide['full'] ) ?>" class="hld-gallery-thumb hld-lightbox-trigger" data-caption="<?= esc_attr( $slide['alt'] ) ?>" data-type="image">
-            <img src="<?= esc_url( $slide['thumb'] ) ?>" alt="<?= esc_attr( $slide['alt'] ) ?>" loading="lazy" />
-            <span class="hld-gallery-zoom-sm" aria-hidden="true">⤢</span>
+<!-- Hero row: photo next to pedigree (desktop), stacked with photo first (mobile). Pedigree boxes are fluid (flex, word-wrap) so they always fit the column width — no horizontal scroll regardless of how narrow the column gets. -->
+<div class="hld-hero-grid">
+
+  <!-- Photo: single hero image, or a featured image + thumbnail grid when there are gallery photos too. No carousel/swipe — click any photo to view full-size. -->
+  <div class="hld-hero-gallery">
+    <?php if ( count( $hero_slides ) > 1 ): ?>
+      <div class="hld-gallery-layout">
+        <div class="hld-gallery-featured">
+          <a href="<?= esc_url( $hero_slides[0]['full'] ) ?>" class="hld-lightbox-trigger" data-caption="<?= esc_attr( $hero_slides[0]['alt'] ) ?>" data-type="image">
+            <img class="hld-gallery-featured__img" src="<?= esc_url( $hero_slides[0]['full'] ) ?>" alt="<?= esc_attr( $hero_slides[0]['alt'] ) ?>" />
+            <span class="hld-gallery-zoom" aria-hidden="true">⤢</span>
           </a>
-        <?php endforeach; ?>
+        </div>
+        <div class="hld-gallery-grid-pub">
+          <?php foreach ( array_slice( $hero_slides, 1 ) as $slide ): ?>
+            <a href="<?= esc_url( $slide['full'] ) ?>" class="hld-gallery-thumb hld-lightbox-trigger" data-caption="<?= esc_attr( $slide['alt'] ) ?>" data-type="image">
+              <img src="<?= esc_url( $slide['thumb'] ) ?>" alt="<?= esc_attr( $slide['alt'] ) ?>" loading="lazy" />
+              <span class="hld-gallery-zoom-sm" aria-hidden="true">⤢</span>
+            </a>
+          <?php endforeach; ?>
+        </div>
       </div>
-    </div>
 
-    <div id="hld-lightbox" class="hld-lightbox" style="display:none;" role="dialog" aria-modal="true" aria-label="Photo viewer">
-      <div class="hld-lightbox__backdrop"></div>
-      <div class="hld-lightbox__content">
-        <img class="hld-lightbox__img" src="" alt="" />
-        <video class="hld-lightbox__video" style="display:none;" controls></video>
-        <div class="hld-lightbox__caption"></div>
+      <div id="hld-lightbox" class="hld-lightbox" style="display:none;" role="dialog" aria-modal="true" aria-label="Photo viewer">
+        <div class="hld-lightbox__backdrop"></div>
+        <div class="hld-lightbox__content">
+          <img class="hld-lightbox__img" src="" alt="" />
+          <video class="hld-lightbox__video" style="display:none;" controls></video>
+          <div class="hld-lightbox__caption"></div>
+        </div>
+        <button type="button" class="hld-lightbox__close" aria-label="Close photo viewer">✕</button>
+        <button type="button" class="hld-lightbox__prev" aria-label="Previous photo">‹</button>
+        <button type="button" class="hld-lightbox__next" aria-label="Next photo">›</button>
       </div>
-      <button type="button" class="hld-lightbox__close" aria-label="Close photo viewer">✕</button>
-      <button type="button" class="hld-lightbox__prev" aria-label="Previous photo">‹</button>
-      <button type="button" class="hld-lightbox__next" aria-label="Next photo">›</button>
-    </div>
-  <?php elseif ( count( $hero_slides ) === 1 ): ?>
-    <div class="hld-horse-photo">
-      <img src="<?= esc_url( $hero_slides[0]['full'] ) ?>" alt="<?= esc_attr( $hero_slides[0]['alt'] ) ?>" />
-    </div>
-  <?php else: ?>
-    <div class="hld-horse-photo hld-horse-photo--empty">
-      <div class="hld-profile-placeholder-text"><?= esc_html( strtoupper( substr( $stallion->name, 0, 2 ) ) ) ?></div>
-    </div>
-  <?php endif; ?>
-</div>
+    <?php elseif ( count( $hero_slides ) === 1 ): ?>
+      <div class="hld-horse-photo">
+        <img src="<?= esc_url( $hero_slides[0]['full'] ) ?>" alt="<?= esc_attr( $hero_slides[0]['alt'] ) ?>" />
+      </div>
+    <?php else: ?>
+      <div class="hld-horse-photo hld-horse-photo--empty">
+        <div class="hld-profile-placeholder-text"><?= esc_html( strtoupper( substr( $stallion->name, 0, 2 ) ) ) ?></div>
+      </div>
+    <?php endif; ?>
+  </div>
 
-<!-- Pedigree: full page width so the three-generation tree has room to breathe — no horizontal scroll. -->
-<div class="hld-hero-pedigree">
-  <h2 class="hld-ped-heading">Pedigree</h2>
-  <?php if ( $pedigree_tree && ! empty( $pedigree_tree['children'] ) ): ?>
-    <div class="hld-ped-tree">
-      <?php hld_render_pedigree_node( $pedigree_tree, true ); ?>
-    </div>
-  <?php else: ?>
-    <p class="hld-ped-empty">Pedigree details coming soon.</p>
-  <?php endif; ?>
+  <!-- Pedigree -->
+  <div class="hld-hero-pedigree">
+    <h2 class="hld-ped-heading">Pedigree</h2>
+    <?php if ( $pedigree_tree && ! empty( $pedigree_tree['children'] ) ): ?>
+      <div class="hld-ped-tree">
+        <?php hld_render_pedigree_node( $pedigree_tree, true ); ?>
+      </div>
+    <?php else: ?>
+      <p class="hld-ped-empty">Pedigree details coming soon.</p>
+    <?php endif; ?>
+  </div>
+
 </div>
 
 <div class="hld-profile-body">

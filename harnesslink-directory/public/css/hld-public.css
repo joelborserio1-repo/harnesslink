@@ -1235,45 +1235,53 @@
 }
 .hld-horse-cta:hover { filter: brightness(1.08); transform: translateY(-1px); }
 
+/* ── Hero row: photo next to pedigree (desktop), stacked photo-first (mobile). ── */
+.hld-hero-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: stretch; margin-bottom: 28px;
+}
+@media (max-width: 900px) {
+  .hld-hero-grid { grid-template-columns: 1fr; gap: 20px; }
+}
+
 /* ── Hero photo: single static image, or featured image + thumbnail grid
    (.hld-gallery-layout / .hld-gallery-featured / .hld-gallery-grid-pub /
    .hld-gallery-thumb are the pre-existing gallery classes above — reused
-   as-is). No carousel/swipe — click a photo to view full-size. Full page
-   width, own row (pedigree below gets its own full-width row too, so it
-   never needs to scroll). ── */
-.hld-hero-gallery { margin-bottom: 28px; }
+   as-is). No carousel/swipe — click a photo to view full-size. ── */
 .hld-horse-photo {
-  border-radius: var(--hl-radius); overflow: hidden; background: var(--hl-bg); aspect-ratio: 21/9;
+  border-radius: var(--hl-radius); overflow: hidden; background: var(--hl-bg); aspect-ratio: 4/3;
 }
 .hld-horse-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .hld-horse-photo--empty { background: var(--hl-navy); display: flex; align-items: center; justify-content: center; }
 
-/* ── Pedigree panel — full page width, fluid boxes (no horizontal scroll at any size) ── */
+/* ── Pedigree panel — sits next to the photo, stretched to match its height.
+   Boxes are fluid (flex, word-wrap) so they always fill the column width —
+   no horizontal scroll no matter how narrow the column gets. ── */
 .hld-hero-pedigree {
   background: #fff; border: 1px solid var(--hl-border); border-radius: var(--hl-radius);
-  padding: 24px 28px; box-shadow: var(--hl-shadow); margin-bottom: 28px;
+  padding: 20px 22px; box-shadow: var(--hl-shadow);
+  display: flex; flex-direction: column;
 }
-.hld-ped-heading { margin: 0 0 18px; font-family: Georgia, serif; font-size: 20px; color: var(--hl-navy); }
+.hld-ped-heading { margin: 0 0 14px; font-family: Georgia, serif; font-size: 18px; color: var(--hl-navy); }
 .hld-ped-empty { color: var(--hl-muted); font-size: 14px; margin: 0; }
-.hld-ped-tree { display: flex; align-items: stretch; width: 100%; padding: 4px 0; }
+.hld-ped-tree { display: flex; align-items: stretch; width: 100%; flex: 1; padding: 4px 0; }
 
 .hld-ped-node { display: flex; align-items: stretch; flex: 1; min-width: 0; }
 .hld-ped-cell {
-  flex: 1; min-width: 0; margin: 4px 12px 4px 0;
-  display: flex; flex-direction: column; justify-content: center; gap: 4px;
-  padding: 14px 16px; border-radius: 10px;
+  flex: 1; min-width: 0; margin: 3px 10px 3px 0;
+  display: flex; flex-direction: column; justify-content: center; gap: 3px;
+  padding: 10px 12px; border-radius: 8px;
   background: var(--hl-navy); color: #fff;
-  line-height: 1.3;
+  line-height: 1.25;
 }
-.hld-ped-cell__name { font-size: 15px; font-weight: 800; overflow-wrap: break-word; }
-.hld-ped-cell__record { font-size: 12px; font-weight: 600; color: var(--hl-light-blue); letter-spacing: .01em; }
+.hld-ped-cell__name { font-size: 13px; font-weight: 800; overflow-wrap: break-word; }
+.hld-ped-cell__record { font-size: 11px; font-weight: 600; color: var(--hl-light-blue); letter-spacing: .01em; }
 .hld-ped-cell--horse {
   background: linear-gradient(135deg, var(--hl-navy), var(--hl-navy-2));
-  padding: 16px 18px;
+  padding: 12px 14px;
   box-shadow: 0 6px 18px rgba(10,42,102,.28);
 }
-.hld-ped-cell--horse .hld-ped-cell__name { font-family: Georgia, serif; font-size: 19px; }
-.hld-ped-cell--horse .hld-ped-cell__record { font-size: 13px; }
+.hld-ped-cell--horse .hld-ped-cell__name { font-family: Georgia, serif; font-size: 16px; }
+.hld-ped-cell--horse .hld-ped-cell__record { font-size: 12px; }
 .hld-ped-children {
   display: flex; flex-direction: column; justify-content: space-around; flex: 1; min-width: 0;
   border-left: 2px solid var(--hl-light-blue); margin-left: -4px; padding-left: 4px;
