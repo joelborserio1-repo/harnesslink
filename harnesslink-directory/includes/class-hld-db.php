@@ -119,12 +119,30 @@ class HLD_DB {
             KEY idx_sort (stallion_id, sort_order)
         ) {$charset};";
 
+        /* ── Promotional banners (repeatable, rotates on the front-end) ── */
+        $sql_banners = "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}hld_banners (
+            id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            stallion_id  BIGINT UNSIGNED NOT NULL,
+            image_id     BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            url          VARCHAR(255)    NOT NULL DEFAULT '',
+            target       VARCHAR(10)     NOT NULL DEFAULT '_self',
+            alt_text     VARCHAR(255)    NOT NULL DEFAULT '',
+            start_date   DATE            NULL,
+            end_date     DATE            NULL,
+            sort_order   INT             NOT NULL DEFAULT 0,
+            created_at   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_stallion (stallion_id),
+            KEY idx_sort (stallion_id, sort_order)
+        ) {$charset};";
+
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta( $sql_stallions );
         dbDelta( $sql_enquiries );
         dbDelta( $sql_gallery );
         dbDelta( $sql_progeny );
         dbDelta( $sql_crosses );
+        dbDelta( $sql_banners );
         self::ensure_columns();
         self::dedupe_stallions();
 
@@ -234,14 +252,6 @@ class HLD_DB {
             'booking_url'    => "ALTER TABLE {$table} ADD booking_url VARCHAR(255) NOT NULL DEFAULT ''",
             'booking_label'  => "ALTER TABLE {$table} ADD booking_label VARCHAR(100) NOT NULL DEFAULT ''",
             'hero_image_id'  => "ALTER TABLE {$table} ADD hero_image_id BIGINT UNSIGNED NOT NULL DEFAULT 0",
-
-            /* ── Promotional banner ── */
-            'banner_image_id' => "ALTER TABLE {$table} ADD banner_image_id BIGINT UNSIGNED NOT NULL DEFAULT 0",
-            'banner_url'      => "ALTER TABLE {$table} ADD banner_url VARCHAR(255) NOT NULL DEFAULT ''",
-            'banner_target'   => "ALTER TABLE {$table} ADD banner_target VARCHAR(10) NOT NULL DEFAULT '_self'",
-            'banner_alt'      => "ALTER TABLE {$table} ADD banner_alt VARCHAR(255) NOT NULL DEFAULT ''",
-            'banner_start'    => "ALTER TABLE {$table} ADD banner_start DATE NULL",
-            'banner_end'      => "ALTER TABLE {$table} ADD banner_end DATE NULL",
 
             /* ── Crosses of Gold intro + related horses ── */
             'crosses_intro' => "ALTER TABLE {$table} ADD crosses_intro TEXT",
@@ -556,6 +566,7 @@ class HLD_DB {
         self::delete_gallery_for_stallion( $id );
         self::delete_progeny( $id );
         self::delete_crosses_for_stallion( $id );
+        self::delete_banners_for_stallion( $id );
         return $wpdb->delete( $wpdb->prefix . 'hld_stallions', array( 'id' => $id ) );
     }
 
@@ -714,34 +725,38 @@ class HLD_DB {
             'booking_label'   => sanitize_text_field( $data['booking_label'] ?? '' ),
             'hero_image_id'   => absint( $data['hero_image_id'] ?? 0 ),
 
-            /* ── Promotional banner ── */
-            'banner_image_id' => absint( $data['banner_image_id'] ?? 0 ),
-            'banner_url'      => esc_url_raw( $data['banner_url'] ?? '' ),
-            'banner_target'   => ( $data['banner_target'] ?? '_self' ) === '_blank' ? '_blank' : '_self',
-            'banner_alt'      => sanitize_text_field( $data['banner_alt'] ?? '' ),
-            'banner_start'    => self::sanitize_date( $data['banner_start'] ?? '' ),
-            'banner_end'      => self::sanitize_date( $data['banner_end'] ?? '' ),
-
             /* ── Crosses of Gold intro + related horses ── */
             'crosses_intro'   => wp_kses_post( $data['crosses_intro'] ?? '' ),
             'related_ids'     => self::sanitize_related_ids( $data['related_ids'] ?? '' ),
 
-            /* ── Pedigree ── */
-            'ped_sire' => sanitize_text_field( $data['ped_sire'] ?? '' ),
-            'ped_dam'  => sanitize_text_field( $data['ped_dam']  ?? '' ),
-            'ped_ss'   => sanitize_text_field( $data['ped_ss']   ?? '' ),
-            'ped_sd'   => sanitize_text_field( $data['ped_sd']   ?? '' ),
-            'ped_ds'   => sanitize_text_field( $data['ped_ds']   ?? '' ),
-            'ped_dd'   => sanitize_text_field( $data['ped_dd']   ?? '' ),
-            'ped_sss'  => sanitize_text_field( $data['ped_sss']  ?? '' ),
-            'ped_ssd'  => sanitize_text_field( $data['ped_ssd']  ?? '' ),
-            'ped_sds'  => sanitize_text_field( $data['ped_sds']  ?? '' ),
-            'ped_sdd'  => sanitize_text_field( $data['ped_sdd']  ?? '' ),
-            'ped_dss'  => sanitize_text_field( $data['ped_dss']  ?? '' ),
-            'ped_dsd'  => sanitize_text_field( $data['ped_dsd']  ?? '' ),
-            'ped_dds'  => sanitize_text_field( $data['ped_dds']  ?? '' ),
-            'ped_ddd'  => sanitize_text_field( $data['ped_ddd']  ?? '' ),
+            /* ── Pedigree ── Each field is "Name" or "Name\nRecord" (e.g. "p,3,1:50"); a
+               textarea in the admin, so newlines must survive sanitisation. */
+            'ped_sire' => self::sanitize_pedigree_field( $data['ped_sire'] ?? '' ),
+            'ped_dam'  => self::sanitize_pedigree_field( $data['ped_dam']  ?? '' ),
+            'ped_ss'   => self::sanitize_pedigree_field( $data['ped_ss']   ?? '' ),
+            'ped_sd'   => self::sanitize_pedigree_field( $data['ped_sd']   ?? '' ),
+            'ped_ds'   => self::sanitize_pedigree_field( $data['ped_ds']   ?? '' ),
+            'ped_dd'   => self::sanitize_pedigree_field( $data['ped_dd']   ?? '' ),
+            'ped_sss'  => self::sanitize_pedigree_field( $data['ped_sss']  ?? '' ),
+            'ped_ssd'  => self::sanitize_pedigree_field( $data['ped_ssd']  ?? '' ),
+            'ped_sds'  => self::sanitize_pedigree_field( $data['ped_sds']  ?? '' ),
+            'ped_sdd'  => self::sanitize_pedigree_field( $data['ped_sdd']  ?? '' ),
+            'ped_dss'  => self::sanitize_pedigree_field( $data['ped_dss']  ?? '' ),
+            'ped_dsd'  => self::sanitize_pedigree_field( $data['ped_dsd']  ?? '' ),
+            'ped_dds'  => self::sanitize_pedigree_field( $data['ped_dds']  ?? '' ),
+            'ped_ddd'  => self::sanitize_pedigree_field( $data['ped_ddd']  ?? '' ),
         );
+    }
+
+    /**
+     * Pedigree fields are entered as "Name" or "Name\nRecord" (e.g. a race
+     * record like "p,3,1:50"). sanitize_text_field() would collapse the
+     * newline into a space, so use the textarea variant, capped to two lines.
+     */
+    private static function sanitize_pedigree_field( $value ) {
+        $value = sanitize_textarea_field( $value );
+        $lines = array_slice( array_map( 'trim', explode( "\n", $value ) ), 0, 2 );
+        return implode( "\n", array_filter( $lines, 'strlen' ) );
     }
 
     /** 'YYYY-MM-DD' or empty; anything else is discarded rather than blocking save. */
@@ -1179,5 +1194,86 @@ class HLD_DB {
     public static function delete_crosses_for_stallion( $stallion_id ) {
         global $wpdb;
         return $wpdb->delete( $wpdb->prefix . 'hld_crosses', array( 'stallion_id' => absint( $stallion_id ) ) );
+    }
+
+    /* ════════════════════════════════════
+       PROMOTIONAL BANNERS (repeatable, rotates on the front-end)
+    ════════════════════════════════════ */
+
+    public static function get_banners( $stallion_id ) {
+        global $wpdb;
+        return $wpdb->get_results( $wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}hld_banners WHERE stallion_id = %d ORDER BY sort_order ASC, id ASC",
+            absint( $stallion_id )
+        ) );
+    }
+
+    /** Banners that have an image and, if dated, fall within their active window — in display order. */
+    public static function get_active_banners( $stallion_id ) {
+        $today = current_time( 'Y-m-d' );
+        $out   = array();
+        foreach ( self::get_banners( $stallion_id ) as $b ) {
+            if ( empty( $b->image_id ) ) continue;
+            if ( ! empty( $b->start_date ) && $today < $b->start_date ) continue;
+            if ( ! empty( $b->end_date ) && $today > $b->end_date ) continue;
+            $out[] = $b;
+        }
+        return $out;
+    }
+
+    private static function sanitize_banner( $stallion_id, $data ) {
+        return array(
+            'stallion_id' => absint( $stallion_id ),
+            'image_id'    => absint( $data['image_id'] ?? 0 ),
+            'url'         => esc_url_raw( $data['url'] ?? '' ),
+            'target'      => ( $data['target'] ?? '_self' ) === '_blank' ? '_blank' : '_self',
+            'alt_text'    => sanitize_text_field( $data['alt_text'] ?? '' ),
+            'start_date'  => self::sanitize_date( $data['start_date'] ?? '' ),
+            'end_date'    => self::sanitize_date( $data['end_date'] ?? '' ),
+        );
+    }
+
+    public static function add_banner( $stallion_id, $data ) {
+        global $wpdb;
+        $existing = self::get_banners( $stallion_id );
+        $record   = self::sanitize_banner( $stallion_id, $data );
+        $record['sort_order'] = count( $existing );
+        $wpdb->insert( $wpdb->prefix . 'hld_banners', $record );
+        return $wpdb->insert_id;
+    }
+
+    public static function update_banner( $id, $data ) {
+        global $wpdb;
+        $update = array();
+        if ( isset( $data['image_id'] ) )   $update['image_id']   = absint( $data['image_id'] );
+        if ( isset( $data['url'] ) )        $update['url']        = esc_url_raw( $data['url'] );
+        if ( isset( $data['target'] ) )     $update['target']     = $data['target'] === '_blank' ? '_blank' : '_self';
+        if ( isset( $data['alt_text'] ) )   $update['alt_text']   = sanitize_text_field( $data['alt_text'] );
+        if ( array_key_exists( 'start_date', $data ) ) $update['start_date'] = self::sanitize_date( $data['start_date'] );
+        if ( array_key_exists( 'end_date', $data ) )   $update['end_date']   = self::sanitize_date( $data['end_date'] );
+        if ( isset( $data['sort_order'] ) ) $update['sort_order'] = absint( $data['sort_order'] );
+        if ( ! $update ) return false;
+        return $wpdb->update( $wpdb->prefix . 'hld_banners', $update, array( 'id' => absint( $id ) ) );
+    }
+
+    public static function delete_banner( $id ) {
+        global $wpdb;
+        return $wpdb->delete( $wpdb->prefix . 'hld_banners', array( 'id' => absint( $id ) ) );
+    }
+
+    public static function reorder_banners( $stallion_id, $ordered_ids ) {
+        global $wpdb;
+        foreach ( $ordered_ids as $sort => $item_id ) {
+            $wpdb->update(
+                $wpdb->prefix . 'hld_banners',
+                array( 'sort_order' => absint( $sort ) ),
+                array( 'id' => absint( $item_id ), 'stallion_id' => absint( $stallion_id ) )
+            );
+        }
+    }
+
+    public static function delete_banners_for_stallion( $stallion_id ) {
+        global $wpdb;
+        return $wpdb->delete( $wpdb->prefix . 'hld_banners', array( 'stallion_id' => absint( $stallion_id ) ) );
     }
 }

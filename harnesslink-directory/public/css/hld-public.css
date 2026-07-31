@@ -1294,16 +1294,21 @@
 
 .hld-ped-node { display: flex; align-items: stretch; }
 .hld-ped-cell {
-  flex: 0 0 auto; width: 128px; margin: 3px 10px 3px 0;
-  display: flex; align-items: center;
-  padding: 8px 10px; border: 1px solid var(--hl-border); border-radius: 8px;
-  background: #fff; font-size: 12px; font-weight: 700; color: var(--hl-text);
+  flex: 0 0 auto; width: 132px; margin: 3px 10px 3px 0;
+  display: flex; flex-direction: column; justify-content: center; gap: 2px;
+  padding: 9px 11px; border-radius: 8px;
+  background: var(--hl-navy); color: #fff;
   line-height: 1.25;
 }
+.hld-ped-cell__name { font-size: 12px; font-weight: 800; }
+.hld-ped-cell__record { font-size: 10.5px; font-weight: 600; color: var(--hl-light-blue); letter-spacing: .01em; }
 .hld-ped-cell--horse {
-  background: var(--hl-navy); border-color: var(--hl-navy); color: #fff;
-  font-family: Georgia, serif; font-size: 15px; width: 140px;
+  background: linear-gradient(135deg, var(--hl-navy), var(--hl-navy-2));
+  width: 150px; padding: 12px 14px;
+  box-shadow: 0 6px 18px rgba(10,42,102,.28);
 }
+.hld-ped-cell--horse .hld-ped-cell__name { font-family: Georgia, serif; font-size: 16px; }
+.hld-ped-cell--horse .hld-ped-cell__record { font-size: 11px; }
 .hld-ped-children {
   display: flex; flex-direction: column; justify-content: space-around;
   border-left: 2px solid var(--hl-light-blue); margin-left: -4px; padding-left: 4px;
@@ -1317,10 +1322,31 @@
 /* ── Summary block ── */
 .hld-horse-summary__text { margin: 0 0 14px; font-size: 15px; color: var(--hl-text); line-height: 1.6; }
 
-/* ── Promotional banner ── */
-.hld-horse-banner { margin-bottom: 16px; border-radius: var(--hl-radius); overflow: hidden; }
+/* ── Promotional banner (single image, or a rotating carousel when 2+) ── */
+.hld-horse-banner {
+  position: relative; margin-bottom: 16px; border-radius: var(--hl-radius);
+  overflow: hidden; background: var(--hl-bg); aspect-ratio: 1360/150;
+}
 .hld-horse-banner img,
-.hld-horse-banner__img { width: 100%; height: auto; display: block; }
+.hld-horse-banner__img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hld-horse-banner--carousel .hld-horse-banner__slide {
+  position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity .5s ease;
+}
+.hld-horse-banner--carousel .hld-horse-banner__slide.is-active { opacity: 1; visibility: visible; position: relative; }
+.hld-horse-banner__dots {
+  position: absolute; bottom: 10px; left: 0; right: 0; z-index: 1;
+  display: flex; justify-content: center; gap: 7px;
+}
+.hld-horse-banner__dot {
+  width: 8px; height: 8px; border-radius: 50%; padding: 0; border: none;
+  background: rgba(255,255,255,.55); cursor: pointer; transition: background .2s, transform .2s;
+}
+.hld-horse-banner__dot.is-active { background: #fff; transform: scale(1.25); }
+.hld-horse-banner__dot:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+@media (max-width: 700px) {
+  .hld-horse-banner { aspect-ratio: 4/1; }
+}
 
 /* ── About + Crosses of Gold (two-column desktop, stacked mobile) ── */
 .hld-about-crosses {

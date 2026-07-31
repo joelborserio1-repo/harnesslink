@@ -15,17 +15,23 @@ $hero_slides    = hld_hero_slides( $stallion, $gallery_images );
 $pedigree_tree  = hld_pedigree_tree( $stallion );
 $crosses        = HLD_DB::get_crosses( $stallion->id );
 $related        = HLD_DB::get_related_listings( HLD_DB::decode_related_ids( $stallion->related_ids ), 4 );
-$banner_active  = hld_banner_is_active( $stallion );
+$banners        = HLD_DB::get_active_banners( $stallion->id );
 
 $booking_url   = $stallion->booking_url ?: '';
 $booking_label = $stallion->booking_label ?: 'Enquire Now';
+
+/** First line only — pedigree fields may carry a "Name\nRecord" second line not wanted here. */
+$ped_name = function ( $raw ) {
+    $lines = explode( "\n", (string) $raw );
+    return trim( $lines[0] );
+};
 
 $quick_facts = array_filter( array(
     'Year of Birth' => $stallion->year_of_birth,
     'Colour'        => $stallion->colour,
     'Sex'           => $stallion->sex,
-    'Sire'          => $stallion->ped_sire,
-    'Dam'           => $stallion->ped_dam,
+    'Sire'          => $ped_name( $stallion->ped_sire ),
+    'Dam'           => $ped_name( $stallion->ped_dam ),
     'Standing Farm' => $stallion->stud_name,
 ) );
 ?>
@@ -150,22 +156,40 @@ $quick_facts = array_filter( array(
   </div>
 <?php endif; ?>
 
-<!-- ═══ PROMOTIONAL BANNER ═══ -->
-<?php if ( $banner_active ): ?>
-  <?php
-    $banner_img_html = wp_get_attachment_image( absint( $stallion->banner_image_id ), 'full', false, array(
-        'class'   => 'hld-horse-banner__img',
-        'alt'     => $stallion->banner_alt ?: $stallion->name,
-        'loading' => 'lazy',
-    ) );
-  ?>
-  <div class="hld-horse-banner">
-    <?php if ( $stallion->banner_url ): ?>
-      <a href="<?= esc_url( $stallion->banner_url ) ?>" target="<?= $stallion->banner_target === '_blank' ? '_blank' : '_self' ?>" <?= $stallion->banner_target === '_blank' ? 'rel="noopener"' : '' ?>>
-        <?= $banner_img_html ?>
-      </a>
-    <?php else: ?>
-      <?= $banner_img_html ?>
+<!-- ═══ PROMOTIONAL BANNER (rotates automatically when more than one is active) ═══ -->
+<?php if ( ! empty( $banners ) ): ?>
+  <div class="hld-horse-banner<?= count( $banners ) > 1 ? ' hld-horse-banner--carousel' : '' ?>" <?= count( $banners ) > 1 ? 'data-hld-banner-carousel' : '' ?>>
+    <?php foreach ( $banners as $i => $banner ): ?>
+      <?php
+        $banner_img_html = wp_get_attachment_image( absint( $banner->image_id ), 'full', false, array(
+            'class'   => 'hld-horse-banner__img',
+            'alt'     => $banner->alt_text ?: $stallion->name,
+            'loading' => $i === 0 ? 'eager' : 'lazy',
+        ) );
+      ?>
+      <div class="hld-horse-banner__slide<?= $i === 0 ? ' is-active' : '' ?>" data-index="<?= (int) $i ?>">
+        <?php if ( $banner->url ): ?>
+          <a href="<?= esc_url( $banner->url ) ?>" target="<?= $banner->target === '_blank' ? '_blank' : '_self' ?>" <?= $banner->target === '_blank' ? 'rel="noopener"' : '' ?>>
+            <?= $banner_img_html ?>
+          </a>
+        <?php else: ?>
+          <?= $banner_img_html ?>
+        <?php endif; ?>
+      </div>
+    <?php endforeach; ?>
+    <?php if ( count( $banners ) > 1 ): ?>
+      <div class="hld-horse-banner__dots" role="tablist" aria-label="Banner selector">
+        <?php foreach ( $banners as $i => $banner ): ?>
+          <button
+            type="button"
+            class="hld-horse-banner__dot<?= $i === 0 ? ' is-active' : '' ?>"
+            data-index="<?= (int) $i ?>"
+            role="tab"
+            aria-selected="<?= $i === 0 ? 'true' : 'false' ?>"
+            aria-label="Show banner <?= (int) $i + 1 ?> of <?= count( $banners ) ?>"
+          ></button>
+        <?php endforeach; ?>
+      </div>
     <?php endif; ?>
   </div>
 <?php endif; ?>

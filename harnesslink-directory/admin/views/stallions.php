@@ -411,74 +411,52 @@ $plural        = wp_strip_all_tags( $type_meta['plural'] );
         <div class="hld-gallery-grid" id="hld-gallery-grid"></div>
 
         <h3 class="hld-panel-heading">Promotional Banner</h3>
-        <p class="hld-field-hint">Optional full-width banner shown below the summary block. Leave the image empty to show nothing — an incomplete banner (e.g. a link with no image) will not display.</p>
-        <div class="hld-form-grid">
-          <div class="hld-field hld-field--full">
-            <input type="hidden" id="hld-banner_image_id" value="0" />
-            <div class="hld-image-picker">
-              <button type="button" class="hld-btn hld-btn--secondary" id="hld-banner-image-pick">Upload / Choose Banner Image</button>
-              <button type="button" class="hld-btn hld-btn--ghost" id="hld-banner-image-clear">Clear</button>
-            </div>
-            <div class="hld-image-preview hld-image-preview--wide" id="hld-banner-image-preview" style="display:none;">
-              <img src="" alt="Banner preview" />
-            </div>
-          </div>
-          <div class="hld-field hld-field--full">
-            <label>Banner Alt Text</label>
-            <input type="text" id="hld-banner_alt" placeholder="Describe the banner image for screen readers" />
-          </div>
-          <div class="hld-field">
-            <label>Banner Link URL</label>
-            <input type="url" id="hld-banner_url" placeholder="https://..." />
-          </div>
-          <div class="hld-field">
-            <label>Open Link In</label>
-            <select id="hld-banner_target">
-              <option value="_self">Same tab</option>
-              <option value="_blank">New tab</option>
-            </select>
-          </div>
-          <div class="hld-field">
-            <label>Start Date</label>
-            <p class="hld-field-hint">Leave blank to show immediately.</p>
-            <input type="date" id="hld-banner_start" />
-          </div>
-          <div class="hld-field">
-            <label>End Date</label>
-            <p class="hld-field-hint">Leave blank to show indefinitely.</p>
-            <input type="date" id="hld-banner_end" />
-          </div>
-        </div>
+        <p class="hld-field-hint">Shown full-width, directly above "About the Horse". <strong>Recommended image size: 1360 &times; 150px.</strong> Add more than one to rotate them automatically on the profile — each can have its own link and optional on/off dates. Leave empty to show nothing.</p>
+        <div id="hld-banners-needs-save" class="hld-tab-note" style="display:none;color:#B45309;">Save the horse first, then return to this tab to add banners.</div>
+        <p class="hld-gallery-note" id="hld-banners-empty">No banners added yet.</p>
+        <div id="hld-banners-list" class="hld-banners-list"></div>
+        <button type="button" class="hld-btn hld-btn--secondary" id="hld-banner-add">+ Add Banner Image</button>
       </div>
 
       <!-- TAB: Pedigree -->
       <div class="hld-tab-panel" id="hld-tab-pedigree">
-        <p class="hld-tab-note">Paste each ancestor's name only — no extra formatting. Leave any field blank to omit it cleanly from the pedigree table. Publishing is never blocked by incomplete pedigree fields.</p>
+        <p class="hld-tab-note">Each box below is two lines: the ancestor's <strong>name</strong>, and optionally a <strong>race record</strong> on the second line (e.g. <code>p,3,1:50</code>). Leave a box blank to omit it cleanly from the pedigree table — publishing is never blocked by incomplete pedigree fields. The horse's own box uses the Name and Race Record fields from the Overview / Profile &amp; Racing tabs.</p>
+
+        <div class="hld-ped-quickfill">
+          <h3 class="hld-panel-heading">Quick Fill from Pasted Text</h3>
+          <p class="hld-field-hint">If you already have this pedigree written out elsewhere (a website, a spreadsheet, notes), this is the fastest way in: click <strong>Get Template</strong>, fill in each line under its label, paste the whole thing back below, then click <strong>Fill Fields</strong>. It never touches an image — this is still plain text, so nothing about how the boxes are branded changes.</p>
+          <div class="hld-ped-quickfill__bar">
+            <button type="button" class="hld-btn hld-btn--secondary" id="hld-ped-template">Get Template</button>
+            <button type="button" class="hld-btn hld-btn--primary" id="hld-ped-fill">Fill Fields</button>
+          </div>
+          <textarea id="hld-ped-paste" rows="8" placeholder="Click &quot;Get Template&quot; to start, or paste a previously-copied template here."></textarea>
+          <div id="hld-ped-fill-result" class="hld-import-result" style="display:none;"></div>
+        </div>
 
         <h3 class="hld-panel-heading">Parents</h3>
         <div class="hld-form-grid">
-          <div class="hld-field"><label>Sire</label><input type="text" id="hld-ped_sire" placeholder="e.g. Sweet Lou" /></div>
-          <div class="hld-field"><label>Dam</label><input type="text" id="hld-ped_dam" placeholder="e.g. Shesalight" /></div>
+          <div class="hld-field"><label>Sire</label><textarea rows="2" id="hld-ped_sire" placeholder="Sweet Lou&#10;p,3,1:50"></textarea></div>
+          <div class="hld-field"><label>Dam</label><textarea rows="2" id="hld-ped_dam" placeholder="Shesalight&#10;p,2,1:53f"></textarea></div>
         </div>
 
         <h3 class="hld-panel-heading">Grandparents</h3>
         <div class="hld-form-grid">
-          <div class="hld-field"><label>Sire &gt; Sire</label><input type="text" id="hld-ped_ss" /></div>
-          <div class="hld-field"><label>Sire &gt; Dam</label><input type="text" id="hld-ped_sd" /></div>
-          <div class="hld-field"><label>Dam &gt; Sire</label><input type="text" id="hld-ped_ds" /></div>
-          <div class="hld-field"><label>Dam &gt; Dam</label><input type="text" id="hld-ped_dd" /></div>
+          <div class="hld-field"><label>Sire &gt; Sire</label><textarea rows="2" id="hld-ped_ss"></textarea></div>
+          <div class="hld-field"><label>Sire &gt; Dam</label><textarea rows="2" id="hld-ped_sd"></textarea></div>
+          <div class="hld-field"><label>Dam &gt; Sire</label><textarea rows="2" id="hld-ped_ds"></textarea></div>
+          <div class="hld-field"><label>Dam &gt; Dam</label><textarea rows="2" id="hld-ped_dd"></textarea></div>
         </div>
 
         <h3 class="hld-panel-heading">Great-Grandparents</h3>
         <div class="hld-form-grid">
-          <div class="hld-field"><label>Sire &gt; Sire &gt; Sire</label><input type="text" id="hld-ped_sss" /></div>
-          <div class="hld-field"><label>Sire &gt; Sire &gt; Dam</label><input type="text" id="hld-ped_ssd" /></div>
-          <div class="hld-field"><label>Sire &gt; Dam &gt; Sire</label><input type="text" id="hld-ped_sds" /></div>
-          <div class="hld-field"><label>Sire &gt; Dam &gt; Dam</label><input type="text" id="hld-ped_sdd" /></div>
-          <div class="hld-field"><label>Dam &gt; Sire &gt; Sire</label><input type="text" id="hld-ped_dss" /></div>
-          <div class="hld-field"><label>Dam &gt; Sire &gt; Dam</label><input type="text" id="hld-ped_dsd" /></div>
-          <div class="hld-field"><label>Dam &gt; Dam &gt; Sire</label><input type="text" id="hld-ped_dds" /></div>
-          <div class="hld-field"><label>Dam &gt; Dam &gt; Dam</label><input type="text" id="hld-ped_ddd" /></div>
+          <div class="hld-field"><label>Sire &gt; Sire &gt; Sire</label><textarea rows="2" id="hld-ped_sss"></textarea></div>
+          <div class="hld-field"><label>Sire &gt; Sire &gt; Dam</label><textarea rows="2" id="hld-ped_ssd"></textarea></div>
+          <div class="hld-field"><label>Sire &gt; Dam &gt; Sire</label><textarea rows="2" id="hld-ped_sds"></textarea></div>
+          <div class="hld-field"><label>Sire &gt; Dam &gt; Dam</label><textarea rows="2" id="hld-ped_sdd"></textarea></div>
+          <div class="hld-field"><label>Dam &gt; Sire &gt; Sire</label><textarea rows="2" id="hld-ped_dss"></textarea></div>
+          <div class="hld-field"><label>Dam &gt; Sire &gt; Dam</label><textarea rows="2" id="hld-ped_dsd"></textarea></div>
+          <div class="hld-field"><label>Dam &gt; Dam &gt; Sire</label><textarea rows="2" id="hld-ped_dds"></textarea></div>
+          <div class="hld-field"><label>Dam &gt; Dam &gt; Dam</label><textarea rows="2" id="hld-ped_ddd"></textarea></div>
         </div>
       </div>
 

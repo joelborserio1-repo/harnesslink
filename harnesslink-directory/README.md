@@ -244,7 +244,7 @@ harnesslink-directory/
 
 ---
 
-## Horse / Stallion Profile Redesign (v1.7.0)
+## Horse / Stallion Profile Redesign (v1.7.1)
 
 The individual stallion profile (`/directory/stallion/{id}/{name}`) was
 rebuilt to a richer, HarnessLink-branded layout: hero photo carousel,
@@ -264,11 +264,12 @@ the pre-redesign markup).
 - **New columns on `hld_stallions`** (added additively via
   `HLD_DB::ensure_columns()` — nothing existing was renamed, dropped, or
   backfilled): `tagline`, `short_summary`, `year_of_birth`, `colour`,
-  `sex`, `booking_url`, `booking_label`, `hero_image_id`,
-  `banner_image_id`, `banner_url`, `banner_target`, `banner_alt`,
-  `banner_start`, `banner_end`, `crosses_intro`, `related_ids`, and 14
-  pedigree fields (`ped_sire`, `ped_dam`, `ped_ss`/`ped_sd`/`ped_ds`/`ped_dd`,
-  and 8 great-grandparent fields `ped_sss` … `ped_ddd`).
+  `sex`, `booking_url`, `booking_label`, `hero_image_id`, `crosses_intro`,
+  `related_ids`, and 14 pedigree fields (`ped_sire`, `ped_dam`,
+  `ped_ss`/`ped_sd`/`ped_ds`/`ped_dd`, and 8 great-grandparent fields
+  `ped_sss` … `ped_ddd`). Each pedigree field stores `"Name"` or
+  `"Name\nRecord"` (a second line for a race record like `p,3,1:50`) —
+  still a single plain-text column, just multi-line.
 - **New `description` column on `hld_gallery`** — used for video
   descriptions (the existing `caption` column doubles as the video title).
   The Images tab and Media tab are two views over the *same* gallery table,
@@ -276,13 +277,33 @@ the pre-redesign markup).
 - **New `hld_crosses` table** — repeatable "Crosses of Gold" entries
   (title, description, examples, drag-to-reorder), following the same
   pattern as the existing `hld_progeny` and `hld_gallery` child tables.
+- **New `hld_banners` table** — the promotional banner is a repeatable,
+  rotating set of images (each with its own link, alt text, and optional
+  on/off dates), not a single field. Recommended image size is
+  **1360 × 150px**. It renders full-width directly above "About the
+  Horse". One active banner shows statically; two or more auto-rotate
+  (6s interval, pauses on hover/focus, dot navigation) via
+  `HLD_DB::get_active_banners()`, which filters to banners that have an
+  image and, if dated, fall inside their start/end window.
 - **Related horses** are stored as a JSON array of listing IDs in
   `related_ids` — a lightweight many-to-many without a join table, resolved
   at render time via `HLD_DB::get_related_listings()`.
-- Deleting a stallion now also cleans up its gallery, progeny and crosses
-  rows (`HLD_DB::delete_stallion()`) — previously these were orphaned.
+- Deleting a stallion now also cleans up its gallery, progeny, crosses and
+  banner rows (`HLD_DB::delete_stallion()`) — previously these were
+  orphaned.
 - Fixed a pre-existing bug where saving a gallery item's caption reset its
   `sort_order` to 0, silently undoing drag-reordering.
+- Pedigree boxes are branded in the site's navy palette (solid navy fill,
+  white name, light-blue record line) rather than plain bordered white
+  cells, with the horse's own box emphasised. **No pedigree image/screenshot
+  upload was added** — that would require a paid third-party AI vision API
+  to extract table data from a photo reliably, which is a real cost/data-
+  privacy decision that needs sign-off, not something to wire in silently.
+  Instead there's a "Quick Fill from Pasted Text" tool on the Pedigree tab:
+  it hands you a bracket-labelled template (`[Sire]`, `[Dam]`, …), you fill
+  each one in from whatever source you already have (a website, a
+  spreadsheet) and paste the whole block back — it parses instantly,
+  client-side, into the 14 structured fields.
 
 ### Admin — editing a horse (for Bev)
 
@@ -296,12 +317,15 @@ directory-type listing the modal now has these tabs:
 3. **Profile & Racing** — "About the Horse" (Profile Bio), legacy Profile
    Picture URL (only used if no Hero Image is set below), race record.
 4. **Images** — Hero Image (the large photo at the top), Gallery Images
-   (carousel/thumbnails — upload or paste a URL, drag to reorder), and the
-   Promotional Banner (image, link, open-in behaviour, alt text, optional
-   start/end dates).
-5. **Pedigree** — paste each ancestor's name into its own labelled field
-   (Sire, Dam, then the 4 grandparents, then the 8 great-grandparents).
-   Leave any field blank to omit it cleanly — nothing blocks publishing.
+   (carousel/thumbnails — upload or paste a URL, drag to reorder), and
+   Promotional Banners (recommended **1360 × 150px**; add one for a static
+   banner, or several to rotate automatically — each with its own link,
+   open-in behaviour, alt text, and optional start/end dates).
+5. **Pedigree** — a "Quick Fill from Pasted Text" tool at the top for fast
+   bulk entry, plus 14 individual two-line boxes (name, optional race
+   record) below it — Sire/Dam, the 4 grandparents, the 8
+   great-grandparents. Leave any box blank to omit it cleanly — nothing
+   blocks publishing.
 6. **Content** — the "Crosses of Gold" intro paragraph plus one card per
    breeding cross (title, description, optional notable examples). Add,
    remove, and drag to reorder.
@@ -338,11 +362,11 @@ exactly as before with zero admin action required:
 ### Rollback
 
 If a revert is needed: reactivate/redeploy the previous plugin version.
-The new `hld_stallions`/`hld_gallery` columns and the `hld_crosses` table
-are purely additive, so the old code ignores them safely — no destructive
-migration runs in either direction. No manual DB cleanup is required to
-roll back; the new columns/table can be left in place harmlessly, or
-dropped manually later if desired.
+The new `hld_stallions`/`hld_gallery` columns and the `hld_crosses`/
+`hld_banners` tables are purely additive, so the old code ignores them
+safely — no destructive migration runs in either direction. No manual DB
+cleanup is required to roll back; the new columns/tables can be left in
+place harmlessly, or dropped manually later if desired.
 
 ### Test checklist
 
@@ -355,11 +379,21 @@ dropped manually later if desired.
       image displays cleanly.
 - [ ] Fill in Sire/Dam only (no grandparents) — pedigree shows a 2-branch
       tree, no empty placeholder cells.
-- [ ] Fill in the full 14-field pedigree — three-generation tree renders
-      with all 15 boxes (horse + 14 ancestors), no horizontal page overflow
-      on mobile (pedigree box scrolls internally).
-- [ ] Upload a banner image without a URL — banner shows, unlinked.
-- [ ] Set a banner start date in the future — banner does not render yet.
+- [ ] Fill in the full 14-field pedigree, each with a name and a race
+      record on the second line — three-generation tree renders with all
+      15 branded navy boxes (horse + 14 ancestors) showing name + record,
+      no horizontal page overflow on mobile (pedigree box scrolls
+      internally).
+- [ ] Pedigree Quick Fill: click "Get Template", fill in a few `[Label]`
+      sections, paste back, click "Fill Fields" — the matching boxes
+      populate and unmatched/blank sections are left alone.
+- [ ] Add one banner image — shows statically, no dots/rotation.
+- [ ] Add three banner images — they auto-rotate every ~6s, rotation
+      pauses on hover/keyboard focus, clicking a dot jumps to that banner,
+      reordering by dragging the thumbnail persists after reload.
+- [ ] Add a banner with a start date in the future — that banner is
+      skipped (not shown) until its date arrives; a banner with no image
+      yet never appears.
 - [ ] Add a YouTube link, a Vimeo link, and an uploaded video — all three
       embed and play correctly; Media section is hidden when no videos
       exist.

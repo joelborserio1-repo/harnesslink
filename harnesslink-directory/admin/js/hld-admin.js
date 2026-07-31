@@ -45,12 +45,6 @@
     booking_label:   $('#hld-booking_label'),
     booking_url:     $('#hld-booking_url'),
     hero_image_id:   $('#hld-hero_image_id'),
-    banner_image_id: $('#hld-banner_image_id'),
-    banner_url:      $('#hld-banner_url'),
-    banner_target:   $('#hld-banner_target'),
-    banner_alt:      $('#hld-banner_alt'),
-    banner_start:    $('#hld-banner_start'),
-    banner_end:      $('#hld-banner_end'),
     crosses_intro:   $('#hld-crosses_intro'),
     related_ids:     $('#hld-related_ids'),
     ped_sire: $('#hld-ped_sire'), ped_dam: $('#hld-ped_dam'),
@@ -100,6 +94,7 @@
     progenyReset();
     crossesReset();
     relatedReset();
+    bannerReset();
   }
 
   $(document).on('change', '#hld-directory_type', function () {
@@ -113,18 +108,18 @@
     mediaReset();
     crossesReset();
     relatedReset();
+    bannerReset();
   }
 
   function resetForm() {
     $.each(form, function (k, el) {
       if (el.is(':checkbox')) el.prop('checked', false);
       else if (k === 'directory_type') el.val(el.data('default') || 'stallion');
-      else if (k === 'hero_image_id' || k === 'banner_image_id') el.val(0);
+      else if (k === 'hero_image_id') el.val(0);
       else el.val('');
     });
     updateProfileImagePreview('');
     heroImagePicker.showPreview('');
-    bannerImagePicker.showPreview('');
   }
 
   function fillForm(s) {
@@ -134,7 +129,6 @@
     });
     updateProfileImagePreview(s.profile_image || '');
     heroImagePicker.loadPreviewFromId(s.hero_image_id);
-    bannerImagePicker.loadPreviewFromId(s.banner_image_id);
   }
 
   form.is_featured.on('change', function () {
@@ -269,7 +263,7 @@
     updateProfileImagePreview('');
   });
 
-  /* ══ HERO / BANNER IMAGE PICKERS (single, WP media ID based) ══ */
+  /* ══ HERO IMAGE PICKER (single, WP media ID based) ══ */
   function singleImagePicker(opts) {
     let frame = null;
     const $hidden  = opts.hiddenField;
@@ -321,14 +315,6 @@
     title: 'Choose Hero Image',
   });
 
-  const bannerImagePicker = singleImagePicker({
-    hiddenField: form.banner_image_id,
-    previewSelector: '#hld-banner-image-preview',
-    pickBtn: '#hld-banner-image-pick',
-    clearBtn: '#hld-banner-image-clear',
-    title: 'Choose Banner Image',
-  });
-
   /* ══ MODAL TABS ══ */
   function switchTab(id) {
     $('.hld-tab').removeClass('active');
@@ -340,7 +326,7 @@
     const tab = $(this).data('tab');
     switchTab(tab);
     if (tab === 'progeny') progenyOnOpen();
-    if (tab === 'images')  imagesOnOpen();
+    if (tab === 'images')  { imagesOnOpen(); bannerOnOpen(); }
     if (tab === 'media')   mediaOnOpen();
     if (tab === 'content') crossesOnOpen();
     if (tab === 'related') relatedOnOpen();
@@ -971,6 +957,184 @@
     relatedSelected.push({ id: id, name: name, stud_name: stud });
     renderRelatedSelected();
     $(this).remove();
+  });
+
+  /* ══════════════════════════════════════════
+     PROMOTIONAL BANNERS (repeatable, rotating)
+  ══════════════════════════════════════════ */
+
+  let bannerLoadedForId = 0;
+  let bannerMediaFrame  = null;
+  const $bannersList  = $('#hld-banners-list');
+  const $bannersEmpty = $('#hld-banners-empty');
+  const $bannersNeedsSave = $('#hld-banners-needs-save');
+
+  function bannerReset() {
+    bannerLoadedForId = 0;
+    $bannersList.empty();
+    $bannersEmpty.show();
+    $bannersNeedsSave.hide();
+  }
+
+  function bannerOnOpen() {
+    const id = currentHorseId();
+    if (!id) { $bannersNeedsSave.show(); $bannersEmpty.hide(); return; }
+    $bannersNeedsSave.hide();
+    if (id !== bannerLoadedForId) bannerLoad(id);
+  }
+
+  function bannerLoad(id) {
+    bannerLoadedForId = id;
+    $bannersList.empty();
+    $.post(ajax, { action: 'hld_get_banners', nonce, stallion_id: id }, function (res) {
+      if (!res.success) return;
+      const items = res.data || [];
+      if (!items.length) { $bannersEmpty.show(); return; }
+      $bannersEmpty.hide();
+      items.forEach(bannerAddCard);
+      bannerInitSortable();
+    });
+  }
+
+  function bannerAddCard(item) {
+    const thumbUrl = item.image_url || '';
+    const card = $(
+      '<div class="hld-banner-card" data-id="' + item.id + '">' +
+        '<button type="button" class="hld-banner-card__del" title="Remove">&#10005;</button>' +
+        '<div class="hld-banner-card__thumb">' + (thumbUrl ? '<img src="' + escHtml(thumbUrl) + '" alt="" />' : '<span>1360 &times; 150</span>') + '</div>' +
+        '<div class="hld-banner-card__fields">' +
+          '<div class="hld-field"><label>Alt Text</label><input type="text" class="hld-banner-alt" value="' + escHtml(item.alt_text || '') + '" placeholder="Describe the banner for screen readers" /></div>' +
+          '<div class="hld-field"><label>Link URL</label><input type="url" class="hld-banner-url" value="' + escHtml(item.url || '') + '" placeholder="https://..." /></div>' +
+          '<div class="hld-field"><label>Open Link In</label><select class="hld-banner-target">' +
+            '<option value="_self"' + (item.target !== '_blank' ? ' selected' : '') + '>Same tab</option>' +
+            '<option value="_blank"' + (item.target === '_blank' ? ' selected' : '') + '>New tab</option>' +
+          '</select></div>' +
+          '<div class="hld-field"><label>Start Date</label><input type="date" class="hld-banner-start" value="' + escHtml(item.start_date || '') + '" /></div>' +
+          '<div class="hld-field"><label>End Date</label><input type="date" class="hld-banner-end" value="' + escHtml(item.end_date || '') + '" /></div>' +
+        '</div>' +
+      '</div>'
+    );
+    $bannersList.append(card);
+  }
+
+  function bannerInitSortable() {
+    if ($bannersList.hasClass('ui-sortable')) $bannersList.sortable('destroy');
+    $bannersList.sortable({
+      items: '.hld-banner-card',
+      handle: '.hld-banner-card__thumb',
+      placeholder: 'hld-banner-card ui-sortable-placeholder',
+      tolerance: 'pointer',
+      stop: function () {
+        const order = [];
+        $bannersList.find('.hld-banner-card').each(function () { order.push($(this).data('id')); });
+        $.post(ajax, { action: 'hld_reorder_banners', nonce, stallion_id: bannerLoadedForId, order: order });
+      }
+    });
+  }
+
+  $('#hld-banner-add').on('click', function () {
+    const id = currentHorseId();
+    if (!id) return alert('Save the horse first before adding a banner.');
+
+    if (bannerMediaFrame) { bannerMediaFrame.open(); return; }
+    bannerMediaFrame = wp.media({
+      title: 'Choose Banner Image (recommended 1360 × 150px)',
+      button: { text: 'Use this image' },
+      library: { type: 'image' },
+      multiple: false,
+    });
+    bannerMediaFrame.on('select', function () {
+      const attachment = bannerMediaFrame.state().get('selection').first().toJSON();
+      $.post(ajax, {
+        action: 'hld_add_banner', nonce, stallion_id: id, image_id: attachment.id,
+      }, function (res) {
+        if (!res.success) return alert(res.data || 'Failed to add banner.');
+        $bannersEmpty.hide();
+        bannerAddCard($.extend({}, res.data, { image_url: attachment.url }));
+        bannerInitSortable();
+      });
+    });
+    bannerMediaFrame.open();
+  });
+
+  $(document).on('click', '.hld-banner-card__del', function () {
+    const $card = $(this).closest('.hld-banner-card');
+    const id    = $card.data('id');
+    if (!confirm('Remove this banner?')) return;
+    $.post(ajax, { action: 'hld_delete_banner', nonce, id }, function (res) {
+      if (!res.success) return;
+      $card.remove();
+      if (!$bannersList.find('.hld-banner-card').length) $bannersEmpty.show();
+    });
+  });
+
+  $(document).on('blur change', '.hld-banner-alt, .hld-banner-url, .hld-banner-target, .hld-banner-start, .hld-banner-end', function () {
+    const $card = $(this).closest('.hld-banner-card');
+    const id    = $card.data('id');
+    $.post(ajax, {
+      action: 'hld_update_banner', nonce, id,
+      alt_text:   $card.find('.hld-banner-alt').val(),
+      url:        $card.find('.hld-banner-url').val(),
+      target:     $card.find('.hld-banner-target').val(),
+      start_date: $card.find('.hld-banner-start').val(),
+      end_date:   $card.find('.hld-banner-end').val(),
+    });
+  });
+
+  /* ══════════════════════════════════════════
+     PEDIGREE — quick fill from pasted text
+  ══════════════════════════════════════════ */
+
+  const PED_LABELS = [
+    ['Sire', 'ped_sire'], ['Dam', 'ped_dam'],
+    ['Sire > Sire', 'ped_ss'], ['Sire > Dam', 'ped_sd'], ['Dam > Sire', 'ped_ds'], ['Dam > Dam', 'ped_dd'],
+    ['Sire > Sire > Sire', 'ped_sss'], ['Sire > Sire > Dam', 'ped_ssd'],
+    ['Sire > Dam > Sire', 'ped_sds'], ['Sire > Dam > Dam', 'ped_sdd'],
+    ['Dam > Sire > Sire', 'ped_dss'], ['Dam > Sire > Dam', 'ped_dsd'],
+    ['Dam > Dam > Sire', 'ped_dds'], ['Dam > Dam > Dam', 'ped_ddd'],
+  ];
+
+  $('#hld-ped-template').on('click', function () {
+    const lines = PED_LABELS.map(function (pair) {
+      const key = pair[1];
+      const existing = (form[key] && form[key].val()) ? form[key].val().split('\n') : [];
+      return '[' + pair[0] + ']\n' + (existing[0] || '') + '\n' + (existing[1] || '') + '\n';
+    });
+    $('#hld-ped-paste').val(lines.join('\n'));
+  });
+
+  $('#hld-ped-fill').on('click', function () {
+    const raw = $('#hld-ped-paste').val();
+    const $result = $('#hld-ped-fill-result').hide().removeClass('error success');
+    if (!raw.trim()) { $result.addClass('error').text('Paste the filled-in template first.').show(); return; }
+
+    // Split on [Label] markers, keeping the label with its following text.
+    const parts = raw.split(/\[([^\]]+)\]/);
+    const byLabel = {};
+    for (let i = 1; i < parts.length; i += 2) {
+      const label = parts[i].trim().toLowerCase().replace(/\s*>\s*/g, ' > ');
+      const body  = (parts[i + 1] || '').split('\n').map(function (l) { return l.trim(); }).filter(function (l) { return l.length; });
+      byLabel[label] = body;
+    }
+
+    let filled = 0;
+    PED_LABELS.forEach(function (pair) {
+      const label = pair[0].toLowerCase();
+      const key   = pair[1];
+      if (!byLabel[label] || !byLabel[label].length) return;
+      const name   = byLabel[label][0] || '';
+      const record = byLabel[label][1] || '';
+      if (form[key]) {
+        form[key].val(record ? (name + '\n' + record) : name);
+        filled++;
+      }
+    });
+
+    if (filled) {
+      $result.addClass('success').text('Filled ' + filled + ' of 14 pedigree boxes. Review them below, then save.').show();
+    } else {
+      $result.addClass('error').text('Couldn’t find any recognised [Label] sections. Use "Get Template" to start from a blank template.').show();
+    }
   });
 
 })(jQuery);

@@ -225,29 +225,20 @@ function hld_hero_slides( $stallion, $gallery_images ) {
     return $slides;
 }
 
-/** True if the promotional banner has an image and, if dated, is within its active window. */
-function hld_banner_is_active( $stallion ) {
-    if ( empty( $stallion->banner_image_id ) ) return false;
-
-    $today = current_time( 'Y-m-d' );
-    if ( ! empty( $stallion->banner_start ) && $today < $stallion->banner_start ) return false;
-    if ( ! empty( $stallion->banner_end ) && $today > $stallion->banner_end ) return false;
-
-    return (bool) wp_get_attachment_image_url( absint( $stallion->banner_image_id ), 'full' );
-}
-
 /**
  * Build a pedigree tree from the stallion's ped_* fields, three generations
- * back (parents, grandparents, great-grandparents). Branches whose name is
- * empty are omitted entirely — including their own descendants — rather
- * than rendering placeholder cells.
+ * back (parents, grandparents, great-grandparents). Each field is stored as
+ * "Name" or "Name\nRecord" (e.g. a race record like "p,3,1:50"). Branches
+ * whose name is empty are omitted entirely — including their own
+ * descendants — rather than rendering placeholder cells.
  */
 function hld_pedigree_tree( $stallion ) {
-    $node = function ( $name, $children = array() ) {
-        $name = trim( (string) $name );
+    $node = function ( $raw, $children = array() ) {
+        $lines = array_map( 'trim', explode( "\n", (string) $raw ) );
+        $name  = $lines[0] ?? '';
         if ( $name === '' ) return null;
         $children = array_values( array_filter( $children ) );
-        return array( 'name' => $name, 'children' => $children );
+        return array( 'name' => $name, 'record' => $lines[1] ?? '', 'children' => $children );
     };
 
     $sire = $node( $stallion->ped_sire ?? '', array(
@@ -272,16 +263,23 @@ function hld_pedigree_tree( $stallion ) {
         ) ),
     ) );
 
-    return $node( $stallion->name, array( $sire, $dam ) );
+    // The horse's own box reuses its Name + Race Record fields (Overview / Profile & Racing tabs).
+    $root_raw = trim( (string) $stallion->name ) . ( $stallion->race_record ? "\n" . $stallion->race_record : '' );
+    return $node( $root_raw, array( $sire, $dam ) );
 }
 
-/** Recursively render a pedigree node (and its descendants) as nested, connected cells. */
+/** Recursively render a pedigree node (and its descendants) as nested, branded, connected cells. */
 function hld_render_pedigree_node( $node, $is_root = false ) {
     if ( empty( $node ) ) return;
     $has_children = ! empty( $node['children'] );
     ?>
     <div class="hld-ped-node<?= $has_children ? ' hld-ped-node--branch' : '' ?>">
-      <div class="hld-ped-cell<?= $is_root ? ' hld-ped-cell--horse' : '' ?>"><?= esc_html( $node['name'] ) ?></div>
+      <div class="hld-ped-cell<?= $is_root ? ' hld-ped-cell--horse' : '' ?>">
+        <span class="hld-ped-cell__name"><?= esc_html( $node['name'] ) ?></span>
+        <?php if ( ! empty( $node['record'] ) ): ?>
+          <span class="hld-ped-cell__record"><?= esc_html( $node['record'] ) ?></span>
+        <?php endif; ?>
+      </div>
       <?php if ( $has_children ): ?>
         <div class="hld-ped-children">
           <?php foreach ( $node['children'] as $child ): ?>
