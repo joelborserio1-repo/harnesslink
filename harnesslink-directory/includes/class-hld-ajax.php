@@ -31,6 +31,14 @@ class HLD_Ajax {
         add_action( 'wp_ajax_hld_delete_gallery_item',    array( __CLASS__, 'delete_gallery_item' ) );
         add_action( 'wp_ajax_hld_reorder_gallery',        array( __CLASS__, 'reorder_gallery' ) );
         add_action( 'wp_ajax_hld_update_gallery_caption', array( __CLASS__, 'update_gallery_caption' ) );
+        // Crosses of Gold
+        add_action( 'wp_ajax_hld_get_crosses',            array( __CLASS__, 'get_crosses' ) );
+        add_action( 'wp_ajax_hld_add_cross',              array( __CLASS__, 'add_cross' ) );
+        add_action( 'wp_ajax_hld_update_cross',           array( __CLASS__, 'update_cross' ) );
+        add_action( 'wp_ajax_hld_delete_cross',           array( __CLASS__, 'delete_cross' ) );
+        add_action( 'wp_ajax_hld_reorder_crosses',        array( __CLASS__, 'reorder_crosses' ) );
+        // Related horses (search-as-you-type picker)
+        add_action( 'wp_ajax_hld_search_horses',          array( __CLASS__, 'search_horses' ) );
     }
 
     /* ── Public: live search / filter ── */
@@ -606,8 +614,13 @@ class HLD_Ajax {
         $url           = sanitize_text_field( wp_unslash( $_POST['url'] ?? '' ) );
         $media_type    = sanitize_text_field( wp_unslash( $_POST['media_type'] ?? 'image' ) );
         $caption       = sanitize_text_field( wp_unslash( $_POST['caption'] ?? '' ) );
+        $description   = sanitize_textarea_field( wp_unslash( $_POST['description'] ?? '' ) );
 
         if ( ! $stallion_id ) wp_send_json_error( 'Missing stallion ID.' );
+
+        if ( $media_type === 'video' && $url && ! self::is_supported_video_url( $url ) && ! $attachment_id ) {
+            wp_send_json_error( 'That video link isn\'t recognised. Please use a YouTube link, a Vimeo link, or upload a video file.' );
+        }
 
         /* If uploading via media library, resolve URL from attachment */
         if ( $attachment_id && ! $url ) {
@@ -632,6 +645,7 @@ class HLD_Ajax {
             'url'           => $url,
             'attachment_id' => $attachment_id,
             'caption'       => $caption,
+            'description'   => $description,
             'sort_order'    => $sort,
         ) );
 
@@ -642,18 +656,29 @@ class HLD_Ajax {
             'url'           => $url,
             'attachment_id' => $attachment_id,
             'caption'       => $caption,
+            'description'   => $description,
             'sort_order'    => $sort,
         ) );
     }
 
-    /* ── Update caption ── */
+    /** YouTube, Vimeo, or a direct video file link/attachment. */
+    private static function is_supported_video_url( $url ) {
+        if ( preg_match( '#^https?://(www\.)?(youtube\.com/watch|youtu\.be/|youtube\.com/embed/)#i', $url ) ) return true;
+        if ( preg_match( '#^https?://(www\.)?vimeo\.com/#i', $url ) ) return true;
+        if ( preg_match( '/\.(mp4|webm|mov|m4v)(\?.*)?$/i', $url ) ) return true;
+        return false;
+    }
+
+    /* ── Update caption / description ── */
     public static function update_gallery_caption() {
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
         check_ajax_referer( 'hld_admin_nonce', 'nonce' );
-        $id      = absint( $_POST['id'] ?? 0 );
-        $caption = sanitize_text_field( wp_unslash( $_POST['caption'] ?? '' ) );
-        HLD_DB::update_gallery_item( $id, array( 'caption' => $caption ) );
-        wp_send_json_success( array( 'message' => 'Caption saved.' ) );
+        $id   = absint( $_POST['id'] ?? 0 );
+        $data = array();
+        if ( isset( $_POST['caption'] ) )     $data['caption']     = sanitize_text_field( wp_unslash( $_POST['caption'] ) );
+        if ( isset( $_POST['description'] ) ) $data['description'] = sanitize_textarea_field( wp_unslash( $_POST['description'] ) );
+        HLD_DB::update_gallery_item( $id, $data );
+        wp_send_json_success( array( 'message' => 'Saved.' ) );
     }
 
     /* ── Delete a gallery item ── */
@@ -677,5 +702,101 @@ class HLD_Ajax {
             HLD_DB::reorder_gallery( $stallion_id, $order );
         }
         wp_send_json_success();
+    }
+
+    /* ════════════════════════════════════
+       CROSSES OF GOLD
+    ════════════════════════════════════ */
+
+    public static function get_crosses() {
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
+        check_ajax_referer( 'hld_admin_nonce', 'nonce' );
+        $stallion_id = absint( $_POST['stallion_id'] ?? 0 );
+        wp_send_json_success( HLD_DB::get_crosses( $stallion_id ) );
+    }
+
+    public static function add_cross() {
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
+        check_ajax_referer( 'hld_admin_nonce', 'nonce' );
+        $stallion_id = absint( $_POST['stallion_id'] ?? 0 );
+        if ( ! $stallion_id ) wp_send_json_error( 'Save the horse first, then add breeding crosses.' );
+
+        $data = array(
+            'title'       => wp_unslash( $_POST['title'] ?? '' ),
+            'description' => wp_unslash( $_POST['description'] ?? '' ),
+            'examples'    => wp_unslash( $_POST['examples'] ?? '' ),
+        );
+        $id = HLD_DB::add_cross( $stallion_id, $data );
+        wp_send_json_success( array_merge( array( 'id' => $id, 'stallion_id' => $stallion_id ), $data ) );
+    }
+
+    public static function update_cross() {
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
+        check_ajax_referer( 'hld_admin_nonce', 'nonce' );
+        $id   = absint( $_POST['id'] ?? 0 );
+        $data = array();
+        foreach ( array( 'title', 'description', 'examples' ) as $key ) {
+            if ( isset( $_POST[ $key ] ) ) $data[ $key ] = wp_unslash( $_POST[ $key ] );
+        }
+        HLD_DB::update_cross( $id, $data );
+        wp_send_json_success( array( 'message' => 'Saved.' ) );
+    }
+
+    public static function delete_cross() {
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
+        check_ajax_referer( 'hld_admin_nonce', 'nonce' );
+        $id = absint( $_POST['id'] ?? 0 );
+        HLD_DB::delete_cross( $id );
+        wp_send_json_success( array( 'message' => 'Removed.' ) );
+    }
+
+    public static function reorder_crosses() {
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
+        check_ajax_referer( 'hld_admin_nonce', 'nonce' );
+        $stallion_id = absint( $_POST['stallion_id'] ?? 0 );
+        $order       = array_map( 'absint', $_POST['order'] ?? array() );
+        if ( $stallion_id && $order ) {
+            HLD_DB::reorder_crosses( $stallion_id, $order );
+        }
+        wp_send_json_success();
+    }
+
+    /* ════════════════════════════════════
+       RELATED HORSES — search-as-you-type picker
+    ════════════════════════════════════ */
+
+    public static function search_horses() {
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
+        check_ajax_referer( 'hld_admin_nonce', 'nonce' );
+
+        /* Exact-ID lookup — used to hydrate the "selected" chips on edit. */
+        if ( ! empty( $_POST['ids'] ) ) {
+            $ids  = array_map( 'absint', explode( ',', sanitize_text_field( wp_unslash( $_POST['ids'] ) ) ) );
+            $rows = HLD_DB::get_related_listings( $ids, 0 );
+            wp_send_json_success( $rows );
+        }
+
+        global $wpdb;
+        $table   = $wpdb->prefix . 'hld_stallions';
+        $search  = sanitize_text_field( wp_unslash( $_POST['search'] ?? '' ) );
+        $exclude = absint( $_POST['exclude'] ?? 0 );
+
+        $where  = array( "directory_type = 'stallion'" );
+        $params = array();
+        if ( $exclude ) {
+            $where[]  = 'id != %d';
+            $params[] = $exclude;
+        }
+        if ( $search !== '' ) {
+            $where[]  = '(name LIKE %s OR stud_name LIKE %s)';
+            $like     = '%' . $wpdb->esc_like( $search ) . '%';
+            $params[] = $like;
+            $params[] = $like;
+        }
+        $where_sql = implode( ' AND ', $where );
+        $sql       = "SELECT id, name, stud_name, hero_image_id, profile_image FROM {$table} WHERE {$where_sql} ORDER BY name ASC LIMIT 30";
+        $rows      = $params ? $wpdb->get_results( $wpdb->prepare( $sql, $params ) ) : $wpdb->get_results( $sql );
+
+        wp_send_json_success( $rows );
     }
 }

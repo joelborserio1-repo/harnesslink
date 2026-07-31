@@ -180,3 +180,140 @@ function hld_listing_url( $listing ) {
     $slug = sanitize_title( $listing->name );
     return home_url( '/directory/' . $type . '/' . (int) $listing->id . '/' . $slug );
 }
+
+/* ──────────────────────────────────────────────
+   HORSE PROFILE HELPERS (hero, pedigree, banner, video)
+────────────────────────────────────────────── */
+
+/**
+ * Ordered hero/gallery slide list for a stallion: the dedicated Hero Image
+ * first (if set), then gallery images in order. Falls back to the legacy
+ * profile_image URL when neither is present, so older listings still show
+ * a photo without any admin action required.
+ */
+function hld_hero_slides( $stallion, $gallery_images ) {
+    $slides = array();
+
+    $hero_id = absint( $stallion->hero_image_id ?? 0 );
+    if ( $hero_id ) {
+        $full = wp_get_attachment_image_url( $hero_id, 'large' );
+        if ( $full ) {
+            $slides[] = array(
+                'full'  => $full,
+                'thumb' => wp_get_attachment_image_url( $hero_id, 'medium' ) ?: $full,
+                'alt'   => get_post_meta( $hero_id, '_wp_attachment_image_alt', true ) ?: $stallion->name,
+            );
+        }
+    }
+
+    foreach ( (array) $gallery_images as $item ) {
+        $slides[] = array(
+            'full'  => $item->url,
+            'thumb' => $item->url,
+            'alt'   => $item->caption ?: $stallion->name,
+        );
+    }
+
+    if ( empty( $slides ) && ! empty( $stallion->profile_image ) ) {
+        $slides[] = array(
+            'full'  => $stallion->profile_image,
+            'thumb' => $stallion->profile_image,
+            'alt'   => $stallion->name,
+        );
+    }
+
+    return $slides;
+}
+
+/** True if the promotional banner has an image and, if dated, is within its active window. */
+function hld_banner_is_active( $stallion ) {
+    if ( empty( $stallion->banner_image_id ) ) return false;
+
+    $today = current_time( 'Y-m-d' );
+    if ( ! empty( $stallion->banner_start ) && $today < $stallion->banner_start ) return false;
+    if ( ! empty( $stallion->banner_end ) && $today > $stallion->banner_end ) return false;
+
+    return (bool) wp_get_attachment_image_url( absint( $stallion->banner_image_id ), 'full' );
+}
+
+/**
+ * Build a pedigree tree from the stallion's ped_* fields, three generations
+ * back (parents, grandparents, great-grandparents). Branches whose name is
+ * empty are omitted entirely — including their own descendants — rather
+ * than rendering placeholder cells.
+ */
+function hld_pedigree_tree( $stallion ) {
+    $node = function ( $name, $children = array() ) {
+        $name = trim( (string) $name );
+        if ( $name === '' ) return null;
+        $children = array_values( array_filter( $children ) );
+        return array( 'name' => $name, 'children' => $children );
+    };
+
+    $sire = $node( $stallion->ped_sire ?? '', array(
+        $node( $stallion->ped_ss ?? '', array(
+            $node( $stallion->ped_sss ?? '' ),
+            $node( $stallion->ped_ssd ?? '' ),
+        ) ),
+        $node( $stallion->ped_sd ?? '', array(
+            $node( $stallion->ped_sds ?? '' ),
+            $node( $stallion->ped_sdd ?? '' ),
+        ) ),
+    ) );
+
+    $dam = $node( $stallion->ped_dam ?? '', array(
+        $node( $stallion->ped_ds ?? '', array(
+            $node( $stallion->ped_dss ?? '' ),
+            $node( $stallion->ped_dsd ?? '' ),
+        ) ),
+        $node( $stallion->ped_dd ?? '', array(
+            $node( $stallion->ped_dds ?? '' ),
+            $node( $stallion->ped_ddd ?? '' ),
+        ) ),
+    ) );
+
+    return $node( $stallion->name, array( $sire, $dam ) );
+}
+
+/** Recursively render a pedigree node (and its descendants) as nested, connected cells. */
+function hld_render_pedigree_node( $node, $is_root = false ) {
+    if ( empty( $node ) ) return;
+    $has_children = ! empty( $node['children'] );
+    ?>
+    <div class="hld-ped-node<?= $has_children ? ' hld-ped-node--branch' : '' ?>">
+      <div class="hld-ped-cell<?= $is_root ? ' hld-ped-cell--horse' : '' ?>"><?= esc_html( $node['name'] ) ?></div>
+      <?php if ( $has_children ): ?>
+        <div class="hld-ped-children">
+          <?php foreach ( $node['children'] as $child ): ?>
+            <?php hld_render_pedigree_node( $child ); ?>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+    </div>
+    <?php
+}
+
+/**
+ * Safe embed markup for a gallery/media item. YouTube and Vimeo links render
+ * as sandboxed iframes; anything else (an uploaded file) renders as a native
+ * <video> element. Falls back to a plain link if the URL isn't recognised.
+ */
+function hld_video_embed_html( $item ) {
+    $url = (string) $item->url;
+
+    if ( preg_match( '#youtube\.com/watch\?v=([\w-]+)#i', $url, $m ) || preg_match( '#youtu\.be/([\w-]+)#i', $url, $m ) || preg_match( '#youtube\.com/embed/([\w-]+)#i', $url, $m ) ) {
+        $src = 'https://www.youtube-nocookie.com/embed/' . rawurlencode( $m[1] );
+        return '<iframe src="' . esc_url( $src ) . '" title="' . esc_attr( $item->caption ?: 'Video' ) . '" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+    }
+
+    if ( preg_match( '#vimeo\.com/(\d+)#i', $url, $m ) ) {
+        $src = 'https://player.vimeo.com/video/' . rawurlencode( $m[1] );
+        return '<iframe src="' . esc_url( $src ) . '" title="' . esc_attr( $item->caption ?: 'Video' ) . '" loading="lazy" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>';
+    }
+
+    if ( preg_match( '/\.(mp4|webm|mov|m4v)(\?.*)?$/i', $url ) ) {
+        return '<video controls preload="metadata" src="' . esc_url( $url ) . '"></video>';
+    }
+
+    return '<a href="' . esc_url( $url ) . '" target="_blank" rel="noopener">' . esc_html( $item->caption ?: $url ) . '</a>';
+}

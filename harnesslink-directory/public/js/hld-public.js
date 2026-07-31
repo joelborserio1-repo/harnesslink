@@ -287,4 +287,47 @@
     if (e.key === 'ArrowRight') { if (lbIndex < lbItems.length - 1) { lbIndex++; lbShow(); } }
   });
 
+  /* ══════════════════════════════════════════
+     HERO GALLERY CAROUSEL (horse profile)
+     Thumbnails, prev/next, keyboard arrows, touch swipe.
+     Full-size viewing is handled by the lightbox above (slides are
+     already wrapped in .hld-lightbox-trigger links).
+  ══════════════════════════════════════════ */
+  $('.hld-hg[data-hld-gallery]').each(function () {
+    const $hg     = $(this);
+    const $slides = $hg.find('.hld-hg__slide-link');
+    const $thumbs = $hg.find('.hld-hg__thumb');
+    const $stage  = $hg.find('.hld-hg__stage');
+    let index = 0;
+
+    if ($slides.length < 2) return; // single image: no controls needed
+
+    function show(i) {
+      index = ((i % $slides.length) + $slides.length) % $slides.length;
+      $slides.removeClass('is-active').eq(index).addClass('is-active');
+      $thumbs.removeClass('is-active').attr('aria-selected', 'false')
+        .eq(index).addClass('is-active').attr('aria-selected', 'true');
+    }
+
+    $hg.find('.hld-hg__nav--prev').on('click', function () { show(index - 1); });
+    $hg.find('.hld-hg__nav--next').on('click', function () { show(index + 1); });
+    $thumbs.on('click', function () { show($(this).data('index')); });
+
+    $stage.attr('tabindex', '0').on('keydown', function (e) {
+      if (e.key === 'ArrowLeft')  { e.preventDefault(); show(index - 1); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); show(index + 1); }
+    });
+
+    let touchStartX = null;
+    $stage.on('touchstart', function (e) {
+      touchStartX = e.originalEvent.touches[0].clientX;
+    });
+    $stage.on('touchend', function (e) {
+      if (touchStartX === null) return;
+      const dx = e.originalEvent.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 40) show(dx < 0 ? index + 1 : index - 1);
+      touchStartX = null;
+    });
+  });
+
 })(jQuery);

@@ -1209,3 +1209,168 @@
   .hld-progeny-table thead th,
   .hld-progeny-table tbody td { padding: 9px 10px; }
 }
+
+/* ══════════════════════════════════════════════════════
+   HORSE PROFILE — redesigned stallion layout
+   (hero + carousel, pedigree tree, summary, banner,
+   about/crosses, videos, related horses)
+══════════════════════════════════════════════════════ */
+
+/* ── Title bar ── */
+.hld-horse-titlebar { margin-bottom: 22px; }
+.hld-horse-name {
+  margin: 6px 0 6px; font-family: Georgia, serif;
+  font-size: 34px; line-height: 1.1; color: var(--hl-navy);
+}
+.hld-horse-tagline { margin: 0 0 14px; font-size: 16px; color: var(--hl-muted); font-weight: 600; }
+.hld-horse-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.hld-profile-tag--fee { background: var(--hl-light-blue); color: var(--hl-blue); }
+.hld-horse-cta {
+  display: inline-flex; align-items: center; height: 46px; padding: 0 26px;
+  border-radius: 999px; background: linear-gradient(135deg, var(--hl-blue), var(--hl-blue-2));
+  color: #fff; font-weight: 800; font-size: 14px; text-decoration: none;
+  letter-spacing: .02em; box-shadow: 0 8px 20px rgba(31,95,191,.22);
+  transition: filter .2s, transform .15s;
+}
+.hld-horse-cta:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+/* ── Hero grid: gallery left, pedigree right (desktop); stacked mobile ── */
+.hld-hero-grid {
+  display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 28px; align-items: start; margin-bottom: 28px;
+}
+@media (max-width: 900px) {
+  .hld-hero-grid { grid-template-columns: 1fr; gap: 20px; }
+}
+
+/* ── Gallery / carousel ── */
+.hld-hg { display: flex; flex-direction: column; gap: 10px; }
+.hld-hg__stage {
+  position: relative; border-radius: var(--hl-radius); overflow: hidden;
+  background: var(--hl-bg); aspect-ratio: 4/3;
+}
+.hld-hg__slide-link {
+  position: absolute; inset: 0; display: block;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .3s ease; cursor: zoom-in;
+}
+.hld-hg__slide-link.is-active { opacity: 1; visibility: visible; pointer-events: auto; position: relative; }
+.hld-hg__slide { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hld-hg--placeholder {
+  border-radius: var(--hl-radius); aspect-ratio: 4/3;
+  background: var(--hl-navy); display: flex; align-items: center; justify-content: center;
+}
+.hld-hg__nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 40px; height: 40px; border-radius: 50%; border: none;
+  background: rgba(10,42,102,.55); color: #fff; font-size: 20px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; backdrop-filter: blur(3px); transition: background .15s;
+}
+.hld-hg__nav:hover, .hld-hg__nav:focus-visible { background: rgba(10,42,102,.85); }
+.hld-hg__nav--prev { left: 10px; }
+.hld-hg__nav--next { right: 10px; }
+.hld-hg__thumbs {
+  display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+.hld-hg__thumb {
+  flex: 0 0 auto; width: 64px; height: 48px; border-radius: 8px; overflow: hidden;
+  border: 2px solid transparent; padding: 0; cursor: pointer; background: var(--hl-bg);
+}
+.hld-hg__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hld-hg__thumb.is-active { border-color: var(--hl-blue); }
+.hld-hg__thumb:focus-visible { outline: 2px solid var(--hl-blue); outline-offset: 2px; }
+
+/* ── Pedigree panel ── */
+.hld-hero-pedigree {
+  background: #fff; border: 1px solid var(--hl-border); border-radius: var(--hl-radius);
+  padding: 20px; box-shadow: var(--hl-shadow);
+}
+.hld-ped-heading { margin: 0 0 14px; font-family: Georgia, serif; font-size: 18px; color: var(--hl-navy); }
+.hld-ped-empty { color: var(--hl-muted); font-size: 14px; margin: 0; }
+.hld-ped-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.hld-ped-tree { display: flex; align-items: stretch; min-width: 460px; padding: 4px 0; }
+
+.hld-ped-node { display: flex; align-items: stretch; }
+.hld-ped-cell {
+  flex: 0 0 auto; width: 128px; margin: 3px 10px 3px 0;
+  display: flex; align-items: center;
+  padding: 8px 10px; border: 1px solid var(--hl-border); border-radius: 8px;
+  background: #fff; font-size: 12px; font-weight: 700; color: var(--hl-text);
+  line-height: 1.25;
+}
+.hld-ped-cell--horse {
+  background: var(--hl-navy); border-color: var(--hl-navy); color: #fff;
+  font-family: Georgia, serif; font-size: 15px; width: 140px;
+}
+.hld-ped-children {
+  display: flex; flex-direction: column; justify-content: space-around;
+  border-left: 2px solid var(--hl-light-blue); margin-left: -4px; padding-left: 4px;
+}
+.hld-ped-children > .hld-ped-node { position: relative; flex: 1; min-height: 44px; }
+.hld-ped-children > .hld-ped-node::before {
+  content: ''; position: absolute; left: -6px; top: 50%;
+  width: 6px; height: 1px; background: var(--hl-light-blue);
+}
+
+/* ── Summary block ── */
+.hld-horse-summary__text { margin: 0 0 14px; font-size: 15px; color: var(--hl-text); line-height: 1.6; }
+
+/* ── Promotional banner ── */
+.hld-horse-banner { margin-bottom: 16px; border-radius: var(--hl-radius); overflow: hidden; }
+.hld-horse-banner img,
+.hld-horse-banner__img { width: 100%; height: auto; display: block; }
+
+/* ── About + Crosses of Gold (two-column desktop, stacked mobile) ── */
+.hld-about-crosses {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 40px;
+}
+@media (max-width: 900px) {
+  .hld-about-crosses { grid-template-columns: 1fr; gap: 24px; }
+}
+.hld-about-crosses__col h2 { margin: 0 0 14px; font-size: 18px; color: var(--hl-navy); font-family: Georgia, serif; }
+.hld-cross-list { display: flex; flex-direction: column; gap: 18px; margin-top: 16px; }
+.hld-cross { padding-top: 16px; border-top: 1px solid var(--hl-border); }
+.hld-cross:first-child { padding-top: 0; border-top: none; }
+.hld-cross__title { margin: 0 0 6px; font-size: 15px; font-weight: 800; color: var(--hl-navy); text-transform: uppercase; letter-spacing: .03em; }
+.hld-cross__desc { font-size: 14px; color: var(--hl-text); line-height: 1.6; }
+.hld-cross__examples { margin: 8px 0 0; font-size: 13px; color: var(--hl-muted); }
+
+/* ── Videos ── */
+.hld-video-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px;
+}
+.hld-video-card__embed {
+  position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden;
+  background: var(--hl-navy);
+}
+.hld-video-card__embed iframe,
+.hld-video-card__embed video {
+  position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block;
+}
+.hld-video-card__title { margin: 10px 0 4px; font-size: 15px; color: var(--hl-navy); }
+.hld-video-card__desc { margin: 0; font-size: 13px; color: var(--hl-muted); line-height: 1.5; }
+
+/* ── Related horses ── */
+.hld-related-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 18px;
+}
+.hld-related-card {
+  display: flex; flex-direction: column; text-decoration: none;
+  border: 1px solid var(--hl-border); border-radius: var(--hl-radius); overflow: hidden;
+  background: #fff; transition: box-shadow .2s, transform .2s;
+}
+.hld-related-card:hover { box-shadow: var(--hl-shadow); transform: translateY(-2px); }
+.hld-related-card__img-wrap {
+  aspect-ratio: 4/3; background: var(--hl-navy); display: flex; align-items: center; justify-content: center;
+}
+.hld-related-card__img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hld-related-card__body { padding: 12px 14px; display: flex; flex-direction: column; gap: 3px; }
+.hld-related-card__body strong { font-size: 14px; color: var(--hl-navy); }
+.hld-related-card__body span { font-size: 12px; color: var(--hl-muted); font-weight: 600; }
+
+@media (max-width: 600px) {
+  .hld-horse-name { font-size: 26px; }
+  .hld-ped-tree { min-width: 400px; }
+}

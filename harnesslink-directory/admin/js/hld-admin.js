@@ -36,6 +36,27 @@
     profile_image:   $('#hld-profile_image'),
     race_record:     $('#hld-race_record'),
     progeny_note:    $('#hld-progeny_note'),
+    tagline:         $('#hld-tagline'),
+    short_summary:   $('#hld-short_summary'),
+    year_of_birth:   $('#hld-year_of_birth'),
+    colour:          $('#hld-colour'),
+    sex:             $('#hld-sex'),
+    service_fee:     $('#hld-service_fee'),
+    booking_label:   $('#hld-booking_label'),
+    booking_url:     $('#hld-booking_url'),
+    hero_image_id:   $('#hld-hero_image_id'),
+    banner_image_id: $('#hld-banner_image_id'),
+    banner_url:      $('#hld-banner_url'),
+    banner_target:   $('#hld-banner_target'),
+    banner_alt:      $('#hld-banner_alt'),
+    banner_start:    $('#hld-banner_start'),
+    banner_end:      $('#hld-banner_end'),
+    crosses_intro:   $('#hld-crosses_intro'),
+    related_ids:     $('#hld-related_ids'),
+    ped_sire: $('#hld-ped_sire'), ped_dam: $('#hld-ped_dam'),
+    ped_ss: $('#hld-ped_ss'), ped_sd: $('#hld-ped_sd'), ped_ds: $('#hld-ped_ds'), ped_dd: $('#hld-ped_dd'),
+    ped_sss: $('#hld-ped_sss'), ped_ssd: $('#hld-ped_ssd'), ped_sds: $('#hld-ped_sds'), ped_sdd: $('#hld-ped_sdd'),
+    ped_dss: $('#hld-ped_dss'), ped_dsd: $('#hld-ped_dsd'), ped_dds: $('#hld-ped_dds'), ped_ddd: $('#hld-ped_ddd'),
   };
 
   /**
@@ -75,7 +96,10 @@
     applyTypeSchema(form.directory_type.val());
     // Reset gallery panel for new listing
     galleryReset();
+    mediaReset();
     progenyReset();
+    crossesReset();
+    relatedReset();
   }
 
   $(document).on('change', '#hld-directory_type', function () {
@@ -86,15 +110,21 @@
     overlay.hide();
     resetForm();
     galleryReset();
+    mediaReset();
+    crossesReset();
+    relatedReset();
   }
 
   function resetForm() {
     $.each(form, function (k, el) {
       if (el.is(':checkbox')) el.prop('checked', false);
       else if (k === 'directory_type') el.val(el.data('default') || 'stallion');
+      else if (k === 'hero_image_id' || k === 'banner_image_id') el.val(0);
       else el.val('');
     });
     updateProfileImagePreview('');
+    heroImagePicker.showPreview('');
+    bannerImagePicker.showPreview('');
   }
 
   function fillForm(s) {
@@ -103,6 +133,8 @@
       else el.val(s[k] || '');
     });
     updateProfileImagePreview(s.profile_image || '');
+    heroImagePicker.loadPreviewFromId(s.hero_image_id);
+    bannerImagePicker.loadPreviewFromId(s.banner_image_id);
   }
 
   form.is_featured.on('change', function () {
@@ -237,6 +269,66 @@
     updateProfileImagePreview('');
   });
 
+  /* ══ HERO / BANNER IMAGE PICKERS (single, WP media ID based) ══ */
+  function singleImagePicker(opts) {
+    let frame = null;
+    const $hidden  = opts.hiddenField;
+    const $preview = $(opts.previewSelector);
+    const $img     = $preview.find('img');
+
+    function showPreview(url) {
+      if (url) { $img.attr('src', url); $preview.show(); }
+      else     { $img.attr('src', ''); $preview.hide(); }
+    }
+
+    function loadPreviewFromId(id) {
+      id = parseInt(id) || 0;
+      if (!id) { showPreview(''); return; }
+      const attachment = wp.media.attachment(id);
+      attachment.fetch().done(function () {
+        const url = (attachment.get('sizes') && attachment.get('sizes').large) ? attachment.get('sizes').large.url : attachment.get('url');
+        showPreview(url);
+      });
+    }
+
+    $(opts.pickBtn).on('click', function (e) {
+      e.preventDefault();
+      if (frame) { frame.open(); return; }
+      frame = wp.media({ title: opts.title, button: { text: 'Use this image' }, library: { type: 'image' }, multiple: false });
+      frame.on('select', function () {
+        const attachment = frame.state().get('selection').first().toJSON();
+        $hidden.val(attachment.id);
+        const url = attachment.sizes && attachment.sizes.large ? attachment.sizes.large.url : attachment.url;
+        showPreview(url);
+      });
+      frame.open();
+    });
+
+    $(opts.clearBtn).on('click', function (e) {
+      e.preventDefault();
+      $hidden.val(0);
+      showPreview('');
+    });
+
+    return { loadPreviewFromId: loadPreviewFromId, showPreview: showPreview };
+  }
+
+  const heroImagePicker = singleImagePicker({
+    hiddenField: form.hero_image_id,
+    previewSelector: '#hld-hero-image-preview',
+    pickBtn: '#hld-hero-image-pick',
+    clearBtn: '#hld-hero-image-clear',
+    title: 'Choose Hero Image',
+  });
+
+  const bannerImagePicker = singleImagePicker({
+    hiddenField: form.banner_image_id,
+    previewSelector: '#hld-banner-image-preview',
+    pickBtn: '#hld-banner-image-pick',
+    clearBtn: '#hld-banner-image-clear',
+    title: 'Choose Banner Image',
+  });
+
   /* ══ MODAL TABS ══ */
   function switchTab(id) {
     $('.hld-tab').removeClass('active');
@@ -248,6 +340,10 @@
     const tab = $(this).data('tab');
     switchTab(tab);
     if (tab === 'progeny') progenyOnOpen();
+    if (tab === 'images')  imagesOnOpen();
+    if (tab === 'media')   mediaOnOpen();
+    if (tab === 'content') crossesOnOpen();
+    if (tab === 'related') relatedOnOpen();
   });
 
   /* ══ PROGENY (per-stallion) ══ */
@@ -501,198 +597,380 @@
   });
 
   /* ══════════════════════════════════════════
-     GALLERY
+     GALLERY IMAGES + MEDIA VIDEOS
+     Both live in the same hld_gallery table (media_type discriminates);
+     the Images tab shows only images, the Media tab shows only videos.
   ══════════════════════════════════════════ */
-
-  let currentStallionId = 0;
-  let wpMediaFrame       = null;
-
-  const $galleryGrid     = $('#hld-gallery-grid');
-  const $galleryEmpty    = $('#hld-gallery-empty-note');
-  const $galleryHint     = $('#hld-gallery-hint');
-
-  /* Reset gallery state when modal closes / new stallion opened */
-  function galleryReset() {
-    currentStallionId = 0;
-    $galleryGrid.empty();
-    $galleryEmpty.show();
-    $galleryHint.hide();
-    $('#hld-gallery-url-input').val('');
-  }
-
-  /* Load gallery items for existing stallion */
-  function galleryLoad(stallionId) {
-    currentStallionId = stallionId;
-    $galleryGrid.empty();
-    $.post(ajax, { action: 'hld_get_gallery', nonce, stallion_id: stallionId }, function (res) {
-      if (!res.success) return;
-      const items = res.data;
-      if (!items || !items.length) {
-        $galleryEmpty.show();
-        $galleryHint.hide();
-        return;
-      }
-      $galleryEmpty.hide();
-      $galleryHint.show();
-      items.forEach(function (item) { galleryAddCard(item); });
-      galleryInitSortable();
-    });
-  }
-
-  /* Build a single gallery card DOM element */
-  function galleryAddCard(item) {
-    const isVideo = item.media_type === 'video';
-    const thumb   = isVideo
-      ? '<div class="hld-gallery-card__video-thumb"><span class="hld-play-icon">&#9654;</span></div>'
-      : '<img class="hld-gallery-card__thumb" src="' + escHtml(item.url) + '" alt="" loading="lazy" />';
-
-    const card = $(
-      '<div class="hld-gallery-card" data-id="' + item.id + '">' +
-        thumb +
-        '<button type="button" class="hld-gallery-card__del" title="Remove">✕</button>' +
-        '<div class="hld-gallery-card__body">' +
-          '<div class="hld-gallery-card__type">' + (isVideo ? 'Video' : 'Image') + '</div>' +
-          '<input class="hld-gallery-card__caption" type="text" value="' + escHtml(item.caption || '') + '" placeholder="Add caption…" />' +
-        '</div>' +
-      '</div>'
-    );
-    $galleryGrid.append(card);
-  }
 
   function escHtml(str) {
     return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
-  /* Sortable drag-to-reorder */
-  function galleryInitSortable() {
-    if ($galleryGrid.hasClass('ui-sortable')) $galleryGrid.sortable('destroy');
-    $galleryGrid.sortable({
-      items: '.hld-gallery-card',
-      placeholder: 'hld-gallery-card ui-sortable-placeholder',
-      tolerance: 'pointer',
-      stop: function () {
-        const order = [];
-        $galleryGrid.find('.hld-gallery-card').each(function () {
-          order.push($(this).data('id'));
-        });
-        $.post(ajax, {
-          action:      'hld_reorder_gallery',
-          nonce:       nonce,
-          stallion_id: currentStallionId,
-          order:       order,
-        });
-      }
-    });
-  }
+  function currentHorseId() { return parseInt($('#hld-id').val()) || 0; }
 
-  /* ── Gallery tab click: load items for existing stallion ── */
-  $(document).on('click', '.hld-tab[data-tab="gallery"]', function () {
-    const stallionId = parseInt($('#hld-id').val()) || 0;
-    if (stallionId && stallionId !== currentStallionId) {
-      galleryLoad(stallionId);
-    } else if (!stallionId) {
-      $galleryEmpty.text('Save the stallion first, then add gallery items.').show();
-      $galleryHint.hide();
-    }
-  });
+  /**
+   * One instance manages either the image grid or the video grid, both
+   * backed by hld_gallery filtered by media_type.
+   */
+  function makeMediaModule(cfg) {
+    let loadedForId = 0;
+    let wpFrame      = null;
 
-  /* ── Add via URL ── */
-  $('#hld-gallery-url-add').on('click', function () {
-    const url  = $('#hld-gallery-url-input').val().trim();
-    const type = $('#hld-gallery-type-select').val();
-    const stallionId = parseInt($('#hld-id').val()) || 0;
-
-    if (!url) return alert('Please paste a URL first.');
-    if (!stallionId) return alert('Save the stallion first before adding gallery items.');
-
-    $.post(ajax, {
-      action:      'hld_add_gallery_item',
-      nonce:       nonce,
-      stallion_id: stallionId,
-      url:         url,
-      media_type:  type,
-      caption:     '',
-    }, function (res) {
-      if (!res.success) return alert(res.data || 'Failed to add item.');
-      $galleryEmpty.hide();
-      $galleryHint.show();
-      galleryAddCard(res.data);
-      galleryInitSortable();
-      $('#hld-gallery-url-input').val('');
-    });
-  });
-
-  /* ── Add via WP Media Library ── */
-  $('#hld-gallery-media-btn').on('click', function () {
-    const stallionId = parseInt($('#hld-id').val()) || 0;
-    if (!stallionId) return alert('Save the stallion first before adding gallery items.');
-
-    if (wpMediaFrame) {
-      wpMediaFrame.open();
-      return;
+    function reset() {
+      loadedForId = 0;
+      cfg.grid.empty();
+      cfg.empty.text(cfg.emptyText).show();
+      cfg.hint.hide();
+      cfg.needsSave.hide();
+      if (cfg.urlInput) cfg.urlInput.val('');
     }
 
-    wpMediaFrame = wp.media({
-      title:    'Select Images or Videos',
-      button:   { text: 'Add to Gallery' },
-      library:  { type: ['image', 'video'] },
-      multiple: true,
-    });
+    function onOpen() {
+      const id = currentHorseId();
+      if (!id) { cfg.needsSave.show(); cfg.empty.hide(); cfg.hint.hide(); return; }
+      cfg.needsSave.hide();
+      if (id !== loadedForId) load(id);
+    }
 
-    wpMediaFrame.on('select', function () {
-      const attachments = wpMediaFrame.state().get('selection').toArray();
-      let pending = attachments.length;
+    function load(id) {
+      loadedForId = id;
+      cfg.grid.empty();
+      $.post(ajax, { action: 'hld_get_gallery', nonce, stallion_id: id }, function (res) {
+        if (!res.success) return;
+        const items = (res.data || []).filter(function (it) { return it.media_type === cfg.mediaType; });
+        if (!items.length) { cfg.empty.text(cfg.emptyText).show(); cfg.hint.hide(); return; }
+        cfg.empty.hide();
+        cfg.hint.show();
+        items.forEach(addCard);
+        initSortable();
+      });
+    }
 
-      attachments.forEach(function (attachment) {
-        const a = attachment.toJSON();
-        const isVideo = a.type === 'video';
+    function addCard(item) {
+      const isVideo = cfg.mediaType === 'video';
+      const thumb = isVideo
+        ? '<div class="hld-gallery-card__video-thumb"><span class="hld-play-icon">&#9654;</span></div>'
+        : '<img class="hld-gallery-card__thumb" src="' + escHtml(item.url) + '" alt="" loading="lazy" />';
 
-        $.post(ajax, {
-          action:        'hld_add_gallery_item',
-          nonce:         nonce,
-          stallion_id:   stallionId,
-          attachment_id: a.id,
-          url:           a.url,
-          media_type:    isVideo ? 'video' : 'image',
-          caption:       a.caption || '',
-        }, function (res) {
-          if (res.success) {
-            $galleryEmpty.hide();
-            $galleryHint.show();
-            galleryAddCard(res.data);
-          }
-          pending--;
-          if (pending === 0) galleryInitSortable();
+      const descField = isVideo
+        ? '<textarea class="hld-gallery-card__description" rows="2" placeholder="Short description…">' + escHtml(item.description || '') + '</textarea>'
+        : '';
+
+      const card = $(
+        '<div class="hld-gallery-card" data-id="' + item.id + '">' +
+          thumb +
+          '<button type="button" class="hld-gallery-card__del" title="Remove">✕</button>' +
+          '<div class="hld-gallery-card__body">' +
+            '<div class="hld-gallery-card__type">' + (isVideo ? 'Video' : 'Image') + '</div>' +
+            '<input class="hld-gallery-card__caption" type="text" value="' + escHtml(item.caption || '') + '" placeholder="' + (isVideo ? 'Video title…' : 'Add caption…') + '" />' +
+            descField +
+          '</div>' +
+        '</div>'
+      );
+      card.data('media-type', cfg.mediaType);
+      cfg.grid.append(card);
+    }
+
+    function initSortable() {
+      if (cfg.grid.hasClass('ui-sortable')) cfg.grid.sortable('destroy');
+      cfg.grid.sortable({
+        items: '.hld-gallery-card',
+        placeholder: 'hld-gallery-card ui-sortable-placeholder',
+        tolerance: 'pointer',
+        stop: function () {
+          const order = [];
+          cfg.grid.find('.hld-gallery-card').each(function () { order.push($(this).data('id')); });
+          $.post(ajax, { action: 'hld_reorder_gallery', nonce, stallion_id: loadedForId, order: order });
+        }
+      });
+    }
+
+    function addViaUrl(url) {
+      const id = currentHorseId();
+      if (!id) return alert('Save the horse first before adding media.');
+      $.post(ajax, {
+        action: 'hld_add_gallery_item', nonce, stallion_id: id,
+        url: url, media_type: cfg.mediaType, caption: '',
+      }, function (res) {
+        if (!res.success) return alert(res.data || 'Failed to add item.');
+        cfg.empty.hide();
+        cfg.hint.show();
+        addCard(res.data);
+        initSortable();
+        if (cfg.urlInput) cfg.urlInput.val('');
+      });
+    }
+
+    function addViaLibrary() {
+      const id = currentHorseId();
+      if (!id) return alert('Save the horse first before adding media.');
+      if (wpFrame) { wpFrame.open(); return; }
+      wpFrame = wp.media({
+        title: cfg.libraryTitle,
+        button: { text: 'Add' },
+        library: { type: [cfg.mediaType] },
+        multiple: true,
+      });
+      wpFrame.on('select', function () {
+        const attachments = wpFrame.state().get('selection').toArray();
+        let pending = attachments.length;
+        attachments.forEach(function (attachment) {
+          const a = attachment.toJSON();
+          $.post(ajax, {
+            action: 'hld_add_gallery_item', nonce, stallion_id: id,
+            attachment_id: a.id, url: a.url, media_type: cfg.mediaType, caption: a.caption || '',
+          }, function (res) {
+            if (res.success) { cfg.empty.hide(); cfg.hint.show(); addCard(res.data); }
+            pending--;
+            if (pending === 0) initSortable();
+          });
         });
       });
-    });
+      wpFrame.open();
+    }
 
-    wpMediaFrame.open();
+    return { reset: reset, onOpen: onOpen, addViaUrl: addViaUrl, addViaLibrary: addViaLibrary, grid: cfg.grid, emptyText: cfg.emptyText, empty: cfg.empty, hint: cfg.hint };
+  }
+
+  const imagesModule = makeMediaModule({
+    grid: $('#hld-gallery-grid'), empty: $('#hld-gallery-empty-note'), hint: $('#hld-gallery-hint'),
+    needsSave: $('#hld-gallery-needs-save'), urlInput: $('#hld-gallery-url-input'),
+    mediaType: 'image', emptyText: 'No gallery images added yet.', libraryTitle: 'Select Images',
+  });
+  const mediaModule = makeMediaModule({
+    grid: $('#hld-media-grid'), empty: $('#hld-media-empty-note'), hint: $('#hld-media-hint'),
+    needsSave: $('#hld-media-needs-save'), urlInput: $('#hld-media-url-input'),
+    mediaType: 'video', emptyText: 'No videos added yet.', libraryTitle: 'Select a Video',
   });
 
-  /* ── Delete gallery item ── */
+  function galleryReset() { imagesModule.reset(); }
+  function mediaReset()   { mediaModule.reset(); }
+  function imagesOnOpen() { imagesModule.onOpen(); }
+  function mediaOnOpen()  { mediaModule.onOpen(); }
+
+  $('#hld-gallery-url-add').on('click', function () {
+    const url = $('#hld-gallery-url-input').val().trim();
+    if (!url) return alert('Please paste an image URL first.');
+    imagesModule.addViaUrl(url);
+  });
+  $('#hld-gallery-media-btn').on('click', function () { imagesModule.addViaLibrary(); });
+
+  $('#hld-media-url-add').on('click', function () {
+    const url = $('#hld-media-url-input').val().trim();
+    if (!url) return alert('Please paste a YouTube or Vimeo link first.');
+    mediaModule.addViaUrl(url);
+  });
+  $('#hld-media-library-btn').on('click', function () { mediaModule.addViaLibrary(); });
+
+  /* ── Delete gallery/media item (shared handler — cards live in either grid) ── */
   $(document).on('click', '.hld-gallery-card__del', function (e) {
     e.stopPropagation();
     const $card = $(this).closest('.hld-gallery-card');
     const id    = $card.data('id');
-    if (!confirm('Remove this media item?')) return;
+    if (!confirm('Remove this item?')) return;
     $.post(ajax, { action: 'hld_delete_gallery_item', nonce, id }, function (res) {
-      if (res.success) {
-        $card.remove();
-        if (!$galleryGrid.find('.hld-gallery-card').length) {
-          $galleryEmpty.text('No media added yet.').show();
-          $galleryHint.hide();
-        }
+      if (!res.success) return;
+      const mod = $card.data('media-type') === 'video' ? mediaModule : imagesModule;
+      $card.remove();
+      if (!mod.grid.find('.hld-gallery-card').length) {
+        mod.empty.text(mod.emptyText).show();
+        mod.hint.hide();
       }
     });
   });
 
-  /* ── Save caption on blur ── */
+  /* ── Save caption / description on blur ── */
   $(document).on('blur', '.hld-gallery-card__caption', function () {
-    const $card   = $(this).closest('.hld-gallery-card');
-    const id      = $card.data('id');
-    const caption = $(this).val();
-    $.post(ajax, { action: 'hld_update_gallery_caption', nonce, id, caption });
+    const id = $(this).closest('.hld-gallery-card').data('id');
+    $.post(ajax, { action: 'hld_update_gallery_caption', nonce, id, caption: $(this).val() });
+  });
+  $(document).on('blur', '.hld-gallery-card__description', function () {
+    const id = $(this).closest('.hld-gallery-card').data('id');
+    $.post(ajax, { action: 'hld_update_gallery_caption', nonce, id, description: $(this).val() });
+  });
+
+  /* ══════════════════════════════════════════
+     CROSSES OF GOLD
+  ══════════════════════════════════════════ */
+
+  let crossesLoadedForId = 0;
+  const $crossesList      = $('#hld-crosses-list');
+  const $crossesEmpty     = $('#hld-crosses-empty');
+  const $crossesNeedsSave = $('#hld-crosses-needs-save');
+
+  function crossesReset() {
+    crossesLoadedForId = 0;
+    $crossesList.empty();
+    $crossesEmpty.show();
+    $crossesNeedsSave.hide();
+  }
+
+  function crossesOnOpen() {
+    const id = currentHorseId();
+    if (!id) { $crossesNeedsSave.show(); $crossesEmpty.hide(); return; }
+    $crossesNeedsSave.hide();
+    if (id !== crossesLoadedForId) crossesLoad(id);
+  }
+
+  function crossesLoad(id) {
+    crossesLoadedForId = id;
+    $crossesList.empty();
+    $.post(ajax, { action: 'hld_get_crosses', nonce, stallion_id: id }, function (res) {
+      if (!res.success) return;
+      const items = res.data || [];
+      if (!items.length) { $crossesEmpty.show(); return; }
+      $crossesEmpty.hide();
+      items.forEach(crossAddCard);
+      crossesInitSortable();
+    });
+  }
+
+  function crossAddCard(item) {
+    const card = $(
+      '<div class="hld-cross-card" data-id="' + item.id + '">' +
+        '<button type="button" class="hld-cross-card__del" title="Remove cross">✕</button>' +
+        '<div class="hld-field"><label>Cross Title / Sire Line</label>' +
+          '<input type="text" class="hld-cross-title" value="' + escHtml(item.title || '') + '" placeholder="e.g. In The Pocket" /></div>' +
+        '<div class="hld-field"><label>Description</label>' +
+          '<textarea class="hld-cross-description" rows="3" placeholder="Why this line works well with this horse…">' + escHtml(item.description || '') + '</textarea></div>' +
+        '<div class="hld-field"><label>Notable Examples (optional)</label>' +
+          '<textarea class="hld-cross-examples" rows="2" placeholder="Horse names or supporting examples…">' + escHtml(item.examples || '') + '</textarea></div>' +
+      '</div>'
+    );
+    $crossesList.append(card);
+  }
+
+  function crossesInitSortable() {
+    if ($crossesList.hasClass('ui-sortable')) $crossesList.sortable('destroy');
+    $crossesList.sortable({
+      items: '.hld-cross-card',
+      handle: false,
+      placeholder: 'hld-cross-card ui-sortable-placeholder',
+      tolerance: 'pointer',
+      stop: function () {
+        const order = [];
+        $crossesList.find('.hld-cross-card').each(function () { order.push($(this).data('id')); });
+        $.post(ajax, { action: 'hld_reorder_crosses', nonce, stallion_id: crossesLoadedForId, order: order });
+      }
+    });
+  }
+
+  $('#hld-cross-add').on('click', function () {
+    const id = currentHorseId();
+    if (!id) return alert('Save the horse first before adding breeding crosses.');
+    $.post(ajax, { action: 'hld_add_cross', nonce, stallion_id: id, title: '', description: '', examples: '' }, function (res) {
+      if (!res.success) return alert(res.data || 'Failed to add cross.');
+      $crossesEmpty.hide();
+      crossAddCard(res.data);
+      crossesInitSortable();
+      $crossesList.find('.hld-cross-card:last .hld-cross-title').trigger('focus');
+    });
+  });
+
+  $(document).on('click', '.hld-cross-card__del', function () {
+    const $card = $(this).closest('.hld-cross-card');
+    const id    = $card.data('id');
+    if (!confirm('Remove this breeding cross?')) return;
+    $.post(ajax, { action: 'hld_delete_cross', nonce, id }, function (res) {
+      if (!res.success) return;
+      $card.remove();
+      if (!$crossesList.find('.hld-cross-card').length) $crossesEmpty.show();
+    });
+  });
+
+  $(document).on('blur', '.hld-cross-title, .hld-cross-description, .hld-cross-examples', function () {
+    const $card = $(this).closest('.hld-cross-card');
+    const id    = $card.data('id');
+    $.post(ajax, {
+      action: 'hld_update_cross', nonce, id,
+      title:       $card.find('.hld-cross-title').val(),
+      description: $card.find('.hld-cross-description').val(),
+      examples:    $card.find('.hld-cross-examples').val(),
+    });
+  });
+
+  /* ══════════════════════════════════════════
+     RELATED HORSES — search-as-you-type picker
+  ══════════════════════════════════════════ */
+
+  let relatedSelected   = []; // [{id, name, stud_name}]
+  const $relatedResults = $('#hld-related-results');
+  const $relatedSelected= $('#hld-related-selected');
+  const $relatedEmpty   = $('#hld-related-empty-note');
+  let relatedSearchTimer = null;
+
+  function relatedReset() {
+    relatedSelected = [];
+    $relatedResults.empty();
+    $('#hld-related-search').val('');
+    renderRelatedSelected();
+  }
+
+  function relatedOnOpen() {
+    const raw = form.related_ids.val();
+    if (!raw) return;
+    let ids = [];
+    try { ids = JSON.parse(raw); } catch (e) { ids = []; }
+    if (!ids || !ids.length) return;
+    if (relatedSelected.length) return; // already hydrated
+    $.post(ajax, { action: 'hld_search_horses', nonce, ids: ids.join(',') }, function (res) {
+      if (!res.success) return;
+      relatedSelected = res.data || [];
+      renderRelatedSelected();
+    });
+  }
+
+  function renderRelatedSelected() {
+    form.related_ids.val(relatedSelected.length ? JSON.stringify(relatedSelected.map(function (h) { return h.id; })) : '');
+    if (!relatedSelected.length) {
+      $relatedSelected.html('<p class="hld-gallery-note" id="hld-related-empty-note">No related horses selected yet.</p>');
+      return;
+    }
+    let html = '';
+    relatedSelected.forEach(function (h) {
+      html += '<div class="hld-related-chip" data-id="' + h.id + '">' +
+        '<span>' + escHtml(h.name) + (h.stud_name ? ' <em>(' + escHtml(h.stud_name) + ')</em>' : '') + '</span>' +
+        '<button type="button" class="hld-related-chip__del" title="Remove">✕</button>' +
+      '</div>';
+    });
+    $relatedSelected.html(html);
+  }
+
+  $(document).on('click', '.hld-related-chip__del', function () {
+    const id = parseInt($(this).closest('.hld-related-chip').data('id'));
+    relatedSelected = relatedSelected.filter(function (h) { return h.id !== id; });
+    renderRelatedSelected();
+  });
+
+  $('#hld-related-search').on('input', function () {
+    const term = $(this).val().trim();
+    clearTimeout(relatedSearchTimer);
+    relatedSearchTimer = setTimeout(function () {
+      const excludeId = currentHorseId();
+      $.post(ajax, { action: 'hld_search_horses', nonce, search: term, exclude: excludeId }, function (res) {
+        if (!res.success) return;
+        const selectedIds = relatedSelected.map(function (h) { return h.id; });
+        let html = '';
+        (res.data || []).forEach(function (h) {
+          if (selectedIds.indexOf(h.id) >= 0) return;
+          html += '<div class="hld-related-result" data-id="' + h.id + '" data-name="' + escHtml(h.name) + '" data-stud="' + escHtml(h.stud_name || '') + '">' +
+            '<span>' + escHtml(h.name) + (h.stud_name ? ' <em>(' + escHtml(h.stud_name) + ')</em>' : '') + '</span>' +
+            '<button type="button" class="hld-btn hld-btn--xs hld-btn--secondary">Add</button>' +
+          '</div>';
+        });
+        $relatedResults.html(html || '<p class="hld-gallery-note">No matches.</p>');
+      });
+    }, 250);
+  });
+
+  $(document).on('click', '.hld-related-result', function () {
+    const id   = parseInt($(this).data('id'));
+    const name = $(this).data('name');
+    const stud = $(this).data('stud');
+    if (relatedSelected.some(function (h) { return h.id === id; })) return;
+    relatedSelected.push({ id: id, name: name, stud_name: stud });
+    renderRelatedSelected();
+    $(this).remove();
   });
 
 })(jQuery);

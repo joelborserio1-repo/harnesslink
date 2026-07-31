@@ -105,11 +105,26 @@ class HLD_DB {
             KEY idx_money (stallion_id, prizemoney_num)
         ) {$charset};";
 
+        /* ── Crosses of Gold (repeatable breeding-cross entries) ── */
+        $sql_crosses = "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}hld_crosses (
+            id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            stallion_id  BIGINT UNSIGNED NOT NULL,
+            title        VARCHAR(200)    NOT NULL DEFAULT '',
+            description  TEXT,
+            examples     TEXT,
+            sort_order   INT             NOT NULL DEFAULT 0,
+            created_at   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_stallion (stallion_id),
+            KEY idx_sort (stallion_id, sort_order)
+        ) {$charset};";
+
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta( $sql_stallions );
         dbDelta( $sql_enquiries );
         dbDelta( $sql_gallery );
         dbDelta( $sql_progeny );
+        dbDelta( $sql_crosses );
         self::ensure_columns();
         self::dedupe_stallions();
 
@@ -209,12 +224,57 @@ class HLD_DB {
             'contact_other' => "ALTER TABLE {$table} ADD contact_other TEXT",
             'stud_website'  => "ALTER TABLE {$table} ADD stud_website VARCHAR(255) NOT NULL DEFAULT ''",
             'is_featured'   => "ALTER TABLE {$table} ADD is_featured TINYINT(1) NOT NULL DEFAULT 0",
+
+            /* ── Profile / hero / summary ── */
+            'tagline'        => "ALTER TABLE {$table} ADD tagline VARCHAR(255) NOT NULL DEFAULT ''",
+            'short_summary'  => "ALTER TABLE {$table} ADD short_summary TEXT",
+            'year_of_birth'  => "ALTER TABLE {$table} ADD year_of_birth VARCHAR(10) NOT NULL DEFAULT ''",
+            'colour'         => "ALTER TABLE {$table} ADD colour VARCHAR(60) NOT NULL DEFAULT ''",
+            'sex'            => "ALTER TABLE {$table} ADD sex VARCHAR(30) NOT NULL DEFAULT ''",
+            'booking_url'    => "ALTER TABLE {$table} ADD booking_url VARCHAR(255) NOT NULL DEFAULT ''",
+            'booking_label'  => "ALTER TABLE {$table} ADD booking_label VARCHAR(100) NOT NULL DEFAULT ''",
+            'hero_image_id'  => "ALTER TABLE {$table} ADD hero_image_id BIGINT UNSIGNED NOT NULL DEFAULT 0",
+
+            /* ── Promotional banner ── */
+            'banner_image_id' => "ALTER TABLE {$table} ADD banner_image_id BIGINT UNSIGNED NOT NULL DEFAULT 0",
+            'banner_url'      => "ALTER TABLE {$table} ADD banner_url VARCHAR(255) NOT NULL DEFAULT ''",
+            'banner_target'   => "ALTER TABLE {$table} ADD banner_target VARCHAR(10) NOT NULL DEFAULT '_self'",
+            'banner_alt'      => "ALTER TABLE {$table} ADD banner_alt VARCHAR(255) NOT NULL DEFAULT ''",
+            'banner_start'    => "ALTER TABLE {$table} ADD banner_start DATE NULL",
+            'banner_end'      => "ALTER TABLE {$table} ADD banner_end DATE NULL",
+
+            /* ── Crosses of Gold intro + related horses ── */
+            'crosses_intro' => "ALTER TABLE {$table} ADD crosses_intro TEXT",
+            'related_ids'   => "ALTER TABLE {$table} ADD related_ids TEXT",
+
+            /* ── Pedigree: parents, grandparents, great-grandparents ── */
+            'ped_sire' => "ALTER TABLE {$table} ADD ped_sire VARCHAR(200) NOT NULL DEFAULT ''",
+            'ped_dam'  => "ALTER TABLE {$table} ADD ped_dam VARCHAR(200) NOT NULL DEFAULT ''",
+            'ped_ss'   => "ALTER TABLE {$table} ADD ped_ss VARCHAR(200) NOT NULL DEFAULT ''",
+            'ped_sd'   => "ALTER TABLE {$table} ADD ped_sd VARCHAR(200) NOT NULL DEFAULT ''",
+            'ped_ds'   => "ALTER TABLE {$table} ADD ped_ds VARCHAR(200) NOT NULL DEFAULT ''",
+            'ped_dd'   => "ALTER TABLE {$table} ADD ped_dd VARCHAR(200) NOT NULL DEFAULT ''",
+            'ped_sss'  => "ALTER TABLE {$table} ADD ped_sss VARCHAR(200) NOT NULL DEFAULT ''",
+            'ped_ssd'  => "ALTER TABLE {$table} ADD ped_ssd VARCHAR(200) NOT NULL DEFAULT ''",
+            'ped_sds'  => "ALTER TABLE {$table} ADD ped_sds VARCHAR(200) NOT NULL DEFAULT ''",
+            'ped_sdd'  => "ALTER TABLE {$table} ADD ped_sdd VARCHAR(200) NOT NULL DEFAULT ''",
+            'ped_dss'  => "ALTER TABLE {$table} ADD ped_dss VARCHAR(200) NOT NULL DEFAULT ''",
+            'ped_dsd'  => "ALTER TABLE {$table} ADD ped_dsd VARCHAR(200) NOT NULL DEFAULT ''",
+            'ped_dds'  => "ALTER TABLE {$table} ADD ped_dds VARCHAR(200) NOT NULL DEFAULT ''",
+            'ped_ddd'  => "ALTER TABLE {$table} ADD ped_ddd VARCHAR(200) NOT NULL DEFAULT ''",
         );
 
         foreach ( $missing as $column => $sql ) {
             if ( ! in_array( $column, $columns, true ) ) {
                 $wpdb->query( $sql );
             }
+        }
+
+        /* Gallery table: video description (caption doubles as the video title). */
+        $gallery_table   = $wpdb->prefix . 'hld_gallery';
+        $gallery_columns = $wpdb->get_col( "DESC {$gallery_table}", 0 );
+        if ( ! empty( $gallery_columns ) && ! in_array( 'description', $gallery_columns, true ) ) {
+            $wpdb->query( "ALTER TABLE {$gallery_table} ADD description TEXT" );
         }
     }
 
@@ -492,7 +552,11 @@ class HLD_DB {
 
     public static function delete_stallion( $id ) {
         global $wpdb;
-        return $wpdb->delete( $wpdb->prefix . 'hld_stallions', array( 'id' => absint( $id ) ) );
+        $id = absint( $id );
+        self::delete_gallery_for_stallion( $id );
+        self::delete_progeny( $id );
+        self::delete_crosses_for_stallion( $id );
+        return $wpdb->delete( $wpdb->prefix . 'hld_stallions', array( 'id' => $id ) );
     }
 
     /**
@@ -639,7 +703,91 @@ class HLD_DB {
             'race_record'     => sanitize_text_field( $data['race_record'] ?? '' ),
             'service_fee'     => sanitize_text_field( $data['service_fee'] ?? '' ),
             'progeny_note'    => sanitize_textarea_field( $data['progeny_note'] ?? '' ),
+
+            /* ── Profile / hero / summary ── */
+            'tagline'         => sanitize_text_field( $data['tagline'] ?? '' ),
+            'short_summary'   => sanitize_textarea_field( $data['short_summary'] ?? '' ),
+            'year_of_birth'   => sanitize_text_field( $data['year_of_birth'] ?? '' ),
+            'colour'          => sanitize_text_field( $data['colour'] ?? '' ),
+            'sex'             => sanitize_text_field( $data['sex'] ?? '' ),
+            'booking_url'     => esc_url_raw( $data['booking_url'] ?? '' ),
+            'booking_label'   => sanitize_text_field( $data['booking_label'] ?? '' ),
+            'hero_image_id'   => absint( $data['hero_image_id'] ?? 0 ),
+
+            /* ── Promotional banner ── */
+            'banner_image_id' => absint( $data['banner_image_id'] ?? 0 ),
+            'banner_url'      => esc_url_raw( $data['banner_url'] ?? '' ),
+            'banner_target'   => ( $data['banner_target'] ?? '_self' ) === '_blank' ? '_blank' : '_self',
+            'banner_alt'      => sanitize_text_field( $data['banner_alt'] ?? '' ),
+            'banner_start'    => self::sanitize_date( $data['banner_start'] ?? '' ),
+            'banner_end'      => self::sanitize_date( $data['banner_end'] ?? '' ),
+
+            /* ── Crosses of Gold intro + related horses ── */
+            'crosses_intro'   => wp_kses_post( $data['crosses_intro'] ?? '' ),
+            'related_ids'     => self::sanitize_related_ids( $data['related_ids'] ?? '' ),
+
+            /* ── Pedigree ── */
+            'ped_sire' => sanitize_text_field( $data['ped_sire'] ?? '' ),
+            'ped_dam'  => sanitize_text_field( $data['ped_dam']  ?? '' ),
+            'ped_ss'   => sanitize_text_field( $data['ped_ss']   ?? '' ),
+            'ped_sd'   => sanitize_text_field( $data['ped_sd']   ?? '' ),
+            'ped_ds'   => sanitize_text_field( $data['ped_ds']   ?? '' ),
+            'ped_dd'   => sanitize_text_field( $data['ped_dd']   ?? '' ),
+            'ped_sss'  => sanitize_text_field( $data['ped_sss']  ?? '' ),
+            'ped_ssd'  => sanitize_text_field( $data['ped_ssd']  ?? '' ),
+            'ped_sds'  => sanitize_text_field( $data['ped_sds']  ?? '' ),
+            'ped_sdd'  => sanitize_text_field( $data['ped_sdd']  ?? '' ),
+            'ped_dss'  => sanitize_text_field( $data['ped_dss']  ?? '' ),
+            'ped_dsd'  => sanitize_text_field( $data['ped_dsd']  ?? '' ),
+            'ped_dds'  => sanitize_text_field( $data['ped_dds']  ?? '' ),
+            'ped_ddd'  => sanitize_text_field( $data['ped_ddd']  ?? '' ),
         );
+    }
+
+    /** 'YYYY-MM-DD' or empty; anything else is discarded rather than blocking save. */
+    private static function sanitize_date( $value ) {
+        $value = sanitize_text_field( $value );
+        if ( $value === '' ) return null;
+        return preg_match( '/^\d{4}-\d{2}-\d{2}$/', $value ) ? $value : null;
+    }
+
+    /** Accepts a JSON string or an array of listing IDs; stores a clean JSON array. */
+    private static function sanitize_related_ids( $value ) {
+        if ( is_string( $value ) ) {
+            $decoded = json_decode( $value, true );
+            $value   = is_array( $decoded ) ? $decoded : array_filter( explode( ',', $value ) );
+        }
+        $ids = array_values( array_unique( array_filter( array_map( 'absint', (array) $value ) ) ) );
+        return $ids ? wp_json_encode( $ids ) : '';
+    }
+
+    /** Decode a stored related_ids JSON string back into an int array. */
+    public static function decode_related_ids( $value ) {
+        $decoded = json_decode( (string) $value, true );
+        return is_array( $decoded ) ? array_values( array_unique( array_filter( array_map( 'absint', $decoded ) ) ) ) : array();
+    }
+
+    /** Fetch related listings by ID, in the stored order, skipping any that no longer exist. */
+    public static function get_related_listings( $ids, $limit = 4 ) {
+        global $wpdb;
+        $ids = array_filter( array_map( 'absint', (array) $ids ) );
+        if ( ! $ids ) return array();
+
+        $table        = $wpdb->prefix . 'hld_stallions';
+        $placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+        $rows         = $wpdb->get_results( $wpdb->prepare(
+            "SELECT * FROM {$table} WHERE id IN ({$placeholders})", $ids
+        ) );
+
+        $by_id = array();
+        foreach ( $rows as $row ) $by_id[ (int) $row->id ] = $row;
+
+        $ordered = array();
+        foreach ( $ids as $id ) {
+            if ( isset( $by_id[ $id ] ) ) $ordered[] = $by_id[ $id ];
+            if ( $limit && count( $ordered ) >= $limit ) break;
+        }
+        return $ordered;
     }
 
     /* ════════════════════════════════════
@@ -770,6 +918,7 @@ class HLD_DB {
             'url'           => esc_url_raw( $data['url'] ?? '' ),
             'attachment_id' => absint( $data['attachment_id'] ?? 0 ),
             'caption'       => sanitize_text_field( $data['caption'] ?? '' ),
+            'description'   => sanitize_textarea_field( $data['description'] ?? '' ),
             'sort_order'    => absint( $data['sort_order'] ?? 0 ),
         ) );
         return $wpdb->insert_id;
@@ -777,12 +926,20 @@ class HLD_DB {
 
     public static function update_gallery_item( $id, $data ) {
         global $wpdb;
+        $update = array();
+        if ( isset( $data['caption'] ) ) {
+            $update['caption'] = sanitize_text_field( $data['caption'] );
+        }
+        if ( isset( $data['description'] ) ) {
+            $update['description'] = sanitize_textarea_field( $data['description'] );
+        }
+        if ( isset( $data['sort_order'] ) ) {
+            $update['sort_order'] = absint( $data['sort_order'] );
+        }
+        if ( ! $update ) return false;
         return $wpdb->update(
             $wpdb->prefix . 'hld_gallery',
-            array(
-                'caption'    => sanitize_text_field( $data['caption'] ?? '' ),
-                'sort_order' => absint( $data['sort_order'] ?? 0 ),
-            ),
+            $update,
             array( 'id' => absint( $id ) )
         );
     }
@@ -960,5 +1117,67 @@ class HLD_DB {
     /** Back-compat alias. */
     public static function seed_bettors_delight_progeny() {
         self::seed_progeny_data();
+    }
+
+    /* ════════════════════════════════════
+       CROSSES OF GOLD (per-stallion, repeatable)
+    ════════════════════════════════════ */
+
+    public static function get_crosses( $stallion_id ) {
+        global $wpdb;
+        return $wpdb->get_results( $wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}hld_crosses WHERE stallion_id = %d ORDER BY sort_order ASC, id ASC",
+            absint( $stallion_id )
+        ) );
+    }
+
+    private static function sanitize_cross( $stallion_id, $data ) {
+        return array(
+            'stallion_id' => absint( $stallion_id ),
+            'title'       => sanitize_text_field( $data['title'] ?? '' ),
+            'description' => wp_kses_post( $data['description'] ?? '' ),
+            'examples'    => sanitize_textarea_field( $data['examples'] ?? '' ),
+            'sort_order'  => absint( $data['sort_order'] ?? 0 ),
+        );
+    }
+
+    public static function add_cross( $stallion_id, $data ) {
+        global $wpdb;
+        $existing = self::get_crosses( $stallion_id );
+        $data['sort_order'] = count( $existing );
+        $wpdb->insert( $wpdb->prefix . 'hld_crosses', self::sanitize_cross( $stallion_id, $data ) );
+        return $wpdb->insert_id;
+    }
+
+    public static function update_cross( $id, $data ) {
+        global $wpdb;
+        $update = array();
+        if ( isset( $data['title'] ) )       $update['title']       = sanitize_text_field( $data['title'] );
+        if ( isset( $data['description'] ) ) $update['description'] = wp_kses_post( $data['description'] );
+        if ( isset( $data['examples'] ) )    $update['examples']    = sanitize_textarea_field( $data['examples'] );
+        if ( isset( $data['sort_order'] ) )  $update['sort_order']  = absint( $data['sort_order'] );
+        if ( ! $update ) return false;
+        return $wpdb->update( $wpdb->prefix . 'hld_crosses', $update, array( 'id' => absint( $id ) ) );
+    }
+
+    public static function delete_cross( $id ) {
+        global $wpdb;
+        return $wpdb->delete( $wpdb->prefix . 'hld_crosses', array( 'id' => absint( $id ) ) );
+    }
+
+    public static function reorder_crosses( $stallion_id, $ordered_ids ) {
+        global $wpdb;
+        foreach ( $ordered_ids as $sort => $item_id ) {
+            $wpdb->update(
+                $wpdb->prefix . 'hld_crosses',
+                array( 'sort_order' => absint( $sort ) ),
+                array( 'id' => absint( $item_id ), 'stallion_id' => absint( $stallion_id ) )
+            );
+        }
+    }
+
+    public static function delete_crosses_for_stallion( $stallion_id ) {
+        global $wpdb;
+        return $wpdb->delete( $wpdb->prefix . 'hld_crosses', array( 'stallion_id' => absint( $stallion_id ) ) );
     }
 }

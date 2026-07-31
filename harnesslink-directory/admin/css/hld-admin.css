@@ -478,3 +478,68 @@
 }
 .hld-master-item:last-child { border-bottom: none; }
 .hld-master-empty { display: block; padding: 10px 12px; color: #94A3B8; font-size: 13px; }
+
+/* ══════════════════════════════
+   HORSE PROFILE TABS — Images / Pedigree / Content / Media / Related
+══════════════════════════════ */
+.hld-panel-heading {
+  margin: 22px 0 12px; padding-top: 16px; border-top: 1px solid var(--hl-border);
+  font-size: 14px; font-weight: 800; color: var(--hl-navy);
+  text-transform: uppercase; letter-spacing: .04em;
+}
+.hld-panel-heading:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+
+.hld-image-preview--wide { width: 100%; max-width: 420px; height: 140px; }
+
+/* Video description field inside a gallery card */
+.hld-gallery-card__description {
+  font-size: 12px; color: var(--hl-text); border: 1px solid transparent;
+  padding: 4px 0 0; background: transparent; width: 100%; outline: none;
+  font-family: inherit; resize: vertical; border-top: 1px dashed var(--hl-border);
+  margin-top: 4px;
+}
+.hld-gallery-card__description:focus { border-color: var(--hl-blue); }
+.hld-gallery-card__description::placeholder { color: #CBD5E0; font-style: italic; }
+
+/* ── Crosses of Gold ── */
+.hld-crosses-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 14px; }
+.hld-cross-card {
+  position: relative; border: 1px solid var(--hl-border); border-radius: 12px;
+  background: #fff; padding: 16px 40px 16px 16px;
+  display: flex; flex-direction: column; gap: 12px;
+  cursor: grab;
+}
+.hld-cross-card:active { cursor: grabbing; }
+.hld-cross-card.ui-sortable-helper { box-shadow: 0 12px 32px rgba(0,0,0,.18); }
+.hld-cross-card.ui-sortable-placeholder { border: 2px dashed #BFD3FF; background: #EFF4FF; visibility: visible !important; min-height: 80px; }
+.hld-cross-card__del {
+  position: absolute; top: 12px; right: 12px;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: #F1F5F9; color: var(--hl-muted);
+  border: none; font-size: 12px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.hld-cross-card__del:hover { background: var(--hl-red); color: #fff; }
+
+/* ── Related horses picker ── */
+.hld-related-results {
+  margin: 10px 0; max-height: 220px; overflow-y: auto;
+  border: 1px solid var(--hl-border); border-radius: 10px;
+}
+.hld-related-results:empty { display: none; border: none; }
+.hld-related-result, .hld-related-chip {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 9px 12px; font-size: 13px; border-bottom: 1px solid #F1F5F9;
+}
+.hld-related-result:last-child { border-bottom: none; }
+.hld-related-result em, .hld-related-chip em { color: var(--hl-muted); font-style: normal; }
+.hld-related-selected { display: flex; flex-direction: column; gap: 8px; }
+.hld-related-chip {
+  border: 1px solid var(--hl-border); border-radius: 10px; background: #F7F9FC;
+}
+.hld-related-chip__del {
+  width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+  background: #fff; border: 1px solid var(--hl-border); color: var(--hl-muted);
+  cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center;
+}
+.hld-related-chip__del:hover { background: var(--hl-red); color: #fff; border-color: var(--hl-red); }
