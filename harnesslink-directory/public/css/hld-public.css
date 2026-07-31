@@ -1235,11 +1235,18 @@
 }
 .hld-horse-cta:hover { filter: brightness(1.08); transform: translateY(-1px); }
 
-/* ── Hero row: photo next to pedigree (desktop), stacked photo-first (mobile). ── */
+/* ── Hero row: photo next to pedigree (desktop), stacked photo-first (mobile).
+   The pedigree column needs real room for 4 generations of text, so it gets
+   a guaranteed minimum width and the breakpoint is high enough that it never
+   has to squeeze below that. align-items is "start" (not "stretch") so the
+   photo keeps its natural aspect-ratio height instead of being stretched
+   into blank space to match the pedigree panel's (taller, and that's normal
+   for a 4-generation tree) height. ── */
 .hld-hero-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: stretch; margin-bottom: 28px;
+  display: grid; grid-template-columns: minmax(280px, 1fr) minmax(460px, 1.15fr);
+  gap: 28px; align-items: start; margin-bottom: 28px;
 }
-@media (max-width: 900px) {
+@media (max-width: 860px) {
   .hld-hero-grid { grid-template-columns: 1fr; gap: 20px; }
 }
 
@@ -1253,9 +1260,13 @@
 .hld-horse-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .hld-horse-photo--empty { background: var(--hl-navy); display: flex; align-items: center; justify-content: center; }
 
-/* ── Pedigree panel — sits next to the photo, stretched to match its height.
-   Boxes are fluid (flex, word-wrap) so they always fill the column width —
-   no horizontal scroll no matter how narrow the column gets. ── */
+/* ── Pedigree panel — sits next to the photo. Each generation column gets
+   40% of the width remaining at that depth (a 2:3 cell:children flex
+   ratio), so the 4th-generation boxes still land around a fifth of the
+   panel's width instead of collapsing to nothing — that collapse is what
+   was forcing names onto one letter per line before. A cell never shrinks
+   below its min-width floor, so word-wrapping is the worst case, never
+   letter-wrapping. ── */
 .hld-hero-pedigree {
   background: #fff; border: 1px solid var(--hl-border); border-radius: var(--hl-radius);
   padding: 20px 22px; box-shadow: var(--hl-shadow);
@@ -1263,11 +1274,11 @@
 }
 .hld-ped-heading { margin: 0 0 14px; font-family: Georgia, serif; font-size: 18px; color: var(--hl-navy); }
 .hld-ped-empty { color: var(--hl-muted); font-size: 14px; margin: 0; }
-.hld-ped-tree { display: flex; align-items: stretch; width: 100%; flex: 1; padding: 4px 0; }
+.hld-ped-tree { display: flex; align-items: stretch; width: 100%; padding: 4px 0; }
 
 .hld-ped-node { display: flex; align-items: stretch; flex: 1; min-width: 0; }
 .hld-ped-cell {
-  flex: 1; min-width: 0; margin: 3px 10px 3px 0;
+  flex: 2 2 0; min-width: 62px; margin: 3px 10px 3px 0;
   display: flex; flex-direction: column; justify-content: center; gap: 3px;
   padding: 10px 12px; border-radius: 8px;
   background: var(--hl-navy); color: #fff;
@@ -1283,7 +1294,7 @@
 .hld-ped-cell--horse .hld-ped-cell__name { font-family: Georgia, serif; font-size: 16px; }
 .hld-ped-cell--horse .hld-ped-cell__record { font-size: 12px; }
 .hld-ped-children {
-  display: flex; flex-direction: column; justify-content: space-around; flex: 1; min-width: 0;
+  display: flex; flex-direction: column; justify-content: space-around; flex: 3 3 0; min-width: 0;
   border-left: 2px solid var(--hl-light-blue); margin-left: -4px; padding-left: 4px;
 }
 .hld-ped-children > .hld-ped-node { position: relative; flex: 1; min-width: 0; min-height: 56px; }
@@ -1295,7 +1306,7 @@
 @media (max-width: 700px) {
   .hld-ped-cell__name { font-size: 12px; }
   .hld-ped-cell__record { font-size: 10px; }
-  .hld-ped-cell { padding: 8px 8px; margin: 3px 6px 3px 0; }
+  .hld-ped-cell { padding: 8px 8px; margin: 3px 6px 3px 0; min-width: 50px; }
   .hld-ped-cell--horse .hld-ped-cell__name { font-size: 14px; }
 }
 
