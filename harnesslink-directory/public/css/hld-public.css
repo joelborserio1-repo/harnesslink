@@ -1243,44 +1243,15 @@
   .hld-hero-grid { grid-template-columns: 1fr; gap: 20px; }
 }
 
-/* ── Gallery / carousel ── */
-.hld-hg { display: flex; flex-direction: column; gap: 10px; }
-.hld-hg__stage {
-  position: relative; border-radius: var(--hl-radius); overflow: hidden;
-  background: var(--hl-bg); aspect-ratio: 4/3;
+/* ── Hero photo: single static image, or featured image + thumbnail grid
+   (.hld-gallery-layout / .hld-gallery-featured / .hld-gallery-grid-pub /
+   .hld-gallery-thumb are the pre-existing gallery classes above — reused
+   as-is). No carousel/swipe — click a photo to view full-size. ── */
+.hld-horse-photo {
+  border-radius: var(--hl-radius); overflow: hidden; background: var(--hl-bg); aspect-ratio: 4/3;
 }
-.hld-hg__slide-link {
-  position: absolute; inset: 0; display: block;
-  opacity: 0; visibility: hidden; pointer-events: none;
-  transition: opacity .3s ease; cursor: zoom-in;
-}
-.hld-hg__slide-link.is-active { opacity: 1; visibility: visible; pointer-events: auto; position: relative; }
-.hld-hg__slide { width: 100%; height: 100%; object-fit: cover; display: block; }
-.hld-hg--placeholder {
-  border-radius: var(--hl-radius); aspect-ratio: 4/3;
-  background: var(--hl-navy); display: flex; align-items: center; justify-content: center;
-}
-.hld-hg__nav {
-  position: absolute; top: 50%; transform: translateY(-50%);
-  width: 40px; height: 40px; border-radius: 50%; border: none;
-  background: rgba(10,42,102,.55); color: #fff; font-size: 20px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; backdrop-filter: blur(3px); transition: background .15s;
-}
-.hld-hg__nav:hover, .hld-hg__nav:focus-visible { background: rgba(10,42,102,.85); }
-.hld-hg__nav--prev { left: 10px; }
-.hld-hg__nav--next { right: 10px; }
-.hld-hg__thumbs {
-  display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px;
-  scrollbar-width: thin;
-}
-.hld-hg__thumb {
-  flex: 0 0 auto; width: 64px; height: 48px; border-radius: 8px; overflow: hidden;
-  border: 2px solid transparent; padding: 0; cursor: pointer; background: var(--hl-bg);
-}
-.hld-hg__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.hld-hg__thumb.is-active { border-color: var(--hl-blue); }
-.hld-hg__thumb:focus-visible { outline: 2px solid var(--hl-blue); outline-offset: 2px; }
+.hld-horse-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hld-horse-photo--empty { background: var(--hl-navy); display: flex; align-items: center; justify-content: center; }
 
 /* ── Pedigree panel ── */
 .hld-hero-pedigree {

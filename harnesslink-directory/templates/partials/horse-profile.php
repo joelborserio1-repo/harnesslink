@@ -56,49 +56,24 @@ $quick_facts = array_filter( array(
 
 <div class="hld-hero-grid">
 
-  <!-- Gallery / carousel -->
+  <!-- Photo: single hero image, or a featured image + thumbnail grid when there are gallery photos too. No carousel/swipe — click any photo to view full-size. -->
   <div class="hld-hero-gallery">
-    <?php if ( ! empty( $hero_slides ) ): ?>
-      <div class="hld-hg" data-hld-gallery>
-        <div class="hld-hg__stage">
-          <?php foreach ( $hero_slides as $i => $slide ): ?>
-            <a
-              href="<?= esc_url( $slide['full'] ) ?>"
-              class="hld-hg__slide-link hld-lightbox-trigger<?= $i === 0 ? ' is-active' : '' ?>"
-              data-caption="<?= esc_attr( $slide['alt'] ) ?>"
-              data-type="image"
-              data-index="<?= (int) $i ?>"
-              aria-label="View full-size photo <?= (int) $i + 1 ?> of <?= count( $hero_slides ) ?>"
-            >
-              <img
-                src="<?= esc_url( $slide['full'] ) ?>"
-                alt="<?= esc_attr( $slide['alt'] ) ?>"
-                class="hld-hg__slide"
-                <?= $i === 0 ? '' : 'loading="lazy"' ?>
-              />
+    <?php if ( count( $hero_slides ) > 1 ): ?>
+      <div class="hld-gallery-layout">
+        <div class="hld-gallery-featured">
+          <a href="<?= esc_url( $hero_slides[0]['full'] ) ?>" class="hld-lightbox-trigger" data-caption="<?= esc_attr( $hero_slides[0]['alt'] ) ?>" data-type="image">
+            <img class="hld-gallery-featured__img" src="<?= esc_url( $hero_slides[0]['full'] ) ?>" alt="<?= esc_attr( $hero_slides[0]['alt'] ) ?>" />
+            <span class="hld-gallery-zoom" aria-hidden="true">⤢</span>
+          </a>
+        </div>
+        <div class="hld-gallery-grid-pub">
+          <?php foreach ( array_slice( $hero_slides, 1 ) as $slide ): ?>
+            <a href="<?= esc_url( $slide['full'] ) ?>" class="hld-gallery-thumb hld-lightbox-trigger" data-caption="<?= esc_attr( $slide['alt'] ) ?>" data-type="image">
+              <img src="<?= esc_url( $slide['thumb'] ) ?>" alt="<?= esc_attr( $slide['alt'] ) ?>" loading="lazy" />
+              <span class="hld-gallery-zoom-sm" aria-hidden="true">⤢</span>
             </a>
           <?php endforeach; ?>
-          <?php if ( count( $hero_slides ) > 1 ): ?>
-            <button type="button" class="hld-hg__nav hld-hg__nav--prev" aria-label="Previous photo">‹</button>
-            <button type="button" class="hld-hg__nav hld-hg__nav--next" aria-label="Next photo">›</button>
-          <?php endif; ?>
         </div>
-        <?php if ( count( $hero_slides ) > 1 ): ?>
-          <div class="hld-hg__thumbs" role="tablist" aria-label="Gallery thumbnails">
-            <?php foreach ( $hero_slides as $i => $slide ): ?>
-              <button
-                type="button"
-                class="hld-hg__thumb<?= $i === 0 ? ' is-active' : '' ?>"
-                data-index="<?= (int) $i ?>"
-                role="tab"
-                aria-selected="<?= $i === 0 ? 'true' : 'false' ?>"
-                aria-label="Show photo <?= (int) $i + 1 ?> of <?= count( $hero_slides ) ?>"
-              >
-                <img src="<?= esc_url( $slide['thumb'] ) ?>" alt="" loading="lazy" />
-              </button>
-            <?php endforeach; ?>
-          </div>
-        <?php endif; ?>
       </div>
 
       <div id="hld-lightbox" class="hld-lightbox" style="display:none;" role="dialog" aria-modal="true" aria-label="Photo viewer">
@@ -112,8 +87,12 @@ $quick_facts = array_filter( array(
         <button type="button" class="hld-lightbox__prev" aria-label="Previous photo">‹</button>
         <button type="button" class="hld-lightbox__next" aria-label="Next photo">›</button>
       </div>
+    <?php elseif ( count( $hero_slides ) === 1 ): ?>
+      <div class="hld-horse-photo">
+        <img src="<?= esc_url( $hero_slides[0]['full'] ) ?>" alt="<?= esc_attr( $hero_slides[0]['alt'] ) ?>" />
+      </div>
     <?php else: ?>
-      <div class="hld-hg hld-hg--placeholder">
+      <div class="hld-horse-photo hld-horse-photo--empty">
         <div class="hld-profile-placeholder-text"><?= esc_html( strtoupper( substr( $stallion->name, 0, 2 ) ) ) ?></div>
       </div>
     <?php endif; ?>

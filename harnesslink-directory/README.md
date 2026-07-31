@@ -247,9 +247,11 @@ harnesslink-directory/
 ## Horse / Stallion Profile Redesign (v1.7.1)
 
 The individual stallion profile (`/directory/stallion/{id}/{name}`) was
-rebuilt to a richer, HarnessLink-branded layout: hero photo carousel,
-structured three-generation pedigree, a promotional banner, "About" +
-"Crosses of Gold" content, videos, and related stallions. **No new
+rebuilt to a richer, HarnessLink-branded layout: a hero photo (with a
+thumbnail grid when there's more than one — no swipe/carousel, click any
+photo to view it full-size), structured three-generation pedigree, a
+rotating promotional banner, "About" + "Crosses of Gold" content, videos,
+and related stallions. **No new
 framework was introduced** — this extends the existing custom-table +
 virtual-URL architecture the plugin already uses (there is no ACF, Meta
 Box, or custom post type in this codebase; every listing across every
@@ -317,10 +319,12 @@ directory-type listing the modal now has these tabs:
 3. **Profile & Racing** — "About the Horse" (Profile Bio), legacy Profile
    Picture URL (only used if no Hero Image is set below), race record.
 4. **Images** — Hero Image (the large photo at the top), Gallery Images
-   (carousel/thumbnails — upload or paste a URL, drag to reorder), and
-   Promotional Banners (recommended **1360 × 150px**; add one for a static
-   banner, or several to rotate automatically — each with its own link,
-   open-in behaviour, alt text, and optional start/end dates).
+   (additional photos shown as a thumbnail grid next to the hero image —
+   upload or paste a URL, drag to reorder; no carousel/swipe, each photo
+   opens full-size on click), and Promotional Banners (recommended
+   **1360 × 150px**; add one for a static banner, or several to rotate
+   automatically — each with its own link, open-in behaviour, alt text,
+   and optional start/end dates).
 5. **Pedigree** — a "Quick Fill from Pasted Text" tool at the top for fast
    bulk entry, plus 14 individual two-line boxes (name, optional race
    record) below it — Sire/Dam, the 4 grandparents, the 8
@@ -346,8 +350,8 @@ Nothing was deleted or renamed. Existing stallion listings keep working
 exactly as before with zero admin action required:
 
 - Their existing **Profile Picture URL** (`profile_image`) is used as the
-  hero photo until a Hero Image is set — the carousel gracefully falls
-  back to a single static image, then to the initials placeholder if
+  hero photo until a Hero Image is set — it gracefully falls back to a
+  single static image, then to the initials placeholder if
   neither is set.
 - Their existing **Profile Bio** is used as "About the Horse" — same
   field, no re-entry needed.
@@ -372,11 +376,12 @@ place harmlessly, or dropped manually later if desired.
 
 - [ ] Add a new stallion with only a Name — publishes, page renders with
       graceful empty states everywhere (no console errors, no PHP notices).
-- [ ] Add Hero Image + several Gallery images — carousel shows thumbnails,
-      arrow keys / swipe / prev-next buttons / thumbnail clicks all switch
-      slides, clicking the main photo opens the full-size lightbox.
-- [ ] Leave only one gallery image — carousel controls are hidden, single
-      image displays cleanly.
+- [ ] Add Hero Image + several Gallery images — featured photo shows on
+      the left with a thumbnail grid alongside it; clicking any photo
+      (featured or thumbnail) opens the full-size lightbox with working
+      prev/next between all of them.
+- [ ] Set only a Hero Image (no gallery images) — shows as a single
+      static photo, no thumbnail grid.
 - [ ] Fill in Sire/Dam only (no grandparents) — pedigree shows a 2-branch
       tree, no empty placeholder cells.
 - [ ] Fill in the full 14-field pedigree, each with a name and a race
