@@ -424,12 +424,17 @@ $plural        = wp_strip_all_tags( $type_meta['plural'] );
 
         <div class="hld-ped-quickfill">
           <h3 class="hld-panel-heading">Quick Fill from Pasted Text</h3>
-          <p class="hld-field-hint">If you already have this pedigree written out elsewhere (a website, a spreadsheet, notes), this is the fastest way in: click <strong>Get Template</strong>, fill in each line under its label, paste the whole thing back below, then click <strong>Fill Fields</strong>. It never touches an image — this is still plain text, so nothing about how the boxes are branded changes.</p>
+          <p class="hld-field-hint">Paste pedigree text below and click <strong>Fill Fields</strong> — two formats are recognised automatically:</p>
+          <ul class="hld-field-hint" style="margin:0 0 10px 18px; padding:0;">
+            <li>An indented tree, e.g. <code>Sire: Cam's Card Shark (p,3,1:50)</code> then <code>Dam: ...</code> nested underneath — however it's indented (spaces, tabs, or │├└ characters), as long as it goes one step deeper per generation.</li>
+            <li>The blank template from <strong>Get Template</strong> below, filled in under each <code>[Label]</code>.</li>
+          </ul>
+          <p class="hld-field-hint">Either way this stays plain text — no image involved, so nothing about how the boxes are branded changes.</p>
           <div class="hld-ped-quickfill__bar">
             <button type="button" class="hld-btn hld-btn--secondary" id="hld-ped-template">Get Template</button>
             <button type="button" class="hld-btn hld-btn--primary" id="hld-ped-fill">Fill Fields</button>
           </div>
-          <textarea id="hld-ped-paste" rows="8" placeholder="Click &quot;Get Template&quot; to start, or paste a previously-copied template here."></textarea>
+          <textarea id="hld-ped-paste" rows="8" placeholder="Paste a Sire:/Dam: pedigree tree here, or click &quot;Get Template&quot; to start from a blank template."></textarea>
           <div id="hld-ped-fill-result" class="hld-import-result" style="display:none;"></div>
         </div>
 

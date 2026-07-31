@@ -1103,37 +1103,110 @@
     $('#hld-ped-paste').val(lines.join('\n'));
   });
 
+  const PED_KEY_BY_PATH = {
+    s: 'ped_sire', d: 'ped_dam',
+    ss: 'ped_ss', sd: 'ped_sd', ds: 'ped_ds', dd: 'ped_dd',
+    sss: 'ped_sss', ssd: 'ped_ssd', sds: 'ped_sds', sdd: 'ped_sdd',
+    dss: 'ped_dss', dsd: 'ped_dsd', dds: 'ped_dds', ddd: 'ped_ddd',
+  };
+
+  /** "Name (record)" or "Name, record" or just "Name" → { name, record }. */
+  function splitPedEntry(text) {
+    text = text.trim();
+    let m = text.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+    if (m) return { name: m[1].trim(), record: m[2].trim() };
+    m = text.match(/^([^,]+),\s*((?:p|t)[.,].*)$/i); // "Name, p,3,1:50" style records only
+    if (m) return { name: m[1].trim(), record: m[2].trim() };
+    return { name: text, record: '' };
+  }
+
+  /**
+   * Parses an indented "Sire: Name (record)" / "Dam: Name (record)" outline
+   * (tree-drawing characters like │├└─ are ignored) into the 14 pedigree
+   * fields, using indentation depth to reconstruct the tree — so it doesn't
+   * matter whether the source used 2 spaces, 4 spaces, or box-drawing guides,
+   * only that it gets deeper going down each branch.
+   */
+  function parsePedigreeOutline(raw) {
+    const pathStack   = [];
+    const indentStack = [];
+    const found       = {};
+    let anyLine = false;
+
+    raw.split('\n').forEach(function (line) {
+      const m = line.match(/^([^A-Za-z0-9]*)(Sire|Dam)\s*:\s*(.+)$/i);
+      if (!m) return;
+      anyLine = true;
+      const indent = m[1].length;
+      const side   = m[2].toLowerCase() === 'sire' ? 's' : 'd';
+      const rest   = m[3];
+
+      while (indentStack.length && indentStack[indentStack.length - 1] >= indent) {
+        indentStack.pop();
+        pathStack.pop();
+      }
+      pathStack.push(side);
+      indentStack.push(indent);
+
+      const path = pathStack.join('');
+      if (path.length <= 3) found[path] = rest;
+    });
+
+    if (!anyLine) return null;
+
+    const result = {};
+    Object.keys(found).forEach(function (path) {
+      const key = PED_KEY_BY_PATH[path];
+      if (key) result[key] = splitPedEntry(found[path]);
+    });
+    return result;
+  }
+
   $('#hld-ped-fill').on('click', function () {
     const raw = $('#hld-ped-paste').val();
     const $result = $('#hld-ped-fill-result').hide().removeClass('error success');
-    if (!raw.trim()) { $result.addClass('error').text('Paste the filled-in template first.').show(); return; }
-
-    // Split on [Label] markers, keeping the label with its following text.
-    const parts = raw.split(/\[([^\]]+)\]/);
-    const byLabel = {};
-    for (let i = 1; i < parts.length; i += 2) {
-      const label = parts[i].trim().toLowerCase().replace(/\s*>\s*/g, ' > ');
-      const body  = (parts[i + 1] || '').split('\n').map(function (l) { return l.trim(); }).filter(function (l) { return l.length; });
-      byLabel[label] = body;
-    }
+    if (!raw.trim()) { $result.addClass('error').text('Paste the filled-in template, or a Sire:/Dam: pedigree tree, first.').show(); return; }
 
     let filled = 0;
-    PED_LABELS.forEach(function (pair) {
-      const label = pair[0].toLowerCase();
-      const key   = pair[1];
-      if (!byLabel[label] || !byLabel[label].length) return;
-      const name   = byLabel[label][0] || '';
-      const record = byLabel[label][1] || '';
-      if (form[key]) {
-        form[key].val(record ? (name + '\n' + record) : name);
-        filled++;
+
+    if (raw.indexOf('[') >= 0 && raw.indexOf(']') >= 0) {
+      // [Label] bracket template (from "Get Template").
+      const parts = raw.split(/\[([^\]]+)\]/);
+      const byLabel = {};
+      for (let i = 1; i < parts.length; i += 2) {
+        const label = parts[i].trim().toLowerCase().replace(/\s*>\s*/g, ' > ');
+        const body  = (parts[i + 1] || '').split('\n').map(function (l) { return l.trim(); }).filter(function (l) { return l.length; });
+        byLabel[label] = body;
       }
-    });
+      PED_LABELS.forEach(function (pair) {
+        const label = pair[0].toLowerCase();
+        const key   = pair[1];
+        if (!byLabel[label] || !byLabel[label].length) return;
+        const name   = byLabel[label][0] || '';
+        const record = byLabel[label][1] || '';
+        if (form[key]) {
+          form[key].val(record ? (name + '\n' + record) : name);
+          filled++;
+        }
+      });
+    } else {
+      // Indented "Sire: Name (record)" / "Dam: Name (record)" outline.
+      const parsed = parsePedigreeOutline(raw);
+      if (parsed) {
+        Object.keys(parsed).forEach(function (key) {
+          const entry = parsed[key];
+          if (form[key]) {
+            form[key].val(entry.record ? (entry.name + '\n' + entry.record) : entry.name);
+            filled++;
+          }
+        });
+      }
+    }
 
     if (filled) {
       $result.addClass('success').text('Filled ' + filled + ' of 14 pedigree boxes. Review them below, then save.').show();
     } else {
-      $result.addClass('error').text('Couldn’t find any recognised [Label] sections. Use "Get Template" to start from a blank template.').show();
+      $result.addClass('error').text('Couldn’t recognise that format. Use "Get Template" for a fill-in-the-blanks version, or paste an indented "Sire: Name (record)" / "Dam: Name (record)" tree.').show();
     }
   });
 
