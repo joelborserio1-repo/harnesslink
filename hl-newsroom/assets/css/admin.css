@@ -1,0 +1,75 @@
+.hln-wrap {
+	max-width: 1100px;
+}
+
+.hln-page-title {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.hln-stats-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 16px;
+	margin: 20px 0;
+}
+
+.hln-stat-card {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 16px;
+	text-align: center;
+}
+
+.hln-stat-icon {
+	font-size: 24px;
+	width: 24px;
+	height: 24px;
+	color: #2271b1;
+}
+
+.hln-stat-value {
+	font-size: 28px;
+	font-weight: 600;
+	line-height: 1.2;
+}
+
+.hln-stat-label {
+	color: #6b7280;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: .02em;
+}
+
+.hln-panel {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 16px 20px;
+	margin-bottom: 20px;
+}
+
+.hln-form-table th {
+	width: 220px;
+}
+
+.hln-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 10px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.hln-badge-on {
+	background: #edfaef;
+	color: #1a7f37;
+}
+
+.hln-badge-off {
+	background: #f6f7f7;
+	color: #6b7280;
+}
