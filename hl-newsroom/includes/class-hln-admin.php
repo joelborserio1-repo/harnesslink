@@ -57,13 +57,134 @@ class HLN_Admin {
 			[ $this, 'page_settings' ]
 		);
 
+		add_submenu_page(
+			'hl-newsroom',
+			__( 'Intake Log', 'hl-newsroom' ),
+			__( 'Intake Log', 'hl-newsroom' ),
+			'manage_options',
+			'hln-intake-log',
+			[ $this, 'page_intake_log' ]
+		);
+
 		/*
 		 * Later-phase screens, added here once they exist:
 		 *
-		 * add_submenu_page( 'hl-newsroom', __( 'Intake Log', 'hl-newsroom' ), __( 'Intake Log', 'hl-newsroom' ), 'manage_options', 'hln-intake-log', [ $this, 'page_intake_log' ] ); // Phase 2
 		 * add_submenu_page( 'hl-newsroom', __( 'Story Candidates', 'hl-newsroom' ), __( 'Story Candidates', 'hl-newsroom' ), 'manage_options', 'edit.php?post_type=hln_candidate' ); // Phase 4
 		 * add_submenu_page( 'hl-newsroom', __( 'Editorial Dashboard', 'hl-newsroom' ), __( 'Editorial Dashboard', 'hl-newsroom' ), 'manage_options', 'hln-dashboard', [ $this, 'page_editorial_dashboard' ] ); // Phase 6
 		 */
+	}
+
+	/* =========================================================
+	   PAGE: INTAKE LOG  (Phase 2 — extends this admin shell)
+	========================================================= */
+
+	public function page_intake_log() {
+		$tab = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'all';
+
+		$counts = HLN_Intake_Log::counts_by_status();
+		$filters = 'all' === $tab ? [] : [ 'status' => $tab ];
+		$items   = HLN_Intake_Log::get_recent( 100, $filters );
+
+		$tabs = [
+			'all'          => sprintf( __( 'All (%d)', 'hl-newsroom' ), array_sum( $counts ) ),
+			'processed'    => sprintf( __( 'Processed (%d)', 'hl-newsroom' ), $counts['processed'] ),
+			'unclassified' => sprintf( __( 'Unclassified (%d)', 'hl-newsroom' ), $counts['unclassified'] ),
+			'quarantined'  => sprintf( __( 'Quarantined (%d)', 'hl-newsroom' ), $counts['quarantined'] ),
+		];
+		?>
+		<div class="wrap hln-wrap">
+			<h1 class="hln-page-title"><span class="dashicons dashicons-list-view"></span> <?php _e( 'Intake Log', 'hl-newsroom' ); ?></h1>
+
+			<h2 class="nav-tab-wrapper">
+				<?php foreach ( $tabs as $key => $label ) : ?>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=hln-intake-log&tab=' . $key ) ); ?>" class="nav-tab <?php echo $tab === $key ? 'nav-tab-active' : ''; ?>"><?php echo esc_html( $label ); ?></a>
+				<?php endforeach; ?>
+			</h2>
+
+			<div class="hln-panel">
+				<table class="wp-list-table widefat fixed striped">
+					<thead>
+						<tr>
+							<th><?php _e( 'Ingested', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Channel', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Status', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Source', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Headline', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Data Type', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Flags', 'hl-newsroom' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php if ( empty( $items ) ) : ?>
+							<tr><td colspan="7"><?php _e( 'No items yet.', 'hl-newsroom' ); ?></td></tr>
+						<?php else : ?>
+							<?php foreach ( $items as $item ) : ?>
+								<tr>
+									<td><?php echo esc_html( $item->ingested_at ); ?></td>
+									<td><?php echo esc_html( $item->channel ); ?></td>
+									<td><span class="hln-badge hln-badge-<?php echo esc_attr( 'processed' === $item->status ? 'on' : 'off' ); ?>"><?php echo esc_html( $item->status ); ?></span></td>
+									<td><?php echo esc_html( $item->source_name ?: '—' ); ?></td>
+									<td>
+										<?php echo esc_html( $item->headline ?: '—' ); ?>
+										<?php if ( $item->reason ) : ?><br><span class="description"><?php echo esc_html( $item->reason ); ?></span><?php endif; ?>
+									</td>
+									<td><?php echo esc_html( $item->data_type ?: '—' ); ?></td>
+									<td>
+										<?php if ( ! empty( $item->requires_source_clearance ) ) : ?><span class="hln-badge hln-badge-off"><?php _e( 'Clearance Required', 'hl-newsroom' ); ?></span><?php endif; ?>
+										<?php if ( ! empty( $item->verify_against_official ) ) : ?><span class="hln-badge hln-badge-off"><?php _e( 'Verify vs Official', 'hl-newsroom' ); ?></span><?php endif; ?>
+										<?php if ( $item->confirm_status ) : ?><span class="hln-badge hln-badge-off"><?php echo esc_html( $item->confirm_status ); ?></span><?php endif; ?>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						<?php endif; ?>
+					</tbody>
+				</table>
+			</div>
+
+			<div class="hln-panel">
+				<h2><?php _e( 'Feature Race Calendar', 'hl-newsroom' ); ?></h2>
+				<?php $this->render_calendar_table(); ?>
+			</div>
+		</div>
+		<?php
+	}
+
+	private function render_calendar_table() {
+		global $wpdb;
+		$table = $wpdb->prefix . 'hln_race_calendar';
+		$rows  = $wpdb->get_results( "SELECT * FROM $table ORDER BY race_date ASC LIMIT 50" );
+		?>
+		<table class="wp-list-table widefat fixed striped">
+			<thead>
+				<tr>
+					<th><?php _e( 'Race', 'hl-newsroom' ); ?></th>
+					<th><?php _e( 'Governing Body', 'hl-newsroom' ); ?></th>
+					<th><?php _e( 'Region', 'hl-newsroom' ); ?></th>
+					<th><?php _e( 'Date', 'hl-newsroom' ); ?></th>
+					<th><?php _e( 'Grade', 'hl-newsroom' ); ?></th>
+					<th><?php _e( 'Prize Money', 'hl-newsroom' ); ?></th>
+					<th><?php _e( 'Intelligence', 'hl-newsroom' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php if ( empty( $rows ) ) : ?>
+					<tr><td colspan="7"><?php _e( 'No calendar entries yet.', 'hl-newsroom' ); ?></td></tr>
+				<?php else : ?>
+					<?php foreach ( $rows as $row ) : $intel = HLN_Racing_Intelligence::get_for_entry( (int) $row->id ); ?>
+						<tr>
+							<td><?php echo esc_html( $row->race_name ); ?></td>
+							<td><?php echo esc_html( $row->governing_body ); ?></td>
+							<td><?php echo esc_html( $row->region ); ?></td>
+							<td><?php echo esc_html( $row->race_date ?: '—' ); ?></td>
+							<td><?php echo esc_html( $row->grade ?: '—' ); ?></td>
+							<td><?php echo esc_html( $row->prize_money ?: '—' ); ?></td>
+							<td><?php echo $intel ? esc_html__( 'Assembled', 'hl-newsroom' ) : esc_html__( 'Not yet', 'hl-newsroom' ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				<?php endif; ?>
+			</tbody>
+		</table>
+		<?php
 	}
 
 	/* =========================================================
@@ -384,6 +505,23 @@ class HLN_Admin {
 				</div>
 
 				<div class="hln-panel">
+					<h2><?php _e( 'Email Intake', 'hl-newsroom' ); ?></h2>
+					<table class="form-table hln-form-table">
+						<tr>
+							<th><label for="hln-inbound-email-signing-key"><?php _e( 'Inbound Webhook Signing Key', 'hl-newsroom' ); ?></label></th>
+							<td>
+								<input type="text" name="hln_inbound_email_signing_key" id="hln-inbound-email-signing-key" class="regular-text code" value="<?php echo esc_attr( get_option( 'hln_inbound_email_signing_key', '' ) ); ?>" />
+								<p class="description"><?php printf(
+									esc_html__( 'Set to the signing key from your inbound-parse email provider (%s payload assumed — see HLN_INBOUND_EMAIL_PROVIDER). The %s endpoint rejects every request until this is set — a POSTed "sender" field is only a claim, not verified identity, until the signature check passes.', 'hl-newsroom' ),
+									'<code>' . esc_html( HLN_INBOUND_EMAIL_PROVIDER ) . '</code>',
+									'<code>/wp-json/hln/v1/inbound-email</code>'
+								); ?></p>
+							</td>
+						</tr>
+					</table>
+				</div>
+
+				<div class="hln-panel">
 					<h2><?php _e( 'Category Taxonomy', 'hl-newsroom' ); ?></h2>
 					<table class="form-table hln-form-table">
 						<tr>
@@ -431,6 +569,7 @@ class HLN_Admin {
 
 	private function save_settings_from_post() {
 		update_option( 'hln_default_byline', sanitize_text_field( wp_unslash( $_POST['hln_default_byline'] ?? 'HarnessLink Media' ) ) );
+		update_option( 'hln_inbound_email_signing_key', sanitize_text_field( wp_unslash( $_POST['hln_inbound_email_signing_key'] ?? '' ) ) );
 		update_option( 'hln_regions', sanitize_textarea_field( wp_unslash( $_POST['hln_regions'] ?? '' ) ) );
 		update_option( 'hln_subcategories', sanitize_textarea_field( wp_unslash( $_POST['hln_subcategories'] ?? '' ) ) );
 

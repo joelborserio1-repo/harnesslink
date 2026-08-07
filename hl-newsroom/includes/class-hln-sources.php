@@ -426,6 +426,46 @@ class HLN_Sources {
 	}
 
 	/**
+	 * Match a sender's email address against a registered source by
+	 * comparing domains — an email from news@ustrotting.com matches the
+	 * source whose url is https://www.ustrotting.com. Only enabled
+	 * sources are matched; a disabled source is treated the same as an
+	 * unregistered one for intake purposes.
+	 *
+	 * @param  string $email
+	 * @return array|null Entry with '_type' and '_slug' added, or null.
+	 */
+	public static function match_by_sender_email( $email ) {
+		$at = strrpos( (string) $email, '@' );
+		if ( false === $at ) {
+			return null;
+		}
+		$sender_domain = strtolower( substr( $email, $at + 1 ) );
+		if ( '' === $sender_domain ) {
+			return null;
+		}
+
+		foreach ( self::all_flat() as $key => $entry ) {
+			if ( empty( $entry['enabled'] ) || empty( $entry['url'] ) ) {
+				continue;
+			}
+			$source_host = strtolower( (string) parse_url( $entry['url'], PHP_URL_HOST ) );
+			if ( '' === $source_host ) {
+				continue;
+			}
+			if ( $sender_domain === $source_host || self::is_subdomain_of( $sender_domain, $source_host ) ) {
+				return $entry;
+			}
+		}
+
+		return null;
+	}
+
+	private static function is_subdomain_of( $domain, $parent ) {
+		return $domain !== $parent && str_ends_with( $domain, '.' . $parent );
+	}
+
+	/**
 	 * Flatten the grouped registry into a single [slug => entry] array
 	 * for admin list-table display. Each entry keeps its own
 	 * 'source_type' field, and the flattening key is prefixed with the
