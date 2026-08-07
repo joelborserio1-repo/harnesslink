@@ -10,12 +10,13 @@
  * the email PDF handling does.
  *
  * The feature-race-calendar adapter runs across every jurisdiction seeded
- * into HLN_Sources, not a single market. Per-body page markup isn't known
- * ahead of time, so calendar extraction uses a generic best-effort table
- * reader plus a per-source selector override map — the same shape as the
- * legacy plugin's per-source XPath arrays in AD_Sources — filterable via
- * 'hln_race_calendar_selectors' so real selectors can be added per body
- * once confirmed, without changing this class.
+ * into HLN_Sources, not a single market. Calendar extraction is resolved
+ * per source through the HLN_Race_Calendar_Adapter_Interface registry
+ * (class-hln-race-calendar-adapter.php) — a jurisdiction-specific adapter
+ * (an HRNSW adapter, a USTA adapter, etc.) can be registered per source
+ * slug via a filter without changing this class; none are registered
+ * today, so every source falls back to HLN_Generic_Calendar_Adapter's
+ * best-effort <table> reader.
  */
 if ( ! defined( 'ABSPATH' ) ) exit;
 
@@ -228,82 +229,18 @@ class HLN_Race_Data {
 	}
 
 	/**
-	 * Generic best-effort calendar-table reader: pulls rows from any
-	 * <table> whose header cells mention race/date/grade/prize, plus any
-	 * per-source override registered via 'hln_race_calendar_selectors'.
-	 * Real per-body markup isn't known yet, so this intentionally
-	 * degrades to an empty result rather than guessing at content.
+	 * Resolves a jurisdiction-specific adapter for this source when one
+	 * is registered (none are, today — see class-hln-race-calendar-adapter.php),
+	 * falling back to the generic best-effort reader otherwise.
 	 *
 	 * @return array[] Each row: ['race_name','race_date','grade','prize_money']
 	 */
 	private function extract_calendar_rows( $html, array $entry ) {
-		$overrides = apply_filters( 'hln_race_calendar_selectors', [], $entry );
-		if ( ! empty( $overrides ) && is_callable( $overrides ) ) {
-			return (array) call_user_func( $overrides, $html, $entry );
+		$adapter = apply_filters( 'hln_race_calendar_adapter_' . $entry['_slug'], null, $entry );
+		if ( ! is_object( $adapter ) || ! ( $adapter instanceof HLN_Race_Calendar_Adapter_Interface ) ) {
+			$adapter = new HLN_Generic_Calendar_Adapter();
 		}
-
-		if ( empty( $html ) ) {
-			return [];
-		}
-
-		libxml_use_internal_errors( true );
-		$doc = new DOMDocument();
-		$doc->loadHTML( '<?xml encoding="UTF-8">' . $html );
-		libxml_clear_errors();
-		$xpath = new DOMXPath( $doc );
-
-		$rows = [];
-		foreach ( $xpath->query( '//table' ) as $table ) {
-			$header_text = strtolower( trim( $table->textContent ) );
-			if ( ! preg_match( '/race|date|grade|stake|prize/i', $header_text ) ) {
-				continue;
-			}
-			foreach ( $xpath->query( './/tr', $table ) as $tr ) {
-				$cells = [];
-				foreach ( $xpath->query( './/td|.//th', $tr ) as $cell ) {
-					$cells[] = trim( $cell->textContent );
-				}
-				if ( count( $cells ) < 2 ) {
-					continue;
-				}
-				$rows[] = [
-					'race_name'   => $cells[0] ?? '',
-					'race_date'   => $this->find_date_in_cells( $cells ),
-					'grade'       => $this->find_grade_in_cells( $cells ),
-					'prize_money' => $this->find_prize_in_cells( $cells ),
-				];
-			}
-		}
-
-		return array_filter( $rows, fn( $r ) => '' !== $r['race_name'] );
-	}
-
-	private function find_date_in_cells( array $cells ) {
-		foreach ( $cells as $cell ) {
-			$ts = strtotime( $cell );
-			if ( $ts && preg_match( '/\d{4}|\d{1,2}\/\d{1,2}/', $cell ) ) {
-				return gmdate( 'Y-m-d', $ts );
-			}
-		}
-		return null;
-	}
-
-	private function find_grade_in_cells( array $cells ) {
-		foreach ( $cells as $cell ) {
-			if ( preg_match( '/\b(grade|group|G[1-3])\b/i', $cell ) ) {
-				return $cell;
-			}
-		}
-		return '';
-	}
-
-	private function find_prize_in_cells( array $cells ) {
-		foreach ( $cells as $cell ) {
-			if ( preg_match( '/[$£€]\s?[\d,]+/', $cell, $m ) ) {
-				return $m[0];
-			}
-		}
-		return '';
+		return $adapter->extract( $html, $entry );
 	}
 
 	private function upsert_calendar_entry( array $entry, array $row ) {

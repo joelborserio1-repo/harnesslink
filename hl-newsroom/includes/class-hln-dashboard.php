@@ -45,6 +45,7 @@ class HLN_Dashboard {
 			<?php endif; ?>
 
 			<?php self::render_kill_switch_panel(); ?>
+			<?php self::render_provider_status_banner(); ?>
 
 			<form method="get" action="" style="margin: 12px 0;">
 				<input type="hidden" name="page" value="hln-dashboard" />
@@ -72,11 +73,31 @@ class HLN_Dashboard {
 	}
 
 	private static function query_new( $region, $recommended ) {
-		$posts = self::query_status( 'hln_new', $region );
-		return array_values( array_filter( $posts, function ( $p ) use ( $recommended ) {
+		$threshold = (float) HLN_Trending::get_weights()['recommended_threshold'];
+		$posts     = self::query_status( 'hln_new', $region );
+		return array_values( array_filter( $posts, function ( $p ) use ( $recommended, $threshold ) {
 			$score = (float) HLN_Candidate_CPT::get_meta( $p->ID, 'trending_signal', 0 );
-			return $recommended ? $score >= self::RECOMMENDED_THRESHOLD : $score < self::RECOMMENDED_THRESHOLD;
+			return $recommended ? $score >= $threshold : $score < $threshold;
 		} ) );
+	}
+
+	private static function render_provider_status_banner() {
+		$status = HLN_Story_Generator::get_provider_status();
+		if ( $status['configured'] && $status['available'] ) {
+			return; // Nothing to warn about.
+		}
+		?>
+		<div class="notice notice-warning">
+			<p>
+				<?php if ( ! $status['configured'] ) : ?>
+					<?php _e( 'No generation provider is configured. "Generate Draft" will move candidates straight to Changes Required until one is set on the Settings screen.', 'hl-newsroom' ); ?>
+				<?php else : ?>
+					<?php printf( esc_html__( 'Generation provider (%s) is configured but reports itself unavailable.', 'hl-newsroom' ), esc_html( $status['class'] ) ); ?>
+					<?php if ( $status['error'] ) : ?> — <?php echo esc_html( $status['error'] ); ?><?php endif; ?>
+				<?php endif; ?>
+			</p>
+		</div>
+		<?php
 	}
 
 	private static function query_status( $status, $region ) {
@@ -110,11 +131,15 @@ class HLN_Dashboard {
 						· <?php _e( 'Score', 'hl-newsroom' ); ?> <?php echo esc_html( HLN_Candidate_CPT::get_meta( $post->ID, 'trending_signal', 0 ) ); ?>
 					</span><br>
 					<?php if ( 'incoming' === $key || 'recommended' === $key ) : ?>
+						<?php $killed = HLN_Kill_Switch::blocks_automatic_advancement( HLN_Kill_Switch::source_slug_for_candidate( $post->ID ) ); ?>
+						<?php if ( $killed ) : ?>
+							<span class="hln-badge hln-badge-off"><?php _e( 'Automation blocked', 'hl-newsroom' ); ?></span><br>
+						<?php endif; ?>
 						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 							<?php wp_nonce_field( 'hln_trigger_generate_' . $post->ID ); ?>
 							<input type="hidden" name="action" value="hln_trigger_generate" />
 							<input type="hidden" name="candidate_id" value="<?php echo (int) $post->ID; ?>" />
-							<button type="submit" class="button button-small"><?php _e( 'Generate Draft', 'hl-newsroom' ); ?></button>
+							<button type="submit" class="button button-small" <?php disabled( $killed ); ?>><?php _e( 'Generate Draft', 'hl-newsroom' ); ?></button>
 						</form>
 					<?php elseif ( 'ready' === $key || 'changes' === $key ) : ?>
 						<a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=hln-review&id=' . $post->ID ) ); ?>"><?php _e( 'Review', 'hl-newsroom' ); ?></a>
@@ -142,8 +167,13 @@ class HLN_Dashboard {
 		$auto_publish_sources = array_filter( HLN_Sources::all_flat(), fn( $s ) => ! empty( $s['auto_publish'] ) );
 		?>
 		<div class="hln-panel">
-			<h2><?php _e( 'Auto-Publish Kill Switch', 'hl-newsroom' ); ?></h2>
-			<p class="description"><?php _e( 'This is UI for a capability that stays off. No source auto-publishes in this build regardless of these switches — engaging a switch here additionally blocks that capability at the code level, for the day a fast-path is actually wired up.', 'hl-newsroom' ); ?></p>
+			<h2><?php _e( 'Automation Kill Switch', 'hl-newsroom' ); ?></h2>
+			<?php if ( $global_killed ) : ?>
+				<div class="notice notice-error inline"><p><strong><?php _e( 'Global kill switch is ENGAGED. Automatic intake-to-candidate promotion and draft generation are blocked for every source.', 'hl-newsroom' ); ?></strong></p></div>
+			<?php elseif ( ! empty( array_filter( $source_killed ) ) ) : ?>
+				<div class="notice notice-warning inline"><p><?php _e( 'One or more sources have automation blocked. See below.', 'hl-newsroom' ); ?></p></div>
+			<?php endif; ?>
+			<p class="description"><?php _e( 'Blocks the pipeline\'s automatic advancement stages: intake -> candidate promotion (HLN_Triage, HLN_Race_Candidate_Link) and candidate -> generation, including the "Generate Draft" button below — generation is where this build\'s only current automation-adjacent step lives. Publish and Reject stay available regardless: those are the human review decision itself, the thing Hard Requirement 5 exists to require, not something this switch should block. These checks run inside HLN_Triage, HLN_Race_Candidate_Link, and HLN_Story_Generator directly — not only in this UI.', 'hl-newsroom' ); ?></p>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<?php wp_nonce_field( 'hln_toggle_kill_switch_nonce' ); ?>
 				<input type="hidden" name="action" value="hln_toggle_kill_switch" />
@@ -165,13 +195,28 @@ class HLN_Dashboard {
 
 	public static function handle_toggle_kill_switch() {
 		check_admin_referer( 'hln_toggle_kill_switch_nonce' );
-		update_option( 'hln_global_kill_switch', ! empty( $_POST['hln_global_kill_switch'] ) );
 
-		$killed = [];
+		$was_global = HLN_Kill_Switch::is_globally_engaged();
+		$is_global  = ! empty( $_POST['hln_global_kill_switch'] );
+		update_option( 'hln_global_kill_switch', $is_global );
+		if ( $was_global !== $is_global ) {
+			HLN_Audit_Log::log( 'kill_switch_changed', $is_global ? 'Global kill switch engaged.' : 'Global kill switch disengaged.' );
+		}
+
+		$was_killed = get_option( 'hln_source_kill_switches', [] );
+		$killed     = [];
 		foreach ( (array) ( $_POST['hln_source_kill_switches'] ?? [] ) as $slug ) {
 			$killed[ sanitize_text_field( wp_unslash( $slug ) ) ] = true;
 		}
 		update_option( 'hln_source_kill_switches', $killed );
+
+		foreach ( array_unique( array_merge( array_keys( $was_killed ), array_keys( $killed ) ) ) as $slug ) {
+			$before = ! empty( $was_killed[ $slug ] );
+			$after  = ! empty( $killed[ $slug ] );
+			if ( $before !== $after ) {
+				HLN_Audit_Log::log( 'kill_switch_changed', $after ? "Source '{$slug}' automation blocked." : "Source '{$slug}' automation unblocked.", null, $slug );
+			}
+		}
 
 		wp_safe_redirect( admin_url( 'admin.php?page=hln-dashboard&hln_notice=' . rawurlencode( __( 'Kill switch settings saved.', 'hl-newsroom' ) ) ) );
 		exit;
@@ -217,6 +262,7 @@ class HLN_Dashboard {
 		$requires_clearance = HLN_Candidate_CPT::get_meta( $candidate_id, 'requires_source_clearance' );
 		$already_published  = HLN_Candidate_CPT::get_meta( $candidate_id, 'wp_post_id' );
 		$audit_trail    = HLN_Candidate_CPT::get_audit_trail( $candidate_id );
+		$breakdown      = HLN_Candidate_CPT::get_meta( $candidate_id, 'trending_breakdown', [] );
 		?>
 		<div class="wrap hln-wrap">
 			<h1 class="hln-page-title"><span class="dashicons dashicons-welcome-write-blog"></span> <?php echo esc_html( get_the_title( $candidate_id ) ); ?></h1>
@@ -254,6 +300,31 @@ class HLN_Dashboard {
 					<p class="submit"><button type="submit" class="button"><?php _e( 'Save Edits', 'hl-newsroom' ); ?></button></p>
 				</form>
 			</div>
+
+			<?php if ( ! empty( $breakdown ) ) : ?>
+			<div class="hln-panel">
+				<h2><?php printf( esc_html__( 'Why This Score: %s', 'hl-newsroom' ), esc_html( $breakdown['total'] ?? '—' ) ); ?></h2>
+				<table class="wp-list-table widefat fixed striped">
+					<thead><tr><th><?php _e( 'Component', 'hl-newsroom' ); ?></th><th><?php _e( 'Raw', 'hl-newsroom' ); ?></th><th><?php _e( 'Weight', 'hl-newsroom' ); ?></th><th><?php _e( 'Contribution', 'hl-newsroom' ); ?></th></tr></thead>
+					<tbody>
+						<?php foreach ( $breakdown['components'] ?? [] as $name => $c ) : ?>
+							<tr>
+								<td><?php echo esc_html( ucwords( str_replace( '_', ' ', $name ) ) ); ?></td>
+								<td><?php echo esc_html( $c['raw'] ?? '—' ); ?></td>
+								<td><?php echo esc_html( $c['weight'] ?? '—' ); ?></td>
+								<td><?php echo esc_html( $c['contribution'] ?? '—' ); ?></td>
+							</tr>
+						<?php endforeach; ?>
+						<?php if ( ! empty( $breakdown['breaking_news_boost']['applied'] ) ) : ?>
+							<tr><td colspan="4"><?php printf( esc_html__( 'Breaking-news boost applied: ×%s', 'hl-newsroom' ), esc_html( $breakdown['breaking_news_boost']['multiplier'] ?? '' ) ); ?></td></tr>
+						<?php endif; ?>
+						<?php if ( ! empty( $breakdown['duplicate_demotion']['applied'] ) ) : ?>
+							<tr><td colspan="4"><?php printf( esc_html__( 'Duplicate demotion applied: ×%s', 'hl-newsroom' ), esc_html( $breakdown['duplicate_demotion']['factor'] ?? '' ) ); ?></td></tr>
+						<?php endif; ?>
+					</tbody>
+				</table>
+			</div>
+			<?php endif; ?>
 
 			<div class="hln-panel">
 				<h2><?php _e( 'Source & Media', 'hl-newsroom' ); ?></h2>
@@ -365,13 +436,15 @@ class HLN_Dashboard {
 			exit;
 		}
 
-		$region_name    = sanitize_text_field( wp_unslash( $_POST['hln_region_category'] ?? '' ) );
-		$subcategory    = sanitize_text_field( wp_unslash( $_POST['hln_subcategory'] ?? '' ) );
-		$tags           = array_filter( array_map( 'trim', explode( ',', wp_unslash( $_POST['hln_tags'] ?? '' ) ) ) );
-		$guest_author   = sanitize_text_field( wp_unslash( $_POST['hln_guest_author'] ?? '' ) );
+		$region_name  = sanitize_text_field( wp_unslash( $_POST['hln_region_category'] ?? '' ) );
+		$subcategory  = sanitize_text_field( wp_unslash( $_POST['hln_subcategory'] ?? '' ) );
+		$guest_author = sanitize_text_field( wp_unslash( $_POST['hln_guest_author'] ?? '' ) );
+		$tags         = self::sanitize_tags( wp_unslash( $_POST['hln_tags'] ?? '' ) );
+
+		$candidate_status = get_post_status( $candidate_id );
 
 		$format_outputs = HLN_Candidate_CPT::get_meta( $candidate_id, 'format_outputs', [] );
-		$category_id    = self::get_or_create_category( $region_name, $subcategory );
+		[ 'category_id' => $category_id, 'warnings' => $category_warnings ] = self::get_or_create_category( $region_name, $subcategory );
 		$existing_post  = HLN_Candidate_CPT::get_meta( $candidate_id, 'wp_post_id' );
 
 		$post_args = [
@@ -393,12 +466,16 @@ class HLN_Dashboard {
 		}
 
 		if ( is_wp_error( $wp_post_id ) ) {
+			HLN_Candidate_CPT::append_audit( $candidate_id, 'candidate_updated', 'Failed to create WordPress post: ' . $wp_post_id->get_error_message() );
 			wp_safe_redirect( admin_url( 'admin.php?page=hln-review&id=' . $candidate_id . '&hln_notice=' . rawurlencode( __( 'Failed to create the WordPress post.', 'hl-newsroom' ) ) ) );
 			exit;
 		}
 
 		if ( ! empty( $tags ) ) {
-			wp_set_post_terms( $wp_post_id, $tags, 'post_tag' );
+			$term_result = wp_set_post_terms( $wp_post_id, $tags, 'post_tag' );
+			if ( is_wp_error( $term_result ) ) {
+				$category_warnings[] = 'Tag assignment failed: ' . $term_result->get_error_message();
+			}
 		}
 
 		update_post_meta( $wp_post_id, '_hln_source_credit', HLN_Candidate_CPT::get_meta( $candidate_id, 'source_credit' ) );
@@ -411,30 +488,116 @@ class HLN_Dashboard {
 
 		HLN_Candidate_CPT::set_meta( $candidate_id, [ 'wp_post_id' => $wp_post_id, 'guest_author' => $guest_author, 'planned_tags' => $tags, 'planned_category' => [ $region_name, $subcategory ] ] );
 		wp_update_post( [ 'ID' => $candidate_id, 'post_status' => 'hln_published' ] );
-		HLN_Candidate_CPT::append_audit( $candidate_id, 'pending_post_created', 'WordPress post #' . $wp_post_id . ' created with status pending.' );
-		HLN_Candidate_CPT::append_audit( $candidate_id, 'reviewer_action', 'publish' );
+
+		foreach ( $category_warnings as $warning ) {
+			HLN_Candidate_CPT::append_audit( $candidate_id, 'candidate_updated', $warning );
+		}
+
+		HLN_Candidate_CPT::append_audit( $candidate_id, 'published', 'WordPress post #' . $wp_post_id . ' created with status pending — not live.' );
+		HLN_Candidate_CPT::append_audit( $candidate_id, 'review_approved', 'Reviewer published candidate.' );
+
+		if ( 'hln_ready' !== $candidate_status ) {
+			HLN_Candidate_CPT::append_audit( $candidate_id, 'manual_override', sprintf( 'Published from status "%s" rather than Ready for Review.', $candidate_status ) );
+		}
 
 		wp_safe_redirect( admin_url( 'admin.php?page=hln-review&id=' . $candidate_id . '&hln_notice=' . rawurlencode( __( 'Sent to WordPress as a pending post.', 'hl-newsroom' ) ) ) );
 		exit;
 	}
 
+	/**
+	 * @param  string $raw Comma-separated tag list from the review form.
+	 * @return string[]
+	 */
+	private static function sanitize_tags( $raw ) {
+		$tags = array_filter( array_map( 'trim', explode( ',', (string) $raw ) ) );
+		$tags = array_map( function ( $tag ) {
+			$tag = sanitize_text_field( $tag );
+			return mb_substr( $tag, 0, 200 );
+		}, $tags );
+		return array_values( array_unique( array_filter( $tags ) ) );
+	}
+
+	/**
+	 * Defensive term get-or-create — every WP taxonomy call here can fail
+	 * for reasons outside this plugin's control (a term with the same
+	 * name existing under a different taxonomy, a malformed/oversized
+	 * name, a race with another process creating the same term). None of
+	 * those should hard-fail the whole Publish action: on any failure
+	 * this returns 0 (no category assigned) rather than throwing, and
+	 * the caller logs a warning to the audit trail so the gap is visible
+	 * without blocking the post from being created.
+	 *
+	 * UNVERIFIED against a live WordPress database — see the README's
+	 * staging verification checklist.
+	 *
+	 * @param  string $region_name
+	 * @param  string $subcategory
+	 * @return array {category_id: int, warnings: string[]}
+	 */
 	private static function get_or_create_category( $region_name, $subcategory ) {
-		if ( empty( $region_name ) ) {
-			return 0;
-		}
-		$region_term = get_term_by( 'name', $region_name, 'category' ) ?: wp_insert_term( $region_name, 'category' );
-		$region_id   = is_wp_error( $region_term ) ? 0 : ( is_array( $region_term ) ? $region_term['term_id'] : $region_term->term_id );
+		$warnings    = [];
+		$region_name = self::sanitize_term_name( $region_name );
+		$subcategory = self::sanitize_term_name( $subcategory );
 
-		if ( empty( $subcategory ) || ! $region_id ) {
-			return $region_id;
+		if ( '' === $region_name ) {
+			return [ 'category_id' => 0, 'warnings' => $warnings ];
 		}
 
-		$existing = get_terms( [ 'taxonomy' => 'category', 'name' => $subcategory, 'parent' => $region_id, 'hide_empty' => false ] );
-		if ( ! empty( $existing ) && ! is_wp_error( $existing ) ) {
-			return $existing[0]->term_id;
+		[ $region_id, $region_warning ] = self::get_or_create_term( $region_name, 0 );
+		if ( $region_warning ) {
+			$warnings[] = $region_warning;
 		}
-		$sub_term = wp_insert_term( $subcategory, 'category', [ 'parent' => $region_id ] );
-		return is_wp_error( $sub_term ) ? $region_id : $sub_term['term_id'];
+		if ( ! $region_id || '' === $subcategory ) {
+			return [ 'category_id' => $region_id, 'warnings' => $warnings ];
+		}
+
+		[ $sub_id, $sub_warning ] = self::get_or_create_term( $subcategory, $region_id );
+		if ( $sub_warning ) {
+			$warnings[] = $sub_warning;
+		}
+
+		return [ 'category_id' => $sub_id ?: $region_id, 'warnings' => $warnings ];
+	}
+
+	/**
+	 * @param  string $name
+	 * @param  int    $parent
+	 * @return array {0: int term_id (0 on failure), 1: string|null warning}
+	 */
+	private static function get_or_create_term( $name, $parent ) {
+		$existing = get_terms( [
+			'taxonomy'   => 'category',
+			'name'       => $name,
+			'parent'     => $parent,
+			'hide_empty' => false,
+		] );
+		if ( is_wp_error( $existing ) ) {
+			return [ 0, sprintf( 'Category lookup failed for "%s": %s', $name, $existing->get_error_message() ) ];
+		}
+		if ( ! empty( $existing ) ) {
+			return [ (int) $existing[0]->term_id, null ];
+		}
+
+		$created = wp_insert_term( $name, 'category', [ 'parent' => $parent ] );
+		if ( ! is_wp_error( $created ) ) {
+			return [ (int) $created['term_id'], null ];
+		}
+
+		// term_exists is the expected race/duplicate case — WP_Error
+		// still carries the existing term_id in its error data.
+		if ( 'term_exists' === $created->get_error_code() ) {
+			$existing_id = $created->get_error_data( 'term_exists' );
+			if ( $existing_id ) {
+				return [ (int) $existing_id, null ];
+			}
+		}
+
+		return [ 0, sprintf( 'Could not create category "%s": %s', $name, $created->get_error_message() ) ];
+	}
+
+	private static function sanitize_term_name( $name ) {
+		$name = sanitize_text_field( (string) $name );
+		return mb_substr( trim( $name ), 0, 200 );
 	}
 
 	/* =========================================================
@@ -446,7 +609,7 @@ class HLN_Dashboard {
 		check_admin_referer( 'hln_reject_' . $candidate_id );
 
 		wp_update_post( [ 'ID' => $candidate_id, 'post_status' => 'hln_rejected' ] );
-		HLN_Candidate_CPT::append_audit( $candidate_id, 'reviewer_action', 'reject' );
+		HLN_Candidate_CPT::append_audit( $candidate_id, 'review_rejected', 'Reviewer rejected candidate.' );
 
 		wp_safe_redirect( admin_url( 'admin.php?page=hln-dashboard&hln_notice=' . rawurlencode( __( 'Candidate rejected.', 'hl-newsroom' ) ) ) );
 		exit;

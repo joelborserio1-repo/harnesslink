@@ -319,6 +319,7 @@ class HLN_Admin {
 			$enabled = ! empty( $_POST['hln_new_enabled'] );
 			if ( in_array( $type, HLN_Sources::SOURCE_TYPES, true ) && '' !== $slug ) {
 				HLN_Sources::set_enabled( $type, $slug, $enabled );
+				HLN_Audit_Log::log( $enabled ? 'source_enabled' : 'source_disabled', "Source '{$slug}' ({$type}) " . ( $enabled ? 'enabled' : 'disabled' ) . ' via Sources screen.', null, $slug );
 				$notice = $enabled ? __( 'Source enabled.', 'hl-newsroom' ) : __( 'Source disabled.', 'hl-newsroom' );
 			}
 		}
@@ -540,7 +541,9 @@ class HLN_Admin {
 		$edit_handle = isset( $_GET['edit'] ) ? sanitize_text_field( wp_unslash( $_GET['edit'] ) ) : '';
 		$edit_entry  = $edit_handle ? HLN_Sources::get_verified_social_account( $edit_handle ) : null;
 
-		$accounts = HLN_Sources::get_verified_social_accounts();
+		$accounts    = HLN_Sources::get_verified_social_accounts();
+		$api_token   = get_option( 'hln_x_api_bearer_token', '' );
+		$scan_status = get_option( 'hln_trending_signal_status', [] );
 		?>
 		<div class="wrap hln-wrap">
 			<h1 class="hln-page-title"><span class="dashicons dashicons-twitter"></span> <?php _e( 'Verified Social (X) Allow-List', 'hl-newsroom' ); ?></h1>
@@ -549,6 +552,25 @@ class HLN_Admin {
 			<?php if ( $notice ) : ?>
 				<div class="notice notice-success is-dismissible"><p><?php echo esc_html( $notice ); ?></p></div>
 			<?php endif; ?>
+
+			<div class="hln-panel">
+				<h2><?php _e( 'Status', 'hl-newsroom' ); ?></h2>
+				<p>
+					<strong><?php _e( 'X API Credentials:', 'hl-newsroom' ); ?></strong>
+					<?php if ( '' === $api_token ) : ?>
+						<span class="hln-badge hln-badge-off"><?php _e( 'Not Configured', 'hl-newsroom' ); ?></span>
+						— <a href="<?php echo esc_url( admin_url( 'admin.php?page=hln-settings' ) ); ?>"><?php _e( 'Set the bearer token on Settings', 'hl-newsroom' ); ?></a>
+					<?php else : ?>
+						<span class="hln-badge hln-badge-on"><?php _e( 'Configured', 'hl-newsroom' ); ?></span>
+					<?php endif; ?>
+				</p>
+				<?php if ( empty( $accounts ) ) : ?>
+					<p><strong><?php _e( 'No verified social accounts configured.', 'hl-newsroom' ); ?></strong> <?php _e( 'The X poller and trending scan have nothing to do until at least one vetted account is added below.', 'hl-newsroom' ); ?></p>
+				<?php endif; ?>
+				<?php if ( ! empty( $scan_status['error'] ) ) : ?>
+					<p><strong><?php _e( 'Broad Trending Scan:', 'hl-newsroom' ); ?></strong> <span class="hln-badge hln-badge-off"><?php echo esc_html( $scan_status['error'] ); ?></span> <span class="description"><?php echo esc_html( $scan_status['last_run_at'] ?? '' ); ?></span></p>
+				<?php endif; ?>
+			</div>
 
 			<div class="hln-panel">
 				<h2><?php echo $edit_entry ? esc_html__( 'Edit Account', 'hl-newsroom' ) : esc_html__( 'Add Account', 'hl-newsroom' ); ?></h2>
@@ -569,10 +591,34 @@ class HLN_Admin {
 							<td><input type="text" name="hln_owning_entity" id="hln-owning-entity" class="regular-text" value="<?php echo esc_attr( $edit_entry['owning_entity'] ?? '' ); ?>" required /></td>
 						</tr>
 						<tr>
+							<th><label for="hln-entity-type"><?php _e( 'Entity Type', 'hl-newsroom' ); ?></label></th>
+							<td>
+								<select name="hln_entity_type" id="hln-entity-type">
+									<?php foreach ( [ 'governing_body', 'trainer', 'driver', 'track', 'media', 'other' ] as $type ) : ?>
+										<option value="<?php echo esc_attr( $type ); ?>" <?php selected( $edit_entry['entity_type'] ?? 'governing_body', $type ); ?>><?php echo esc_html( ucfirst( str_replace( '_', ' ', $type ) ) ); ?></option>
+									<?php endforeach; ?>
+								</select>
+							</td>
+						</tr>
+						<tr>
 							<th><label for="hln-verification-method"><?php _e( 'Verification Method', 'hl-newsroom' ); ?></label></th>
 							<td>
 								<input type="text" name="hln_verification_method" id="hln-verification-method" class="regular-text" placeholder="<?php esc_attr_e( 'e.g. linked from the official body\'s own site', 'hl-newsroom' ); ?>" value="<?php echo esc_attr( $edit_entry['verification_method'] ?? '' ); ?>" required />
 								<p class="description"><?php _e( 'How this was confirmed as the real, named account — required for every entry.', 'hl-newsroom' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th><?php _e( 'Verified', 'hl-newsroom' ); ?></th>
+							<td>
+								<label><input type="checkbox" name="hln_verified" value="1" <?php checked( ! empty( $edit_entry['verified'] ) ); ?> /> <?php _e( 'Mark as verified', 'hl-newsroom' ); ?></label>
+								<p class="description"><?php _e( 'Explicit confirmation flag, distinct from the free-text Verification Method note above.', 'hl-newsroom' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="hln-priority"><?php _e( 'Priority', 'hl-newsroom' ); ?></label></th>
+							<td>
+								<input type="number" name="hln_priority" id="hln-priority" class="small-text" min="1" max="10" value="<?php echo esc_attr( $edit_entry['priority'] ?? 5 ); ?>" />
+								<p class="description"><?php _e( '1 (highest) to 10 (lowest). Not yet used to order polling or weight scoring — reserved for future prioritisation.', 'hl-newsroom' ); ?></p>
 							</td>
 						</tr>
 						<tr>
@@ -616,28 +662,41 @@ class HLN_Admin {
 						<tr>
 							<th><?php _e( 'Handle', 'hl-newsroom' ); ?></th>
 							<th><?php _e( 'Owning Entity', 'hl-newsroom' ); ?></th>
-							<th><?php _e( 'Verification Method', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Type', 'hl-newsroom' ); ?></th>
 							<th><?php _e( 'Region', 'hl-newsroom' ); ?></th>
-							<th><?php _e( 'Date Added', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Priority', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Verified', 'hl-newsroom' ); ?></th>
 							<th><?php _e( 'Status', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Last Poll', 'hl-newsroom' ); ?></th>
 							<th><?php _e( 'Actions', 'hl-newsroom' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
 						<?php if ( empty( $accounts ) ) : ?>
-							<tr><td colspan="7"><?php _e( 'No accounts added yet.', 'hl-newsroom' ); ?></td></tr>
+							<tr><td colspan="9"><?php _e( 'No verified social accounts configured.', 'hl-newsroom' ); ?></td></tr>
 						<?php else : ?>
 							<?php foreach ( $accounts as $handle => $account ) : ?>
 								<tr>
 									<td><strong>@<?php echo esc_html( $handle ); ?></strong></td>
 									<td><?php echo esc_html( $account['owning_entity'] ); ?></td>
-									<td><?php echo esc_html( $account['verification_method'] ); ?></td>
+									<td><?php echo esc_html( ucfirst( str_replace( '_', ' ', $account['entity_type'] ?? '' ) ) ); ?></td>
 									<td><?php echo esc_html( $account['region'] ); ?></td>
-									<td><?php echo esc_html( $account['date_added'] ); ?></td>
+									<td><?php echo esc_html( $account['priority'] ?? '—' ); ?></td>
+									<td><?php echo ! empty( $account['verified'] ) ? esc_html__( 'Yes', 'hl-newsroom' ) : esc_html__( 'No', 'hl-newsroom' ); ?></td>
 									<td>
 										<span class="hln-badge <?php echo ! empty( $account['enabled'] ) ? 'hln-badge-on' : 'hln-badge-off'; ?>">
 											<?php echo ! empty( $account['enabled'] ) ? esc_html__( 'Enabled', 'hl-newsroom' ) : esc_html__( 'Disabled', 'hl-newsroom' ); ?>
 										</span>
+									</td>
+									<td>
+										<?php if ( ! empty( $account['last_error'] ) ) : ?>
+											<span class="hln-badge hln-badge-off" title="<?php echo esc_attr( $account['last_error'] ); ?>"><?php _e( 'Error', 'hl-newsroom' ); ?></span>
+										<?php elseif ( ! empty( $account['last_polled_at'] ) ) : ?>
+											<span class="hln-badge hln-badge-on"><?php _e( 'OK', 'hl-newsroom' ); ?></span>
+										<?php else : ?>
+											<span class="description"><?php _e( 'Never', 'hl-newsroom' ); ?></span>
+										<?php endif; ?>
+										<br><span class="description"><?php echo esc_html( $account['last_polled_at'] ?? '' ); ?></span>
 									</td>
 									<td>
 										<a href="<?php echo esc_url( admin_url( 'admin.php?page=hln-verified-social&edit=' . rawurlencode( $handle ) ) ); ?>"><?php _e( 'Edit', 'hl-newsroom' ); ?></a>
@@ -669,9 +728,17 @@ class HLN_Admin {
 			return;
 		}
 
+		$entity_type = sanitize_text_field( wp_unslash( $_POST['hln_entity_type'] ?? 'governing_body' ) );
+		if ( ! in_array( $entity_type, [ 'governing_body', 'trainer', 'driver', 'track', 'media', 'other' ], true ) ) {
+			$entity_type = 'other';
+		}
+
 		HLN_Sources::save_verified_social_account( $handle, [
 			'owning_entity'       => sanitize_text_field( wp_unslash( $_POST['hln_owning_entity'] ?? '' ) ),
+			'entity_type'         => $entity_type,
 			'verification_method' => sanitize_text_field( wp_unslash( $_POST['hln_verification_method'] ?? '' ) ),
+			'verified'            => ! empty( $_POST['hln_verified'] ),
+			'priority'            => max( 1, min( 10, absint( $_POST['hln_priority'] ?? 5 ) ) ),
 			'region'              => sanitize_text_field( wp_unslash( $_POST['hln_region'] ?? '' ) ),
 			'check_frequency'     => sanitize_text_field( wp_unslash( $_POST['hln_check_frequency'] ?? '15m' ) ),
 			'enabled'             => ! empty( $_POST['hln_enabled'] ),
@@ -822,6 +889,8 @@ class HLN_Admin {
 		$regions            = get_option( 'hln_regions', "USA\nCanada\nAustralia\nNew Zealand\nEurope" );
 		$subcategories       = get_option( 'hln_subcategories', "News\nEntries\nResults\nBreeding" );
 		$premium_defaults   = get_option( 'hln_is_premium_defaults', [] );
+		$provider_status    = HLN_Story_Generator::get_provider_status();
+		$weights            = HLN_Trending::get_weights();
 		?>
 		<div class="wrap hln-wrap">
 			<h1 class="hln-page-title"><span class="dashicons dashicons-admin-settings"></span> <?php _e( 'Settings', 'hl-newsroom' ); ?></h1>
@@ -842,6 +911,32 @@ class HLN_Admin {
 							<td>
 								<input type="text" name="hln_default_byline" id="hln-default-byline" class="regular-text" value="<?php echo esc_attr( $default_byline ); ?>" />
 								<p class="description"><?php _e( 'Used on every generated draft unless a human sets a Published-By author at review time. Never set this to a source\'s own name.', 'hl-newsroom' ); ?></p>
+							</td>
+						</tr>
+					</table>
+				</div>
+
+				<div class="hln-panel">
+					<h2><?php _e( 'Generation Provider', 'hl-newsroom' ); ?></h2>
+					<p>
+						<?php if ( $provider_status['configured'] && $provider_status['available'] ) : ?>
+							<span class="hln-badge hln-badge-on"><?php _e( 'Configured & Available', 'hl-newsroom' ); ?></span>
+							&nbsp;<code><?php echo esc_html( $provider_status['class'] ); ?></code>
+						<?php elseif ( $provider_status['configured'] ) : ?>
+							<span class="hln-badge hln-badge-off"><?php _e( 'Configured, Unavailable', 'hl-newsroom' ); ?></span>
+							&nbsp;<code><?php echo esc_html( $provider_status['class'] ); ?></code>
+							<?php if ( $provider_status['error'] ) : ?><br><span class="description"><?php echo esc_html( $provider_status['error'] ); ?></span><?php endif; ?>
+						<?php else : ?>
+							<span class="hln-badge hln-badge-off"><?php _e( 'Not Configured', 'hl-newsroom' ); ?></span>
+						<?php endif; ?>
+					</p>
+					<p class="description"><?php _e( 'Per Hard Requirement 4, no provider ships with or is named by this plugin. Wire one via the hln_generation_provider filter (preferred — see the docblock in class-hln-story-generator.php for the full input/output schema), or set a class name below as a simpler alternative for a provider that needs no per-request filter logic.', 'hl-newsroom' ); ?></p>
+					<table class="form-table hln-form-table">
+						<tr>
+							<th><label for="hln-generation-provider-class"><?php _e( 'Provider Class Name', 'hl-newsroom' ); ?></label></th>
+							<td>
+								<input type="text" name="hln_generation_provider_class" id="hln-generation-provider-class" class="regular-text code" value="<?php echo esc_attr( get_option( 'hln_generation_provider_class', '' ) ); ?>" placeholder="My_Custom_Provider" />
+								<p class="description"><?php _e( 'Fully-qualified, autoloadable class implementing HLN_Generation_Provider_Interface. Only used when the hln_generation_provider filter returns nothing.', 'hl-newsroom' ); ?></p>
 							</td>
 						</tr>
 					</table>
@@ -878,6 +973,98 @@ class HLN_Admin {
 				</div>
 
 				<div class="hln-panel">
+					<h2><?php _e( 'Trending Score Weights', 'hl-newsroom' ); ?></h2>
+					<p class="description"><?php _e( 'V1 defaults, not permanent editorial rules. The Review Story screen shows the full breakdown (raw value × weight = contribution) for every candidate, so a score is always explainable, never a black box.', 'hl-newsroom' ); ?></p>
+					<table class="form-table hln-form-table">
+						<?php
+						$weight_fields = [
+							'source_authority_weight'       => __( 'Source Authority Weight', 'hl-newsroom' ),
+							'recency_weight'                => __( 'Recency Weight', 'hl-newsroom' ),
+							'corroboration_weight'          => __( 'Cross-Source Corroboration Weight', 'hl-newsroom' ),
+							'entity_significance_weight'    => __( 'Racing/Entity Significance Weight', 'hl-newsroom' ),
+							'historical_performance_weight' => __( 'Historical HarnessLink Performance Weight', 'hl-newsroom' ),
+							'x_signal_weight'                => __( 'X/Social Signal Weight', 'hl-newsroom' ),
+						];
+						foreach ( $weight_fields as $key => $label ) : ?>
+							<tr>
+								<th><label for="hln-w-<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></label></th>
+								<td><input type="number" step="0.1" name="hln_trending_weights[<?php echo esc_attr( $key ); ?>]" id="hln-w-<?php echo esc_attr( $key ); ?>" class="small-text" value="<?php echo esc_attr( $weights[ $key ] ); ?>" /></td>
+							</tr>
+						<?php endforeach; ?>
+						<tr>
+							<th><label for="hln-w-breaking"><?php _e( 'Breaking-News Boost (multiplier)', 'hl-newsroom' ); ?></label></th>
+							<td><input type="number" step="0.05" name="hln_trending_weights[breaking_news_boost]" id="hln-w-breaking" class="small-text" value="<?php echo esc_attr( $weights['breaking_news_boost'] ); ?>" />
+								<p class="description"><?php _e( 'Applied when a candidate is an official-source result (Tier 1).', 'hl-newsroom' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="hln-w-dup"><?php _e( 'Duplicate Demotion Factor', 'hl-newsroom' ); ?></label></th>
+							<td><input type="number" step="0.05" min="0" max="1" name="hln_trending_weights[duplicate_demotion_factor]" id="hln-w-dup" class="small-text" value="<?php echo esc_attr( $weights['duplicate_demotion_factor'] ); ?>" /></td>
+						</tr>
+						<tr>
+							<th><label for="hln-w-tier2"><?php _e( 'Story Tier 2 Score Threshold', 'hl-newsroom' ); ?></label></th>
+							<td><input type="number" step="1" name="hln_trending_weights[tier2_score_threshold]" id="hln-w-tier2" class="small-text" value="<?php echo esc_attr( $weights['tier2_score_threshold'] ); ?>" />
+								<p class="description"><?php _e( 'At/above this score (and not an official-source result), a candidate is Tier 2 rather than Tier 3. Tier 1 stays rule-based (official result), not score-based, per spec.', 'hl-newsroom' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="hln-w-recommended"><?php _e( 'Dashboard "Recommended" Threshold', 'hl-newsroom' ); ?></label></th>
+							<td><input type="number" step="1" name="hln_trending_weights[recommended_threshold]" id="hln-w-recommended" class="small-text" value="<?php echo esc_attr( $weights['recommended_threshold'] ); ?>" />
+								<p class="description"><?php _e( 'Score at/above which an Incoming candidate is shown in the Recommended column instead.', 'hl-newsroom' ); ?></p>
+							</td>
+						</tr>
+					</table>
+				</div>
+
+				<div class="hln-panel">
+					<h2><?php _e( 'Feature Race Calendar Windows', 'hl-newsroom' ); ?></h2>
+					<table class="form-table hln-form-table">
+						<tr>
+							<th><label for="hln-preview-window"><?php _e( 'Preview Window (days ahead)', 'hl-newsroom' ); ?></label></th>
+							<td><input type="number" min="1" name="hln_race_preview_window_days" id="hln-preview-window" class="small-text" value="<?php echo esc_attr( get_option( 'hln_race_preview_window_days', 3 ) ); ?>" />
+								<p class="description"><?php _e( 'A calendar entry within this many days becomes a Preview candidate (the available proxy for "fields available" — see class-hln-race-candidate-link.php).', 'hl-newsroom' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="hln-result-window"><?php _e( 'Result Window (days back)', 'hl-newsroom' ); ?></label></th>
+							<td><input type="number" min="1" name="hln_race_result_window_days" id="hln-result-window" class="small-text" value="<?php echo esc_attr( get_option( 'hln_race_result_window_days', 3 ) ); ?>" />
+								<p class="description"><?php _e( 'A calendar entry whose race date has passed, within this many days, becomes a Result candidate.', 'hl-newsroom' ); ?></p>
+							</td>
+						</tr>
+					</table>
+				</div>
+
+				<div class="hln-panel">
+					<h2><?php _e( 'Outbound Feeds', 'hl-newsroom' ); ?></h2>
+					<p class="description"><?php _e( 'Registered via add_feed() rather than the site\'s own /feed/ path, so these never override HarnessLink\'s existing default feed. Populated automatically from Published posts only.', 'hl-newsroom' ); ?></p>
+					<table class="wp-list-table widefat fixed striped">
+						<thead><tr><th><?php _e( 'Feed', 'hl-newsroom' ); ?></th><th><?php _e( 'URL', 'hl-newsroom' ); ?></th></tr></thead>
+						<tbody>
+							<tr>
+								<td><?php _e( 'All Stories', 'hl-newsroom' ); ?></td>
+								<td><a href="<?php echo esc_url( home_url( '/feed/hln-all/' ) ); ?>" target="_blank"><?php echo esc_html( home_url( '/feed/hln-all/' ) ); ?></a></td>
+							</tr>
+							<tr>
+								<td><?php _e( 'Breaking (Tier 1 only)', 'hl-newsroom' ); ?></td>
+								<td><a href="<?php echo esc_url( home_url( '/feed/hln-breaking/' ) ); ?>" target="_blank"><?php echo esc_html( home_url( '/feed/hln-breaking/' ) ); ?></a></td>
+							</tr>
+							<?php foreach ( HLN_Sources::REGIONS as $region ) : ?>
+							<tr>
+								<td><?php printf( esc_html__( 'Region: %s', 'hl-newsroom' ), esc_html( $region ) ); ?></td>
+								<td><a href="<?php echo esc_url( home_url( '/feed/hln-region-' . $region . '/' ) ); ?>" target="_blank"><?php echo esc_html( home_url( '/feed/hln-region-' . $region . '/' ) ); ?></a></td>
+							</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+					<p class="description"><?php printf(
+						esc_html__( 'Public REST equivalents: %s', 'hl-newsroom' ),
+						'<code>' . esc_html( home_url( '/wp-json/hln/v1/public/stories' ) ) . '</code>, ' .
+						'<code>' . esc_html( home_url( '/wp-json/hln/v1/public/trending' ) ) . '</code>, ' .
+						'<code>' . esc_html( home_url( '/wp-json/hln/v1/public/popular' ) ) . '</code>'
+					); ?></p>
+				</div>
+
+				<div class="hln-panel">
 					<h2><?php _e( 'Category Taxonomy', 'hl-newsroom' ); ?></h2>
 					<table class="form-table hln-form-table">
 						<tr>
@@ -898,8 +1085,8 @@ class HLN_Admin {
 				</div>
 
 				<div class="hln-panel">
-					<h2><?php _e( 'Premium Defaults by Story Type', 'hl-newsroom' ); ?></h2>
-					<p class="description"><?php _e( 'is_premium is an access-tier flag, independent of category. Superseded in practice by the per-template is_premium default on the Style Templates screen, which is what generated drafts actually use — kept here as the original Phase 1 scaffold rather than silently dropped.', 'hl-newsroom' ); ?></p>
+					<h2><?php _e( 'Premium Defaults by Story Type', 'hl-newsroom' ); ?> <span class="hln-badge hln-badge-off"><?php _e( 'Legacy — Deprecated', 'hl-newsroom' ); ?></span></h2>
+					<p class="description"><strong><?php _e( 'Not read by the generator.', 'hl-newsroom' ); ?></strong> <?php _e( 'The per-template is_premium default on the Style Templates screen is the source of truth for generated drafts. This Phase 1 setting is kept only for backward compatibility with anything that still reads the hln_is_premium_defaults option directly, and does not control current behaviour — set premium defaults on the Style Templates screen instead.', 'hl-newsroom' ); ?></p>
 					<table class="form-table hln-form-table">
 						<?php foreach ( self::STORY_TYPES as $story_type ) : ?>
 							<tr>
@@ -946,6 +1133,18 @@ class HLN_Admin {
 		update_option( 'hln_default_byline', sanitize_text_field( wp_unslash( $_POST['hln_default_byline'] ?? 'HarnessLink Media' ) ) );
 		update_option( 'hln_inbound_email_signing_key', sanitize_text_field( wp_unslash( $_POST['hln_inbound_email_signing_key'] ?? '' ) ) );
 		update_option( 'hln_x_api_bearer_token', sanitize_text_field( wp_unslash( $_POST['hln_x_api_bearer_token'] ?? '' ) ) );
+		update_option( 'hln_generation_provider_class', sanitize_text_field( wp_unslash( $_POST['hln_generation_provider_class'] ?? '' ) ) );
+
+		$weights = [];
+		$posted_weights = wp_unslash( $_POST['hln_trending_weights'] ?? [] );
+		foreach ( HLN_Trending::DEFAULT_WEIGHTS as $key => $default ) {
+			$weights[ $key ] = isset( $posted_weights[ $key ] ) ? (float) $posted_weights[ $key ] : $default;
+		}
+		update_option( 'hln_trending_weights', $weights );
+
+		update_option( 'hln_race_preview_window_days', max( 1, absint( $_POST['hln_race_preview_window_days'] ?? 3 ) ) );
+		update_option( 'hln_race_result_window_days', max( 1, absint( $_POST['hln_race_result_window_days'] ?? 3 ) ) );
+
 		update_option( 'hln_regions', sanitize_textarea_field( wp_unslash( $_POST['hln_regions'] ?? '' ) ) );
 		update_option( 'hln_subcategories', sanitize_textarea_field( wp_unslash( $_POST['hln_subcategories'] ?? '' ) ) );
 

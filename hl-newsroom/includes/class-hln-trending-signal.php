@@ -41,17 +41,30 @@ class HLN_Trending_Signal {
 	public function run_scan() {
 		$token = get_option( 'hln_x_api_bearer_token', '' );
 		if ( '' === $token ) {
-			return; // Not configured — do nothing rather than guess.
+			update_option( 'hln_trending_signal_status', [ 'last_run_at' => current_time( 'mysql' ), 'error' => 'X API bearer token is not configured.' ] );
+			return; // Fail gracefully — no credentials, no guessing.
 		}
 
 		$terms = $this->build_watchlist_terms();
+		if ( empty( $terms ) ) {
+			update_option( 'hln_trending_signal_status', [ 'last_run_at' => current_time( 'mysql' ), 'error' => 'No watchlist terms available yet (no entities seen in the intake log).' ] );
+			return;
+		}
+
+		$failures = 0;
 		foreach ( $terms as $term ) {
 			$result = $this->fetch_recent_count( $term, $token );
 			if ( null === $result ) {
+				$failures++;
 				continue;
 			}
 			$this->record_signal( $term, $result );
 		}
+
+		update_option( 'hln_trending_signal_status', [
+			'last_run_at' => current_time( 'mysql' ),
+			'error'       => $failures === count( $terms ) ? 'Every term lookup failed — the X API may be unavailable.' : null,
+		] );
 	}
 
 	/**

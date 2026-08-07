@@ -118,11 +118,12 @@ class HLN_Candidate_CPT {
 	const META_KEYS = [
 		'source_name', 'source_type', 'source_credit', 'region', 'governing_body',
 		'original_url', 'published_at', 'entities', 'data_type', 'images', 'video',
-		'trust_score', 'quality_score', 'trending_signal', 'verify_against_official',
-		'requires_source_clearance', 'format_outputs', 'headline_alternatives',
-		'is_premium', 'duplicate_of', 'story_type', 'tier', 'template_id',
-		'template_version', 'qc_flags', 'guest_author', 'byline', 'planned_tags',
-		'planned_category', 'source_intake_log_id', 'wp_post_id',
+		'trust_score', 'quality_score', 'trending_signal', 'trending_breakdown',
+		'verify_against_official', 'requires_source_clearance', 'format_outputs',
+		'headline_alternatives', 'is_premium', 'duplicate_of', 'story_type', 'tier',
+		'template_id', 'template_version', 'qc_flags', 'guest_author', 'byline',
+		'planned_tags', 'planned_category', 'source_intake_log_id', 'wp_post_id',
+		'race_calendar_id',
 	];
 
 	/**
@@ -167,7 +168,55 @@ class HLN_Candidate_CPT {
 			'guest_author'              => '',
 		] );
 
-		self::append_audit( $post_id, 'source_detected', sprintf( 'Promoted from intake log #%d (%s / %s).', $row->id, $row->channel, $row->source_name ) );
+		self::append_audit( $post_id, 'candidate_created', sprintf( 'Promoted from intake log #%d (%s).', $row->id, $row->channel ) );
+		self::append_audit( $post_id, 'source_attached', sprintf( 'Source: %s (%s), credit: %s.', $row->source_name, $row->source_type, $row->source_credit ) );
+
+		return $post_id;
+	}
+
+	/**
+	 * Create a Story Candidate directly from a feature-race-calendar row
+	 * (spec-driven deterministic link — see HLN_Race_Candidate_Link).
+	 * Unlike create_from_intake_row(), there is no intake-log row behind
+	 * this: the calendar entry itself is the source.
+	 *
+	 * @param  object $calendar_row Row from hln_race_calendar.
+	 * @param  string $story_type   'preview' or 'result'.
+	 * @param  string $headline
+	 * @param  string $excerpt
+	 * @param  int    $trust_score
+	 * @return int|WP_Error Post ID.
+	 */
+	public static function create_from_calendar_row( $calendar_row, $story_type, $headline, $excerpt, $trust_score ) {
+		$post_id = wp_insert_post( [
+			'post_type'    => self::POST_TYPE,
+			'post_status'  => 'hln_new',
+			'post_title'   => $headline,
+			'post_excerpt' => $excerpt,
+		], true );
+
+		if ( is_wp_error( $post_id ) ) {
+			return $post_id;
+		}
+
+		self::set_meta( $post_id, [
+			'source_name'    => $calendar_row->governing_body,
+			'source_type'    => 'race-data',
+			'source_credit'  => $calendar_row->governing_body,
+			'region'         => $calendar_row->region,
+			'governing_body' => $calendar_row->governing_body,
+			'data_type'      => 'preview' === $story_type ? 'fixture' : 'result',
+			'trust_score'    => $trust_score,
+			'entities'       => [ $calendar_row->race_name ],
+			'is_premium'     => false,
+			'story_type'     => $story_type,
+			'race_calendar_id' => (int) $calendar_row->id,
+			'byline'         => get_option( 'hln_default_byline', 'HarnessLink Media' ),
+			'guest_author'   => '',
+		] );
+
+		self::append_audit( $post_id, 'candidate_created', sprintf( 'Created directly from feature-race calendar entry #%d (%s).', $calendar_row->id, $story_type ) );
+		self::append_audit( $post_id, 'source_attached', sprintf( 'Source: %s (race-data), race: %s.', $calendar_row->governing_body, $calendar_row->race_name ) );
 
 		return $post_id;
 	}
@@ -210,7 +259,7 @@ class HLN_Candidate_CPT {
 		if ( '' === $value || null === $value ) {
 			return $default;
 		}
-		if ( in_array( $key, [ 'entities', 'images', 'video', 'format_outputs', 'headline_alternatives', 'qc_flags', 'planned_tags' ], true ) ) {
+		if ( in_array( $key, [ 'entities', 'images', 'video', 'format_outputs', 'headline_alternatives', 'qc_flags', 'planned_tags', 'trending_breakdown' ], true ) ) {
 			$decoded = json_decode( $value, true );
 			return is_array( $decoded ) ? $decoded : $default;
 		}
@@ -218,22 +267,16 @@ class HLN_Candidate_CPT {
 	}
 
 	/**
-	 * Append one entry to the candidate's audit trail. Written to the
-	 * dedicated hln_audit_log table (Hard Requirement 5), not post meta —
-	 * an append-only log, never overwritten.
+	 * Thin wrapper around HLN_Audit_Log, kept so existing call sites in
+	 * this class didn't need to change when the audit log was
+	 * generalised to also carry system-level (non-candidate) events.
 	 *
 	 * @param int    $post_id
 	 * @param string $event
 	 * @param string $detail
 	 */
 	public static function append_audit( $post_id, $event, $detail = '' ) {
-		global $wpdb;
-		$wpdb->insert( $wpdb->prefix . 'hln_audit_log', [
-			'candidate_id' => (int) $post_id,
-			'event'        => $event,
-			'detail'       => $detail,
-			'created_at'   => current_time( 'mysql' ),
-		] );
+		HLN_Audit_Log::log( $event, $detail, $post_id );
 	}
 
 	/**
@@ -241,11 +284,7 @@ class HLN_Candidate_CPT {
 	 * @return object[] Ordered oldest first.
 	 */
 	public static function get_audit_trail( $post_id ) {
-		global $wpdb;
-		$table = $wpdb->prefix . 'hln_audit_log';
-		return $wpdb->get_results( $wpdb->prepare(
-			"SELECT * FROM $table WHERE candidate_id = %d ORDER BY created_at ASC", (int) $post_id
-		) );
+		return HLN_Audit_Log::get_for_candidate( $post_id );
 	}
 
 	/* =========================================================

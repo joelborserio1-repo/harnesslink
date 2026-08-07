@@ -34,7 +34,17 @@ class HLN_Outbound_RSS {
 		}
 	}
 
+	/**
+	 * Guarded on two levels so this never becomes a "flush on every
+	 * request" cost: (1) admin-context only, since rewrite state only
+	 * ever changes as a result of an admin action (activation, a
+	 * version bump); (2) a stored version check, so even in admin it
+	 * only actually flushes once per plugin version.
+	 */
 	public function maybe_flush_rewrite_rules() {
+		if ( ! is_admin() ) {
+			return;
+		}
 		if ( get_option( 'hln_feed_rewrite_version' ) === HLN_VERSION ) {
 			return;
 		}

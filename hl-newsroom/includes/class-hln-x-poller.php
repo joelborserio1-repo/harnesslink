@@ -20,6 +20,9 @@ class HLN_X_Poller {
 	const MAX_TWEETS_PER_POLL      = 10;
 	const REQUEST_TIMEOUT          = 20;
 
+	/** Set by resolve_user_id()/fetch_recent_tweets() on failure, read back by run_handle() for HLN_Sources::record_poll_attempt(). */
+	private $last_error = null;
+
 	public function __construct() {
 		add_filter( 'cron_schedules', [ $this, 'add_intervals' ] );
 		add_action( 'init', [ $this, 'ensure_schedules' ] );
@@ -70,23 +73,34 @@ class HLN_X_Poller {
 	public function run_handle( $handle ) {
 		$account = HLN_Sources::get_verified_social_account( $handle );
 		if ( empty( $account ) || empty( $account['enabled'] ) ) {
-			return;
+			return; // Not a poll attempt against the external service — nothing to record.
 		}
 
 		$token = get_option( 'hln_x_api_bearer_token', '' );
 		if ( '' === $token ) {
-			return; // Not configured — do nothing rather than guess.
+			HLN_Sources::record_poll_attempt( $handle, 'X API bearer token is not configured.' );
+			return; // Fail gracefully — no credentials, no guessing.
 		}
+
+		$this->last_error = null;
 
 		$user_id = $this->resolve_user_id( $handle, $token );
 		if ( ! $user_id ) {
+			HLN_Sources::record_poll_attempt( $handle, $this->last_error ?: 'Could not resolve X user ID for this handle.' );
 			return;
 		}
 
 		$tweets = $this->fetch_recent_tweets( $user_id, $token );
+		if ( null === $tweets ) {
+			HLN_Sources::record_poll_attempt( $handle, $this->last_error ?: 'X API request failed.' );
+			return; // Fail gracefully — external service unavailable this cycle.
+		}
 		if ( empty( $tweets ) ) {
+			HLN_Sources::record_poll_attempt( $handle, null ); // Reachable, just nothing new.
 			return;
 		}
+
+		HLN_Sources::record_poll_attempt( $handle, null );
 
 		$watermark_key = 'x:' . $handle;
 		$watermark     = $this->get_watermark( $watermark_key );
@@ -155,13 +169,19 @@ class HLN_X_Poller {
 			'headers' => [ 'Authorization' => 'Bearer ' . $token ],
 		] );
 
-		if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+		if ( is_wp_error( $response ) ) {
+			$this->last_error = 'User lookup failed: ' . $response->get_error_message();
+			return null;
+		}
+		if ( 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+			$this->last_error = 'User lookup returned HTTP ' . wp_remote_retrieve_response_code( $response ) . '.';
 			return null;
 		}
 
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 		$id   = $body['data']['id'] ?? null;
 		if ( ! $id ) {
+			$this->last_error = 'X account not found for this handle.';
 			return null;
 		}
 
@@ -171,7 +191,8 @@ class HLN_X_Poller {
 	}
 
 	/**
-	 * @return array[] Each: ['id','text','created_at','media_urls'=>[]]
+	 * @return array[]|null Null on failure (distinct from a successful,
+	 *                       empty result — see run_handle()'s use of this).
 	 */
 	private function fetch_recent_tweets( $user_id, $token ) {
 		$url = add_query_arg( [
@@ -186,8 +207,13 @@ class HLN_X_Poller {
 			'headers' => [ 'Authorization' => 'Bearer ' . $token ],
 		] );
 
-		if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
-			return [];
+		if ( is_wp_error( $response ) ) {
+			$this->last_error = 'Tweet fetch failed: ' . $response->get_error_message();
+			return null;
+		}
+		if ( 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+			$this->last_error = 'Tweet fetch returned HTTP ' . wp_remote_retrieve_response_code( $response ) . '.';
+			return null;
 		}
 
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );

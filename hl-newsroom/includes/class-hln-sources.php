@@ -453,12 +453,38 @@ class HLN_Sources {
 			if ( '' === $source_host ) {
 				continue;
 			}
-			if ( $sender_domain === $source_host || self::is_subdomain_of( $sender_domain, $source_host ) ) {
+			if ( self::domains_match( $sender_domain, $source_host ) ) {
 				return $entry;
 			}
 		}
 
 		return null;
+	}
+
+	/**
+	 * Domain match tolerant of a "www." on either side (the registry's
+	 * url field is typically the public www. site, but the same
+	 * organisation's mail is just as commonly sent from the bare apex
+	 * domain — e.g. url "https://www.ustrotting.com" but sender
+	 * "news@ustrotting.com") — plus genuine subdomains in either
+	 * direction (news.example.com <-> example.com).
+	 *
+	 * @param  string $sender_domain
+	 * @param  string $source_host
+	 * @return bool
+	 */
+	private static function domains_match( $sender_domain, $source_host ) {
+		$a = self::strip_www( $sender_domain );
+		$b = self::strip_www( $source_host );
+
+		if ( $a === $b ) {
+			return true;
+		}
+		return self::is_subdomain_of( $a, $b ) || self::is_subdomain_of( $b, $a );
+	}
+
+	private static function strip_www( $host ) {
+		return 0 === strpos( $host, 'www.' ) ? substr( $host, 4 ) : $host;
 	}
 
 	private static function is_subdomain_of( $domain, $parent ) {
@@ -540,14 +566,34 @@ class HLN_Sources {
 		$defaults = [
 			'handle'              => $handle,
 			'owning_entity'       => '',
+			'entity_type'         => 'governing_body', // governing_body | trainer | driver | track | media | other
 			'verification_method' => '',
+			'verified'            => false, // Explicit, distinct from having a verification_method note.
+			'priority'            => 5,     // 1 (highest) - 10 (lowest); available for future poll-ordering/weighting use.
 			'date_added'          => current_time( 'Y-m-d' ),
 			'region'              => '',
 			'check_frequency'     => '15m',
 			'enabled'             => true,
+			'last_polled_at'      => null,
+			'last_error'          => null,
 		];
 		$accounts[ $handle ] = array_merge( $defaults, $accounts[ $handle ] ?? [], $fields );
 		update_option( 'hln_verified_social_accounts', $accounts );
+	}
+
+	/**
+	 * Records the outcome of a poll attempt without touching any other
+	 * field — called from HLN_X_Poller so failures are visible in the
+	 * admin UI instead of silently vanishing.
+	 *
+	 * @param string      $handle
+	 * @param string|null $error Null on success (clears any prior error).
+	 */
+	public static function record_poll_attempt( $handle, $error = null ) {
+		self::save_verified_social_account( $handle, [
+			'last_polled_at' => current_time( 'mysql' ),
+			'last_error'     => $error,
+		] );
 	}
 
 	/**

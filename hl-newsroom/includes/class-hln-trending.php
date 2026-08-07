@@ -8,12 +8,21 @@
  * score), entity significance (cross-referenced against the archive),
  * historical performance of similar story types/sources (Phase 7's Popular
  * dataset once it exists — still placeholder-valued until real analytics
- * flow in, exactly as spec §5.1 describes), and duplicate demotion.
+ * flow in, exactly as spec §5.1 describes), a breaking-news boost, and
+ * duplicate demotion.
  *
  * Also completes the wiring Phase 3 deliberately left as a placeholder:
  * HLN_Trending_Signal writes raw X-scan volume to its own hln_trending_signal
  * table; this class is what reads that table and folds it into a
  * candidate's _hln_trending_signal meta, matched by entity.
+ *
+ * EXPLAINABLE SCORING: every weight, threshold, and multiplier below is
+ * a configurable value (option 'hln_trending_weights', editable on the
+ * Settings screen — see get_weights()), not a permanent hard-coded
+ * editorial rule. compute() stores the full component breakdown — each
+ * factor's raw value, its weight, and its contribution to the final
+ * score — as _hln_trending_breakdown meta, shown on the Review Story
+ * screen, so an editor can see exactly why a candidate scored what it did.
  */
 if ( ! defined( 'ABSPATH' ) ) exit;
 
@@ -21,10 +30,38 @@ class HLN_Trending {
 
 	const BATCH_SIZE = 50;
 
+	/**
+	 * Defaults — the same distribution this class shipped with
+	 * originally, now overridable via the hln_trending_weights option
+	 * rather than hard-coded in compute().
+	 */
+	const DEFAULT_WEIGHTS = [
+		'source_authority_weight'       => 40,
+		'recency_weight'                => 25,
+		'corroboration_weight'          => 15,
+		'entity_significance_weight'    => 10,
+		'historical_performance_weight' => 5,
+		'x_signal_weight'               => 5,
+		'breaking_news_boost'           => 1.2,
+		'duplicate_demotion_factor'     => 0.3,
+		'tier2_score_threshold'         => 40,
+		'recommended_threshold'         => 40,
+	];
+
 	public function __construct() {
 		add_action( 'init', [ $this, 'ensure_schedule' ] );
 		add_action( 'hln_trending_run', [ $this, 'run' ] );
 		add_action( 'rest_api_init', [ $this, 'register_routes' ] );
+	}
+
+	/**
+	 * @return array Full weights array, defaults merged under any
+	 *               admin-saved overrides so a partially-saved option
+	 *               never leaves a key missing.
+	 */
+	public static function get_weights() {
+		$saved = get_option( 'hln_trending_weights', [] );
+		return array_merge( self::DEFAULT_WEIGHTS, is_array( $saved ) ? $saved : [] );
 	}
 
 	public function ensure_schedule() {
@@ -50,35 +87,59 @@ class HLN_Trending {
 	 * @return float
 	 */
 	public function compute( $candidate_id ) {
+		$weights = self::get_weights();
+
 		$trust_score  = (float) HLN_Candidate_CPT::get_meta( $candidate_id, 'trust_score', 50 );
 		$entities     = HLN_Candidate_CPT::get_meta( $candidate_id, 'entities', [] );
 		$source_type  = HLN_Candidate_CPT::get_meta( $candidate_id, 'source_type', '' );
+		$data_type    = HLN_Candidate_CPT::get_meta( $candidate_id, 'data_type', '' );
 		$published_at = HLN_Candidate_CPT::get_meta( $candidate_id, 'published_at' );
 		$duplicate_of = HLN_Candidate_CPT::get_meta( $candidate_id, 'duplicate_of' );
 
-		$recency_factor       = $this->recency_factor( $published_at );
-		$corroboration        = $this->corroboration_factor( $entities, $source_type, $candidate_id );
-		$entity_significance  = $this->entity_significance_factor( $entities );
-		$historical_factor    = $this->historical_performance_factor( HLN_Candidate_CPT::get_meta( $candidate_id, 'story_type' ) );
-		$x_signal             = $this->x_signal_factor( $entities );
+		$components = [
+			'source_authority'       => [ 'raw' => round( $trust_score / 100, 3 ), 'weight' => $weights['source_authority_weight'] ],
+			'recency'                => [ 'raw' => $this->recency_factor( $published_at ), 'weight' => $weights['recency_weight'] ],
+			'corroboration'          => [ 'raw' => $this->corroboration_factor( $entities, $source_type, $candidate_id ), 'weight' => $weights['corroboration_weight'] ],
+			'entity_significance'    => [ 'raw' => $this->entity_significance_factor( $entities ), 'weight' => $weights['entity_significance_weight'] ],
+			'historical_performance' => [ 'raw' => $this->historical_performance_factor( HLN_Candidate_CPT::get_meta( $candidate_id, 'story_type' ) ), 'weight' => $weights['historical_performance_weight'] ],
+			'x_signal'               => [ 'raw' => $this->x_signal_factor( $entities ), 'weight' => $weights['x_signal_weight'] ],
+		];
 
-		$score = ( $trust_score / 100 ) * 40
-			+ $recency_factor * 25
-			+ $corroboration * 15
-			+ $entity_significance * 10
-			+ $historical_factor * 5
-			+ $x_signal * 5;
+		$score = 0;
+		foreach ( $components as $name => &$c ) {
+			$c['contribution'] = round( $c['raw'] * $c['weight'], 2 );
+			$score += $c['contribution'];
+		}
+		unset( $c );
 
+		$is_breaking = 'result' === $data_type && 'official' === $source_type;
+		$breaking_applied = false;
+		if ( $is_breaking ) {
+			$score *= (float) $weights['breaking_news_boost'];
+			$breaking_applied = true;
+		}
+
+		$duplicate_applied = false;
 		if ( $duplicate_of ) {
-			$score *= 0.3; // Demoted, never hidden.
+			$score *= (float) $weights['duplicate_demotion_factor'];
+			$duplicate_applied = true;
 		}
 
 		$score = round( $score, 1 );
+		$tier  = $this->assign_tier( $is_breaking, $score, $weights );
 
 		HLN_Candidate_CPT::set_meta( $candidate_id, [
-			'trending_signal' => $score,
-			'tier'            => $this->assign_tier( $candidate_id, $score ),
+			'trending_signal'    => $score,
+			'tier'               => $tier,
+			'trending_breakdown' => [
+				'total'      => $score,
+				'components' => $components,
+				'breaking_news_boost' => [ 'applied' => $breaking_applied, 'multiplier' => $weights['breaking_news_boost'] ],
+				'duplicate_demotion'  => [ 'applied' => $duplicate_applied, 'factor' => $weights['duplicate_demotion_factor'] ],
+			],
 		] );
+
+		HLN_Candidate_CPT::append_audit( $candidate_id, 'tier_assigned', sprintf( 'Tier %d, score %s.', $tier, $score ) );
 
 		return $score;
 	}
@@ -160,16 +221,15 @@ class HLN_Trending {
 	}
 
 	/**
-	 * Tier per spec §11 — news urgency, not draft quality.
+	 * Tier per spec §11 — news urgency, not draft quality. Tier 1
+	 * remains a rule (official result), not score-based, per spec's own
+	 * definition; only the tier 2/3 score threshold is configurable.
 	 */
-	private function assign_tier( $candidate_id, $score ) {
-		$data_type   = HLN_Candidate_CPT::get_meta( $candidate_id, 'data_type' );
-		$source_type = HLN_Candidate_CPT::get_meta( $candidate_id, 'source_type' );
-
-		if ( 'result' === $data_type && 'official' === $source_type ) {
+	private function assign_tier( $is_breaking, $score, array $weights ) {
+		if ( $is_breaking ) {
 			return 1;
 		}
-		if ( $score >= 40 ) {
+		if ( $score >= (float) $weights['tier2_score_threshold'] ) {
 			return 2;
 		}
 		return 3;

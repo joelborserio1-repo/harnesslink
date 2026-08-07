@@ -20,12 +20,19 @@
  *                            entities even by mistake, because those
  *                            columns live in a different table it never
  *                            touches (Hard Requirement 9).
+ *   hln_audit_log         – append-only editorial/system event log
+ *                            (Hard Requirement 5). candidate_id is
+ *                            nullable for system-level events.
+ *
+ * hln_race_calendar also carries preview_candidate_id/result_candidate_id
+ * (added 1.4.0) — the deterministic link between a calendar entry and the
+ * Story Candidate(s) built from it. See HLN_Race_Candidate_Link.
  */
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 class HLN_DB {
 
-	const SCHEMA_VERSION = '1.3.0';
+	const SCHEMA_VERSION = '1.4.0';
 
 	public static function install() {
 		global $wpdb;
@@ -70,20 +77,24 @@ class HLN_DB {
 		) $charset;" );
 
 		dbDelta( "CREATE TABLE $calendar (
-			id              BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-			source_slug     VARCHAR(100) NOT NULL,
-			governing_body  VARCHAR(255) DEFAULT NULL,
-			region          VARCHAR(20)  DEFAULT NULL,
-			race_name       VARCHAR(255) NOT NULL,
-			race_date       DATE         DEFAULT NULL,
-			grade           VARCHAR(100) DEFAULT NULL,
-			prize_money     VARCHAR(100) DEFAULT NULL,
-			content_hash    VARCHAR(64)  DEFAULT NULL,
-			created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			updated_at      DATETIME     DEFAULT NULL,
+			id                     BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			source_slug            VARCHAR(100) NOT NULL,
+			governing_body         VARCHAR(255) DEFAULT NULL,
+			region                 VARCHAR(20)  DEFAULT NULL,
+			race_name              VARCHAR(255) NOT NULL,
+			race_date              DATE         DEFAULT NULL,
+			grade                  VARCHAR(100) DEFAULT NULL,
+			prize_money            VARCHAR(100) DEFAULT NULL,
+			content_hash           VARCHAR(64)  DEFAULT NULL,
+			preview_candidate_id   BIGINT(20) UNSIGNED DEFAULT NULL,
+			result_candidate_id    BIGINT(20) UNSIGNED DEFAULT NULL,
+			created_at             DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at             DATETIME     DEFAULT NULL,
 			PRIMARY KEY  (id),
 			KEY source_slug (source_slug),
-			KEY race_date (race_date)
+			KEY race_date (race_date),
+			KEY preview_candidate_id (preview_candidate_id),
+			KEY result_candidate_id (result_candidate_id)
 		) $charset;" );
 
 		dbDelta( "CREATE TABLE $intel (
@@ -117,19 +128,31 @@ class HLN_DB {
 			KEY detected_at (detected_at)
 		) $charset;" );
 
-		// Hard Requirement 5's audit-trail log table. Every candidate's
-		// full lifecycle (source detected, duplicate check, tier
-		// assigned, draft generated, QC result, pending post created,
-		// reviewer action) is appended here, never overwritten.
+		// Hard Requirement 5's audit-trail log table. Every meaningful
+		// editorial or system action is appended here, never overwritten.
+		// candidate_id is nullable — system-level events (kill switch
+		// toggled, a source disabled) aren't about one candidate, and are
+		// recorded with source_slug instead.
+		//
+		// NOTE: this table shipped in schema 1.3.0 with candidate_id
+		// NOT NULL and no user_id/source_slug columns. dbDelta can ALTER
+		// existing columns in most cases, but relaxing NOT NULL -> NULL
+		// on an already-deployed table is exactly the kind of migration
+		// that needs staging verification rather than blind trust in
+		// dbDelta — see the README's staging checklist.
 		$audit = $wpdb->prefix . 'hln_audit_log';
 		dbDelta( "CREATE TABLE $audit (
 			id            BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-			candidate_id  BIGINT(20) UNSIGNED NOT NULL,
+			candidate_id  BIGINT(20) UNSIGNED DEFAULT NULL,
+			source_slug   VARCHAR(100) DEFAULT NULL,
 			event         VARCHAR(50)  NOT NULL,
 			detail        TEXT         DEFAULT NULL,
+			user_id       BIGINT(20) UNSIGNED DEFAULT NULL,
 			created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY  (id),
-			KEY candidate_id (candidate_id)
+			KEY candidate_id (candidate_id),
+			KEY source_slug (source_slug),
+			KEY event (event)
 		) $charset;" );
 
 		update_option( 'hln_db_version', self::SCHEMA_VERSION );

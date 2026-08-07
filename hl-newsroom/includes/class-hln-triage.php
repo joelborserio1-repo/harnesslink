@@ -13,6 +13,11 @@
  * dedup pass (HLN_Dedup's fuzzy near-duplicate pass runs separately,
  * after the candidate exists, since it needs to compare against other
  * candidates too).
+ *
+ * Kill switch (service-level, not just UI — see HLN_Kill_Switch): a row
+ * whose source is killed (globally or per-source) is left untouched —
+ * not discarded, not promoted — so it's picked up normally on a future
+ * run once the switch is lifted, rather than being lost.
  */
 if ( ! defined( 'ABSPATH' ) ) exit;
 
@@ -39,6 +44,10 @@ class HLN_Triage {
 	}
 
 	private function process_row( $row ) {
+		if ( HLN_Kill_Switch::blocks_automatic_advancement( $row->source_slug ) ) {
+			return; // Left as-is; picked up on a future run once the switch lifts.
+		}
+
 		$reason = $this->stage_a_reason( $row );
 		if ( $reason ) {
 			HLN_Intake_Log::set_status( $row->id, HLN_Intake_Log::STATUS_DISCARDED );

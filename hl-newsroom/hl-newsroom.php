@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'HLN_VERSION',     '0.1.0' );
+define( 'HLN_VERSION',     '0.2.0' );
 define( 'HLN_PLUGIN_DIR',  plugin_dir_path( __FILE__ ) );
 define( 'HLN_PLUGIN_URL',  plugin_dir_url( __FILE__ ) );
 define( 'HLN_PLUGIN_FILE', __FILE__ );
@@ -27,6 +27,7 @@ require_once HLN_PLUGIN_DIR . 'includes/class-hln-cron-utils.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-intake-log.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-stewards-parser.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-email-intake.php';
+require_once HLN_PLUGIN_DIR . 'includes/class-hln-race-calendar-adapter.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-race-data.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-racing-intelligence.php';
 
@@ -36,7 +37,10 @@ require_once HLN_PLUGIN_DIR . 'includes/class-hln-x-poller.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-trending-signal.php';
 
 /* ---- Phase 4: triage gate, Story Candidate CPT, dedup, trending score ---- */
+require_once HLN_PLUGIN_DIR . 'includes/class-hln-audit-log.php';
+require_once HLN_PLUGIN_DIR . 'includes/class-hln-kill-switch.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-candidate-cpt.php';
+require_once HLN_PLUGIN_DIR . 'includes/class-hln-race-candidate-link.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-triage.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-dedup.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-trending.php';
@@ -85,6 +89,10 @@ function hln_activate() {
 		'hln_syndication_partner_push_enabled'      => false,
 		'hln_syndication_governing_body_enabled'    => false,
 		'hln_syndication_social_autopost_enabled'   => false,
+		'hln_generation_provider_class'  => '',
+		'hln_trending_weights'           => HLN_Trending::DEFAULT_WEIGHTS,
+		'hln_race_preview_window_days'   => 3,
+		'hln_race_result_window_days'    => 3,
 	];
 	foreach ( $defaults as $key => $val ) {
 		if ( false === get_option( $key ) ) {
@@ -136,6 +144,7 @@ function hln_init() {
 	new HLN_X_Poller();
 	new HLN_Trending_Signal();
 	new HLN_Candidate_CPT();
+	new HLN_Race_Candidate_Link();
 	new HLN_Triage();
 	new HLN_Dedup();
 	new HLN_Trending();
@@ -145,8 +154,10 @@ function hln_init() {
 	new HLN_Syndication();
 	new HLN_Insider();
 	// HLN_Stewards_Parser, HLN_Parsing_Utils, HLN_Cron_Utils, HLN_Templates,
-	// and HLN_Popular are stateless static helpers — nothing to wire here.
-	// HLN_Story_Generator is instantiated on demand by HLN_Dashboard when
-	// a human triggers "Generate Draft," not eagerly on every request.
+	// HLN_Popular, HLN_Audit_Log, HLN_Kill_Switch, and
+	// HLN_Generic_Calendar_Adapter are stateless static helpers — nothing
+	// to wire here. HLN_Story_Generator is instantiated on demand by
+	// HLN_Dashboard when a human triggers "Generate Draft," not eagerly
+	// on every request.
 }
 add_action( 'plugins_loaded', 'hln_init' );
