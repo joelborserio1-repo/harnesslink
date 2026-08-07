@@ -23,17 +23,17 @@ require_once HLN_PLUGIN_DIR . 'includes/class-hln-sources.php';
 /* ---- Phase 2: news@ intake, race-data feeds, racing intelligence ---- */
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-db.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-parsing-utils.php';
+require_once HLN_PLUGIN_DIR . 'includes/class-hln-cron-utils.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-intake-log.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-stewards-parser.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-email-intake.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-race-data.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-racing-intelligence.php';
 
-/* ---- Phase 3: RSS + verified-X intake, trending signal ----
+/* ---- Phase 3: RSS + verified-X intake, trending signal ---- */
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-rss-intake.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-x-poller.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-trending-signal.php';
-*/
 
 /* ---- Phase 4: triage gate, Story Candidate CPT, dedup, trending score ----
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-candidate-cpt.php';
@@ -68,6 +68,7 @@ function hln_activate() {
 	$defaults = [
 		'hln_default_byline'             => 'HarnessLink Media',
 		'hln_inbound_email_signing_key'  => '',
+		'hln_x_api_bearer_token'         => '',
 		'hln_regions'                    => "USA\nCanada\nAustralia\nNew Zealand\nEurope",
 		'hln_subcategories'              => "News\nEntries\nResults\nBreeding",
 		'hln_is_premium_defaults'        => [
@@ -79,6 +80,7 @@ function hln_activate() {
 			'industry' => false,
 		],
 		'hln_source_overrides'           => [],
+		'hln_verified_social_accounts'   => [],
 	];
 	foreach ( $defaults as $key => $val ) {
 		if ( false === get_option( $key ) ) {
@@ -90,13 +92,20 @@ function hln_activate() {
 }
 
 function hln_deactivate() {
-	foreach ( [ 'official', 'race-data' ] as $type ) {
+	foreach ( HLN_Sources::SOURCE_TYPES as $type ) {
 		foreach ( HLN_Sources::get_by_type( $type ) as $slug => $entry ) {
 			wp_clear_scheduled_hook( 'hln_race_data_poll_' . $type . ':' . $slug );
+			wp_clear_scheduled_hook( 'hln_rss_poll_' . $type . ':' . $slug );
 		}
 	}
 	wp_clear_scheduled_hook( 'hln_race_calendar_poll' );
-	// Later phases clear their own scheduled hooks here (RSS polling, X polling, Insider).
+
+	foreach ( HLN_Sources::get_verified_social_accounts() as $handle => $account ) {
+		wp_clear_scheduled_hook( 'hln_x_poll_' . $handle );
+	}
+	wp_clear_scheduled_hook( 'hln_trending_signal_scan' );
+
+	// Later phases clear their own scheduled hooks here (Insider, etc.).
 }
 
 function hln_init() {
@@ -106,15 +115,16 @@ function hln_init() {
 	new HLN_Email_Intake();
 	new HLN_Race_Data();
 	new HLN_Racing_Intelligence();
-	// HLN_Stewards_Parser and HLN_Parsing_Utils are stateless static
-	// helpers, called directly by the classes above — nothing to wire here.
+	new HLN_RSS_Intake();
+	new HLN_X_Poller();
+	new HLN_Trending_Signal();
+	// HLN_Stewards_Parser, HLN_Parsing_Utils, and HLN_Cron_Utils are
+	// stateless static helpers, called directly by the classes above —
+	// nothing to wire here.
 
 	/*
 	 * Later-phase classes, instantiated here once they exist:
 	 *
-	 * new HLN_RSS_Intake();            // Phase 3
-	 * new HLN_X_Poller();              // Phase 3
-	 * new HLN_Trending_Signal();       // Phase 3
 	 * new HLN_Candidate_CPT();         // Phase 4
 	 * new HLN_Triage();                // Phase 4
 	 * new HLN_Dedup();                 // Phase 4

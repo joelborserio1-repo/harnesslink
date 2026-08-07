@@ -50,6 +50,15 @@ class HLN_Admin {
 
 		add_submenu_page(
 			'hl-newsroom',
+			__( 'Verified Social (X)', 'hl-newsroom' ),
+			__( 'Verified Social (X)', 'hl-newsroom' ),
+			'manage_options',
+			'hln-verified-social',
+			[ $this, 'page_verified_social' ]
+		);
+
+		add_submenu_page(
+			'hl-newsroom',
 			__( 'Settings', 'hl-newsroom' ),
 			__( 'Settings', 'hl-newsroom' ),
 			'manage_options',
@@ -79,11 +88,15 @@ class HLN_Admin {
 	========================================================= */
 
 	public function page_intake_log() {
-		$tab = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'all';
+		$tab     = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'all';
+		$channel = isset( $_GET['channel'] ) ? sanitize_text_field( wp_unslash( $_GET['channel'] ) ) : '';
 
-		$counts = HLN_Intake_Log::counts_by_status();
+		$counts  = HLN_Intake_Log::counts_by_status();
 		$filters = 'all' === $tab ? [] : [ 'status' => $tab ];
-		$items   = HLN_Intake_Log::get_recent( 100, $filters );
+		if ( '' !== $channel ) {
+			$filters['channel'] = $channel;
+		}
+		$items = HLN_Intake_Log::get_recent( 100, $filters );
 
 		$tabs = [
 			'all'          => sprintf( __( 'All (%d)', 'hl-newsroom' ), array_sum( $counts ) ),
@@ -91,15 +104,27 @@ class HLN_Admin {
 			'unclassified' => sprintf( __( 'Unclassified (%d)', 'hl-newsroom' ), $counts['unclassified'] ),
 			'quarantined'  => sprintf( __( 'Quarantined (%d)', 'hl-newsroom' ), $counts['quarantined'] ),
 		];
+		$channels = [ '' => __( 'All Channels', 'hl-newsroom' ), 'email' => 'Email', 'race-data' => 'Race Data', 'rss' => 'RSS', 'x' => 'X' ];
 		?>
 		<div class="wrap hln-wrap">
 			<h1 class="hln-page-title"><span class="dashicons dashicons-list-view"></span> <?php _e( 'Intake Log', 'hl-newsroom' ); ?></h1>
 
 			<h2 class="nav-tab-wrapper">
 				<?php foreach ( $tabs as $key => $label ) : ?>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=hln-intake-log&tab=' . $key ) ); ?>" class="nav-tab <?php echo $tab === $key ? 'nav-tab-active' : ''; ?>"><?php echo esc_html( $label ); ?></a>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=hln-intake-log&tab=' . $key . '&channel=' . rawurlencode( $channel ) ) ); ?>" class="nav-tab <?php echo $tab === $key ? 'nav-tab-active' : ''; ?>"><?php echo esc_html( $label ); ?></a>
 				<?php endforeach; ?>
 			</h2>
+
+			<form method="get" action="" style="margin: 12px 0;">
+				<input type="hidden" name="page" value="hln-intake-log" />
+				<input type="hidden" name="tab" value="<?php echo esc_attr( $tab ); ?>" />
+				<label for="hln-channel-filter"><?php _e( 'Channel:', 'hl-newsroom' ); ?></label>
+				<select name="channel" id="hln-channel-filter" onchange="this.form.submit()">
+					<?php foreach ( $channels as $value => $label ) : ?>
+						<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $channel, $value ); ?>><?php echo esc_html( $label ); ?></option>
+					<?php endforeach; ?>
+				</select>
+			</form>
 
 			<div class="hln-panel">
 				<table class="wp-list-table widefat fixed striped">
@@ -463,6 +488,167 @@ class HLN_Admin {
 	}
 
 	/* =========================================================
+	   PAGE: VERIFIED SOCIAL (X) ALLOW-LIST
+	========================================================= */
+
+	public function page_verified_social() {
+		$notice = '';
+
+		if ( isset( $_POST['hln_save_verified_social'] ) ) {
+			check_admin_referer( 'hln_save_verified_social_nonce' );
+			$this->save_verified_social_from_post();
+			$notice = __( 'Account saved.', 'hl-newsroom' );
+		} elseif ( isset( $_POST['hln_toggle_verified_social'] ) ) {
+			check_admin_referer( 'hln_toggle_verified_social_nonce' );
+			$handle = sanitize_text_field( wp_unslash( $_POST['hln_handle'] ?? '' ) );
+			if ( '' !== $handle ) {
+				HLN_Sources::set_verified_social_enabled( $handle, ! empty( $_POST['hln_new_enabled'] ) );
+				$notice = __( 'Account updated.', 'hl-newsroom' );
+			}
+		}
+
+		$edit_handle = isset( $_GET['edit'] ) ? sanitize_text_field( wp_unslash( $_GET['edit'] ) ) : '';
+		$edit_entry  = $edit_handle ? HLN_Sources::get_verified_social_account( $edit_handle ) : null;
+
+		$accounts = HLN_Sources::get_verified_social_accounts();
+		?>
+		<div class="wrap hln-wrap">
+			<h1 class="hln-page-title"><span class="dashicons dashicons-twitter"></span> <?php _e( 'Verified Social (X) Allow-List', 'hl-newsroom' ); ?></h1>
+			<p class="description"><?php _e( 'A narrow, explicitly-vetted list by design (spec §2.3). Never add a handle here without individually confirming it is the real, named account for the entity it claims to be — this list is not a place for keyword or hashtag search.', 'hl-newsroom' ); ?></p>
+
+			<?php if ( $notice ) : ?>
+				<div class="notice notice-success is-dismissible"><p><?php echo esc_html( $notice ); ?></p></div>
+			<?php endif; ?>
+
+			<div class="hln-panel">
+				<h2><?php echo $edit_entry ? esc_html__( 'Edit Account', 'hl-newsroom' ) : esc_html__( 'Add Account', 'hl-newsroom' ); ?></h2>
+				<form method="post" action="">
+					<?php wp_nonce_field( 'hln_save_verified_social_nonce' ); ?>
+					<input type="hidden" name="hln_save_verified_social" value="1" />
+					<table class="form-table hln-form-table">
+						<tr>
+							<th><label for="hln-handle"><?php _e( 'Handle', 'hl-newsroom' ); ?></label></th>
+							<td>
+								<input type="text" name="hln_handle" id="hln-handle" class="regular-text" placeholder="USTAracing"
+									value="<?php echo esc_attr( $edit_handle ); ?>" <?php echo $edit_entry ? 'readonly' : ''; ?> required />
+								<p class="description"><?php _e( 'Without the @ sign. Cannot be changed after adding — disable and re-add instead.', 'hl-newsroom' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="hln-owning-entity"><?php _e( 'Owning Entity', 'hl-newsroom' ); ?></label></th>
+							<td><input type="text" name="hln_owning_entity" id="hln-owning-entity" class="regular-text" value="<?php echo esc_attr( $edit_entry['owning_entity'] ?? '' ); ?>" required /></td>
+						</tr>
+						<tr>
+							<th><label for="hln-verification-method"><?php _e( 'Verification Method', 'hl-newsroom' ); ?></label></th>
+							<td>
+								<input type="text" name="hln_verification_method" id="hln-verification-method" class="regular-text" placeholder="<?php esc_attr_e( 'e.g. linked from the official body\'s own site', 'hl-newsroom' ); ?>" value="<?php echo esc_attr( $edit_entry['verification_method'] ?? '' ); ?>" required />
+								<p class="description"><?php _e( 'How this was confirmed as the real, named account — required for every entry.', 'hl-newsroom' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="hln-vs-region"><?php _e( 'Region', 'hl-newsroom' ); ?></label></th>
+							<td>
+								<select name="hln_region" id="hln-vs-region">
+									<option value=""><?php _e( '— None —', 'hl-newsroom' ); ?></option>
+									<?php foreach ( HLN_Sources::REGIONS as $region ) : ?>
+										<option value="<?php echo esc_attr( $region ); ?>" <?php selected( $edit_entry['region'] ?? '', $region ); ?>><?php echo esc_html( $region ); ?></option>
+									<?php endforeach; ?>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="hln-vs-check-frequency"><?php _e( 'Check Frequency', 'hl-newsroom' ); ?></label></th>
+							<td><input type="text" name="hln_check_frequency" id="hln-vs-check-frequency" class="small-text" value="<?php echo esc_attr( $edit_entry['check_frequency'] ?? '15m' ); ?>" /></td>
+						</tr>
+						<tr>
+							<th><?php _e( 'Enabled', 'hl-newsroom' ); ?></th>
+							<td>
+								<label>
+									<input type="checkbox" name="hln_enabled" value="1" <?php checked( $edit_entry ? ! empty( $edit_entry['enabled'] ) : true ); ?> />
+									<?php _e( 'Account is active', 'hl-newsroom' ); ?>
+								</label>
+							</td>
+						</tr>
+					</table>
+					<p class="submit">
+						<button type="submit" class="button button-primary"><?php echo $edit_entry ? esc_html__( 'Save Changes', 'hl-newsroom' ) : esc_html__( 'Add Account', 'hl-newsroom' ); ?></button>
+						<?php if ( $edit_entry ) : ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=hln-verified-social' ) ); ?>" class="button"><?php _e( 'Cancel', 'hl-newsroom' ); ?></a>
+						<?php endif; ?>
+					</p>
+				</form>
+			</div>
+
+			<div class="hln-panel">
+				<h2><?php _e( 'Allow-List', 'hl-newsroom' ); ?></h2>
+				<table class="wp-list-table widefat fixed striped">
+					<thead>
+						<tr>
+							<th><?php _e( 'Handle', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Owning Entity', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Verification Method', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Region', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Date Added', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Status', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Actions', 'hl-newsroom' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php if ( empty( $accounts ) ) : ?>
+							<tr><td colspan="7"><?php _e( 'No accounts added yet.', 'hl-newsroom' ); ?></td></tr>
+						<?php else : ?>
+							<?php foreach ( $accounts as $handle => $account ) : ?>
+								<tr>
+									<td><strong>@<?php echo esc_html( $handle ); ?></strong></td>
+									<td><?php echo esc_html( $account['owning_entity'] ); ?></td>
+									<td><?php echo esc_html( $account['verification_method'] ); ?></td>
+									<td><?php echo esc_html( $account['region'] ); ?></td>
+									<td><?php echo esc_html( $account['date_added'] ); ?></td>
+									<td>
+										<span class="hln-badge <?php echo ! empty( $account['enabled'] ) ? 'hln-badge-on' : 'hln-badge-off'; ?>">
+											<?php echo ! empty( $account['enabled'] ) ? esc_html__( 'Enabled', 'hl-newsroom' ) : esc_html__( 'Disabled', 'hl-newsroom' ); ?>
+										</span>
+									</td>
+									<td>
+										<a href="<?php echo esc_url( admin_url( 'admin.php?page=hln-verified-social&edit=' . rawurlencode( $handle ) ) ); ?>"><?php _e( 'Edit', 'hl-newsroom' ); ?></a>
+										&nbsp;|&nbsp;
+										<form method="post" action="" style="display:inline;">
+											<?php wp_nonce_field( 'hln_toggle_verified_social_nonce' ); ?>
+											<input type="hidden" name="hln_toggle_verified_social" value="1" />
+											<input type="hidden" name="hln_handle" value="<?php echo esc_attr( $handle ); ?>" />
+											<input type="hidden" name="hln_new_enabled" value="<?php echo ! empty( $account['enabled'] ) ? '0' : '1'; ?>" />
+											<button type="submit" class="button-link">
+												<?php echo ! empty( $account['enabled'] ) ? esc_html__( 'Disable', 'hl-newsroom' ) : esc_html__( 'Enable', 'hl-newsroom' ); ?>
+											</button>
+										</form>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						<?php endif; ?>
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<?php
+	}
+
+	private function save_verified_social_from_post() {
+		$handle = sanitize_text_field( wp_unslash( $_POST['hln_handle'] ?? '' ) );
+		$handle = ltrim( $handle, '@' );
+		if ( '' === $handle ) {
+			return;
+		}
+
+		HLN_Sources::save_verified_social_account( $handle, [
+			'owning_entity'       => sanitize_text_field( wp_unslash( $_POST['hln_owning_entity'] ?? '' ) ),
+			'verification_method' => sanitize_text_field( wp_unslash( $_POST['hln_verification_method'] ?? '' ) ),
+			'region'              => sanitize_text_field( wp_unslash( $_POST['hln_region'] ?? '' ) ),
+			'check_frequency'     => sanitize_text_field( wp_unslash( $_POST['hln_check_frequency'] ?? '15m' ) ),
+			'enabled'             => ! empty( $_POST['hln_enabled'] ),
+		] );
+	}
+
+	/* =========================================================
 	   PAGE: SETTINGS
 	========================================================= */
 
@@ -522,6 +708,19 @@ class HLN_Admin {
 				</div>
 
 				<div class="hln-panel">
+					<h2><?php _e( 'X (Twitter) API', 'hl-newsroom' ); ?></h2>
+					<table class="form-table hln-form-table">
+						<tr>
+							<th><label for="hln-x-api-bearer-token"><?php _e( 'Bearer Token', 'hl-newsroom' ); ?></label></th>
+							<td>
+								<input type="text" name="hln_x_api_bearer_token" id="hln-x-api-bearer-token" class="regular-text code" value="<?php echo esc_attr( get_option( 'hln_x_api_bearer_token', '' ) ); ?>" />
+								<p class="description"><?php _e( 'Used by both the Verified Social (X) poller and the broader trending scan. Neither does anything until this is set.', 'hl-newsroom' ); ?></p>
+							</td>
+						</tr>
+					</table>
+				</div>
+
+				<div class="hln-panel">
 					<h2><?php _e( 'Category Taxonomy', 'hl-newsroom' ); ?></h2>
 					<table class="form-table hln-form-table">
 						<tr>
@@ -570,6 +769,7 @@ class HLN_Admin {
 	private function save_settings_from_post() {
 		update_option( 'hln_default_byline', sanitize_text_field( wp_unslash( $_POST['hln_default_byline'] ?? 'HarnessLink Media' ) ) );
 		update_option( 'hln_inbound_email_signing_key', sanitize_text_field( wp_unslash( $_POST['hln_inbound_email_signing_key'] ?? '' ) ) );
+		update_option( 'hln_x_api_bearer_token', sanitize_text_field( wp_unslash( $_POST['hln_x_api_bearer_token'] ?? '' ) ) );
 		update_option( 'hln_regions', sanitize_textarea_field( wp_unslash( $_POST['hln_regions'] ?? '' ) ) );
 		update_option( 'hln_subcategories', sanitize_textarea_field( wp_unslash( $_POST['hln_subcategories'] ?? '' ) ) );
 

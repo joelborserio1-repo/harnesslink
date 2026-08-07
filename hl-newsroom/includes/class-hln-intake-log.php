@@ -36,6 +36,7 @@ class HLN_Intake_Log {
 			'source_credit'             => null,
 			'region'                    => null,
 			'governing_body'            => null,
+			'trust_score'               => null,
 			'headline'                  => null,
 			'body_excerpt'              => null,
 			'original_url'              => null,

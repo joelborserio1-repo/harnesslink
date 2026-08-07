@@ -96,6 +96,7 @@ class HLN_Email_Intake {
 				'source_credit'             => $source['label'],
 				'region'                    => $source['region'],
 				'governing_body'            => $source['governing_body'],
+				'trust_score'               => $source['trust_score'] ?? null,
 				'headline'                  => $parsed['headline'],
 				'body_excerpt'              => $parsed['body_excerpt'],
 				'original_url'              => $links[0] ?? null,
@@ -118,6 +119,7 @@ class HLN_Email_Intake {
 			'source_credit'  => $source['label'],
 			'region'         => $source['region'],
 			'governing_body' => $source['governing_body'],
+			'trust_score'    => $source['trust_score'] ?? null,
 			'headline'       => HLN_Parsing_Utils::extract_short_excerpt( $payload['subject'], 20 ),
 			'body_excerpt'   => HLN_Parsing_Utils::extract_short_excerpt( $combined_text ),
 			'original_url'   => $links[0] ?? null,
@@ -228,6 +230,7 @@ class HLN_Email_Intake {
 		if ( ! preg_match_all( '/<img[^>]+src=["\']([^"\']+)["\']/i', (string) $html, $m ) ) {
 			return [];
 		}
-		return array_slice( array_unique( $m[1] ), 0, 10 );
+		$urls = array_slice( array_unique( $m[1] ), 0, 10 );
+		return array_map( fn( $url ) => HLN_Parsing_Utils::build_image_entry( $url, false ), $urls );
 	}
 }

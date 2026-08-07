@@ -184,6 +184,28 @@ class HLN_Parsing_Utils {
 	}
 
 	/* =========================================================
+	   MEDIA RIGHTS
+	   Every image/video an intake channel captures is stored in this
+	   shape so rights_confirmed is never implicitly true — Hard
+	   Requirement 9. agency_flagged marks media that needs extra
+	   scrutiny (e.g. a repost on a verified-social account) even before
+	   a human looks at it.
+	========================================================= */
+
+	/**
+	 * @param  string $url
+	 * @param  bool   $agency_flagged
+	 * @return array {url, rights_confirmed, agency_flagged}
+	 */
+	public static function build_image_entry( $url, $agency_flagged = false ) {
+		return [
+			'url'               => esc_url_raw( $url ),
+			'rights_confirmed'  => false,
+			'agency_flagged'    => (bool) $agency_flagged,
+		];
+	}
+
+	/* =========================================================
 	   ENTITY EXTRACTION (naive)
 	   A lightweight heuristic only — matches capitalized word runs as
 	   candidate horse/trainer/driver/track names. Phase 4's dedup/
@@ -212,6 +234,29 @@ class HLN_Parsing_Utils {
 		}
 
 		return array_keys( $entities );
+	}
+
+	/* =========================================================
+	   DATA-TYPE HEURISTIC (shared)
+	========================================================= */
+
+	/**
+	 * @param  string $url
+	 * @param  string $text
+	 * @return string result | field | fixture | article
+	 */
+	public static function guess_data_type( $url, $text ) {
+		$haystack = strtolower( $url . ' ' . wp_strip_all_tags( (string) $text ) );
+		if ( false !== strpos( $haystack, 'result' ) ) {
+			return 'result';
+		}
+		if ( false !== strpos( $haystack, 'entries' ) || false !== strpos( $haystack, 'field' ) ) {
+			return 'field';
+		}
+		if ( false !== strpos( $haystack, 'fixture' ) || false !== strpos( $haystack, 'calendar' ) ) {
+			return 'fixture';
+		}
+		return 'article';
 	}
 
 	/* =========================================================

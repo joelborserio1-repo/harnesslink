@@ -60,31 +60,20 @@ class HLN_Race_Data {
 
 	public function add_intervals( $schedules ) {
 		foreach ( self::pollable_sources() as $entry ) {
-			$seconds = $this->frequency_to_seconds( $entry['check_frequency'] ?? '1h' );
-			$key     = 'hln_every_' . $seconds . 's';
-			if ( ! isset( $schedules[ $key ] ) ) {
-				$schedules[ $key ] = [
-					'interval' => $seconds,
-					'display'  => sprintf( __( 'Every %d seconds (HarnessLink Newsroom)', 'hl-newsroom' ), $seconds ),
-				];
-			}
+			$schedules = HLN_Cron_Utils::register_interval( $schedules, $entry['check_frequency'] ?? '1h' );
 		}
-		if ( ! isset( $schedules['hln_every_1800s'] ) ) {
-			$schedules['hln_every_1800s'] = [ 'interval' => 1800, 'display' => __( 'Every 30 minutes (HarnessLink Newsroom)', 'hl-newsroom' ) ];
-		}
-		return $schedules;
+		return HLN_Cron_Utils::register_interval( $schedules, '30m' );
 	}
 
 	public function ensure_schedules() {
 		foreach ( self::pollable_sources() as $key => $entry ) {
 			$hook = 'hln_race_data_poll_' . $key;
 			if ( ! wp_next_scheduled( $hook ) ) {
-				$schedule = 'hln_every_' . $this->frequency_to_seconds( $entry['check_frequency'] ?? '1h' ) . 's';
-				wp_schedule_event( time(), $schedule, $hook );
+				wp_schedule_event( time(), HLN_Cron_Utils::schedule_key_for_frequency( $entry['check_frequency'] ?? '1h' ), $hook );
 			}
 		}
 		if ( ! wp_next_scheduled( 'hln_race_calendar_poll' ) ) {
-			wp_schedule_event( time(), 'hln_every_1800s', 'hln_race_calendar_poll' );
+			wp_schedule_event( time(), HLN_Cron_Utils::schedule_key_for_frequency( '30m' ), 'hln_race_calendar_poll' );
 		}
 	}
 
@@ -93,14 +82,6 @@ class HLN_Race_Data {
 			wp_clear_scheduled_hook( 'hln_race_data_poll_' . $key );
 		}
 		$this->ensure_schedules();
-	}
-
-	private function frequency_to_seconds( $freq ) {
-		if ( preg_match( '/^(\d+)([mh])$/', trim( (string) $freq ), $m ) ) {
-			$value = (int) $m[1];
-			return 'h' === $m[2] ? $value * HOUR_IN_SECONDS : $value * MINUTE_IN_SECONDS;
-		}
-		return HOUR_IN_SECONDS;
 	}
 
 	/* =========================================================
@@ -174,6 +155,7 @@ class HLN_Race_Data {
 				'source_credit'             => $entry['label'],
 				'region'                    => $entry['region'],
 				'governing_body'            => $entry['governing_body'],
+				'trust_score'               => $entry['trust_score'] ?? null,
 				'headline'                  => $parsed['headline'],
 				'body_excerpt'              => $parsed['body_excerpt'],
 				'original_url'              => $entry['url'],
@@ -194,11 +176,12 @@ class HLN_Race_Data {
 			'source_credit'  => $entry['label'],
 			'region'         => $entry['region'],
 			'governing_body' => $entry['governing_body'],
+			'trust_score'    => $entry['trust_score'] ?? null,
 			'headline'       => wp_trim_words( wp_strip_all_tags( $body ), 15, '…' ),
 			'body_excerpt'   => $text,
 			'original_url'   => $entry['url'],
 			'entities'       => HLN_Parsing_Utils::extract_entities_naive( $body ),
-			'data_type'      => $this->guess_data_type( $entry['url'], $body ),
+			'data_type'      => HLN_Parsing_Utils::guess_data_type( $entry['url'], $body ),
 		] );
 	}
 
@@ -212,22 +195,9 @@ class HLN_Race_Data {
 			'source_credit'  => $entry['label'],
 			'region'         => $entry['region'],
 			'governing_body' => $entry['governing_body'],
+			'trust_score'    => $entry['trust_score'] ?? null,
 			'data_type'      => 'result',
 		], $item ) );
-	}
-
-	private function guess_data_type( $url, $text ) {
-		$haystack = strtolower( $url . ' ' . wp_strip_all_tags( $text ) );
-		if ( false !== strpos( $haystack, 'result' ) ) {
-			return 'result';
-		}
-		if ( false !== strpos( $haystack, 'entries' ) || false !== strpos( $haystack, 'field' ) ) {
-			return 'field';
-		}
-		if ( false !== strpos( $haystack, 'fixture' ) || false !== strpos( $haystack, 'calendar' ) ) {
-			return 'fixture';
-		}
-		return 'article';
 	}
 
 	/* =========================================================

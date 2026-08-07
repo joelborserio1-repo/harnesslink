@@ -498,4 +498,63 @@ class HLN_Sources {
 		}
 		return $options;
 	}
+
+	/* =========================================================
+	   VERIFIED-SOCIAL (X) ALLOW-LIST — spec §2.3
+	   A narrow, explicitly-vetted sub-registry, deliberately separate
+	   from the general schema above: handle, owning_entity,
+	   verification_method, date_added, region, check_frequency, enabled.
+	   Never seeded with placeholder handles — every row here must be a
+	   real account HarnessLink editorial individually confirmed.
+	========================================================= */
+
+	/**
+	 * @return array [handle => entry]
+	 */
+	public static function get_verified_social_accounts() {
+		$accounts = get_option( 'hln_verified_social_accounts', [] );
+		if ( ! is_array( $accounts ) ) {
+			$accounts = [];
+		}
+		return apply_filters( 'hln_verified_social_accounts', $accounts );
+	}
+
+	/**
+	 * @param  string $handle
+	 * @return array|null
+	 */
+	public static function get_verified_social_account( $handle ) {
+		$accounts = self::get_verified_social_accounts();
+		return $accounts[ $handle ] ?? null;
+	}
+
+	/**
+	 * @param string $handle
+	 * @param array  $fields
+	 */
+	public static function save_verified_social_account( $handle, array $fields ) {
+		$accounts = get_option( 'hln_verified_social_accounts', [] );
+		if ( ! is_array( $accounts ) ) {
+			$accounts = [];
+		}
+		$defaults = [
+			'handle'              => $handle,
+			'owning_entity'       => '',
+			'verification_method' => '',
+			'date_added'          => current_time( 'Y-m-d' ),
+			'region'              => '',
+			'check_frequency'     => '15m',
+			'enabled'             => true,
+		];
+		$accounts[ $handle ] = array_merge( $defaults, $accounts[ $handle ] ?? [], $fields );
+		update_option( 'hln_verified_social_accounts', $accounts );
+	}
+
+	/**
+	 * @param string $handle
+	 * @param bool   $enabled
+	 */
+	public static function set_verified_social_enabled( $handle, $enabled ) {
+		self::save_verified_social_account( $handle, [ 'enabled' => (bool) $enabled ] );
+	}
 }
