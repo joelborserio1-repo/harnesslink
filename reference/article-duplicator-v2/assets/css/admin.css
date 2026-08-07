@@ -1,0 +1,453 @@
+/*
+ * Article Duplicator – Admin Styles  v1.1.0
+ *
+ * IMPORTANT: We use the "artdup-" prefix throughout (not "ad-") because
+ * WordPress core ships a stylesheet that applies  display:none !important
+ * to any selector beginning with ".ad-", which would hide every panel.
+ */
+
+:root {
+    --artdup-primary:    #1a56db;
+    --artdup-primary-h:  #1e429f;
+    --artdup-success:    #057a55;
+    --artdup-warning:    #c27803;
+    --artdup-danger:     #c81e1e;
+    --artdup-gray-50:    #f9fafb;
+    --artdup-gray-100:   #f3f4f6;
+    --artdup-gray-200:   #e5e7eb;
+    --artdup-gray-400:   #9ca3af;
+    --artdup-gray-700:   #374151;
+    --artdup-gray-900:   #111827;
+    --artdup-radius:     10px;
+    --artdup-shadow:     0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+    --artdup-shadow-md:  0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06);
+}
+
+/* =========================================================
+   LAYOUT
+========================================================= */
+.artdup-wrap { max-width: 1200px; }
+
+.artdup-page-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.6rem;
+    margin-bottom: 24px;
+    color: var(--artdup-gray-900);
+}
+.artdup-page-title .dashicons {
+    color: var(--artdup-primary);
+    font-size: 1.6rem;
+    width: 1.6rem;
+    height: 1.6rem;
+}
+
+/* =========================================================
+   PANELS
+========================================================= */
+.artdup-panel {
+    background: #fff;
+    border: 1px solid var(--artdup-gray-200);
+    border-radius: var(--artdup-radius);
+    padding: 24px 28px;
+    margin-bottom: 20px;
+    box-shadow: var(--artdup-shadow);
+}
+.artdup-panel h2 {
+    margin: 0 0 18px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid var(--artdup-gray-100);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--artdup-gray-700);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+/* =========================================================
+   STATS GRID
+========================================================= */
+.artdup-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+@media (max-width: 900px) {
+    .artdup-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.artdup-stat-card {
+    background: #fff;
+    border-radius: var(--artdup-radius);
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    border: 1px solid var(--artdup-gray-200);
+    border-left: 5px solid var(--artdup-gray-200);
+    box-shadow: var(--artdup-shadow);
+}
+.artdup-stat-total   { border-left-color: var(--artdup-primary); }
+.artdup-stat-success { border-left-color: var(--artdup-success); }
+.artdup-stat-skipped { border-left-color: var(--artdup-warning); }
+.artdup-stat-error   { border-left-color: var(--artdup-danger);  }
+
+.artdup-stat-icon  { font-size: 1.4rem; width: 1.4rem; height: 1.4rem; color: var(--artdup-gray-400); }
+.artdup-stat-value { font-size: 2.2rem; font-weight: 700; color: var(--artdup-gray-900); line-height: 1; }
+.artdup-stat-label { font-size: .8rem; color: var(--artdup-gray-400); text-transform: uppercase; letter-spacing: .06em; }
+
+/* =========================================================
+   DASHBOARD PANELS
+========================================================= */
+.artdup-dashboard-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+@media (max-width: 760px) {
+    .artdup-dashboard-panels { grid-template-columns: 1fr; }
+}
+
+.artdup-info-table { width: 100%; border-collapse: collapse; }
+.artdup-info-table th,
+.artdup-info-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--artdup-gray-100);
+    font-size: .88rem;
+}
+.artdup-info-table th { color: var(--artdup-gray-400); font-weight: 500; width: 40%; }
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+.artdup-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: .88rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    transition: background .15s, transform .1s;
+    line-height: 1.5;
+    box-sizing: border-box;
+}
+.artdup-btn[style*="display: none"],
+.artdup-btn[style*="display:none"] { display: none !important; }
+.artdup-btn:active { transform: scale(.98); }
+.artdup-btn .dashicons { font-size: 1rem; width: 1rem; height: 1rem; line-height: 1.5; }
+
+.artdup-btn-primary         { background: var(--artdup-primary);   color: #fff !important; }
+.artdup-btn-primary:hover   { background: var(--artdup-primary-h); color: #fff !important; }
+.artdup-btn-secondary       { background: var(--artdup-gray-100);  color: var(--artdup-gray-700) !important; border: 1px solid var(--artdup-gray-200); }
+.artdup-btn-secondary:hover { background: var(--artdup-gray-200);  color: var(--artdup-gray-900) !important; }
+.artdup-btn-outline         { background: transparent; color: var(--artdup-primary) !important; border: 1px solid var(--artdup-primary); }
+.artdup-btn-outline:hover   { background: var(--artdup-primary); color: #fff !important; }
+.artdup-btn-danger          { background: var(--artdup-danger);    color: #fff !important; }
+.artdup-btn-danger:hover    { background: #9b1c1c;                 color: #fff !important; }
+.artdup-btn:disabled        { opacity: .5; cursor: not-allowed; pointer-events: none; }
+
+.artdup-quick-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.artdup-btn-row       { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; align-items: center; }
+
+/* =========================================================
+   FORM ROW
+========================================================= */
+.artdup-row { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+.artdup-row input { flex: 1; }
+
+/* =========================================================
+   BADGES
+========================================================= */
+.artdup-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: .75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+.artdup-badge-success { background: #d1fae5; color: var(--artdup-success); }
+.artdup-badge-skipped { background: #fef3c7; color: var(--artdup-warning); }
+.artdup-badge-error   { background: #fee2e2; color: var(--artdup-danger);  }
+.artdup-badge-on      { background: #d1fae5; color: var(--artdup-success); }
+.artdup-badge-off     { background: var(--artdup-gray-100); color: var(--artdup-gray-400); }
+
+/* =========================================================
+   PROGRESS BAR
+========================================================= */
+.artdup-progress-wrap { display: none; margin: 12px 0; }
+.artdup-progress-bar {
+    height: 8px;
+    background: var(--artdup-gray-200);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+#artdup-progress-bar-inner {
+    height: 100%;
+    width: 0%;
+    background: var(--artdup-primary);
+    border-radius: 99px;
+    transition: width .4s ease;
+}
+#artdup-progress-text { font-size: .82rem; color: var(--artdup-gray-400); }
+
+/* =========================================================
+   RESULT BOXES
+========================================================= */
+.artdup-result-box {
+    display: none;
+    background: var(--artdup-gray-50);
+    border: 1px solid var(--artdup-gray-200);
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-size: .87rem;
+    margin-top: 12px;
+    box-sizing: border-box;
+}
+.artdup-result-box.success { border-color: #6ee7b7; background: #ecfdf5; color: var(--artdup-success); }
+.artdup-result-box.error   { border-color: #fca5a5; background: #fef2f2; color: var(--artdup-danger);  }
+
+/* =========================================================
+   ARTICLE PREVIEW GRID
+========================================================= */
+.artdup-articles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+.artdup-articles-grid:empty { display: none; }
+
+.artdup-article-card {
+    border: 1px solid var(--artdup-gray-200);
+    border-radius: var(--artdup-radius);
+    overflow: hidden;
+    background: #fff;
+    box-shadow: var(--artdup-shadow);
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow .2s, transform .2s;
+}
+.artdup-article-card:hover           { box-shadow: var(--artdup-shadow-md); transform: translateY(-2px); }
+.artdup-article-card.artdup-imported { opacity: .55; }
+
+.artdup-article-thumb {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    background: var(--artdup-gray-100);
+    display: block;
+}
+.artdup-article-thumb-placeholder {
+    width: 100%;
+    height: 140px;
+    background: var(--artdup-gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--artdup-gray-400);
+}
+.artdup-article-thumb-placeholder .dashicons { font-size: 2.5rem; width: 2.5rem; height: 2.5rem; }
+
+.artdup-article-body    { padding: 14px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.artdup-article-title   { font-size: .9rem; font-weight: 600; color: var(--artdup-gray-900); margin: 0; line-height: 1.4; }
+.artdup-article-meta    { font-size: .76rem; color: var(--artdup-gray-400); }
+.artdup-article-excerpt { font-size: .82rem; color: var(--artdup-gray-700); line-height: 1.5; flex: 1; }
+.artdup-article-footer  {
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px solid var(--artdup-gray-100);
+    display: flex;
+    gap: 6px;
+}
+.artdup-article-footer a       { font-size: .76rem; color: var(--artdup-primary); text-decoration: none; }
+.artdup-article-footer a:hover { text-decoration: underline; }
+
+/* =========================================================
+   IMPORT SUMMARY
+========================================================= */
+.artdup-import-summary { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+.artdup-import-count        { display: flex; flex-direction: column; align-items: center; }
+.artdup-import-count strong { font-size: 1.6rem; font-weight: 700; }
+.artdup-import-count span   { font-size: .75rem; color: var(--artdup-gray-400); }
+
+/* =========================================================
+   SETTINGS FORM TABLE
+========================================================= */
+.artdup-form-table th { width: 240px; padding: 15px 10px 15px 0; }
+
+/* =========================================================
+   LOG TABLE
+========================================================= */
+.artdup-log-table th { font-size: .82rem; }
+.artdup-log-table td { font-size: .82rem; vertical-align: middle; }
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+.artdup-empty-state { text-align: center; padding: 60px 20px; color: var(--artdup-gray-400); }
+.artdup-empty-state .dashicons { font-size: 4rem; width: 4rem; height: 4rem; display: block; margin: 0 auto 12px; }
+
+/* =========================================================
+   SPINNER
+========================================================= */
+.artdup-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: artdup-spin .65s linear infinite;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+@keyframes artdup-spin { to { transform: rotate(360deg); } }
+
+/* =========================================================
+   TABS
+========================================================= */
+.artdup-tabs { display: flex; border-bottom: 2px solid var(--artdup-gray-200); margin-bottom: 24px; }
+.artdup-tab {
+    padding: 10px 20px;
+    font-size: .88rem;
+    font-weight: 500;
+    color: var(--artdup-gray-400);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    text-decoration: none;
+    transition: color .15s, border-color .15s;
+    background: none;
+    border-top: none; border-left: none; border-right: none;
+}
+.artdup-tab:hover     { color: var(--artdup-gray-700); }
+.artdup-tab.is-active { color: var(--artdup-primary); border-bottom-color: var(--artdup-primary); }
+
+/* =========================================================
+   NOTICES
+========================================================= */
+.artdup-notice {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 16px; border-radius: 6px; font-size: .88rem;
+    margin-bottom: 16px; border: 1px solid transparent;
+}
+.artdup-notice .dashicons { flex-shrink: 0; margin-top: 1px; }
+.artdup-notice-info    { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+.artdup-notice-success { background: #ecfdf5; border-color: #6ee7b7; color: var(--artdup-success); }
+.artdup-notice-warning { background: #fffbeb; border-color: #fde68a; color: var(--artdup-warning); }
+.artdup-notice-error   { background: #fef2f2; border-color: #fca5a5; color: var(--artdup-danger);  }
+
+/* =========================================================
+   MODAL
+========================================================= */
+.artdup-modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.5); z-index: 100000;
+    align-items: center; justify-content: center;
+}
+.artdup-modal-overlay.is-open { display: flex; }
+.artdup-modal {
+    background: #fff; border-radius: var(--artdup-radius);
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    width: 560px; max-width: 95vw; max-height: 90vh;
+    overflow-y: auto; display: flex; flex-direction: column;
+}
+.artdup-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 24px; border-bottom: 1px solid var(--artdup-gray-200);
+}
+.artdup-modal-header h3 { margin: 0; font-size: 1rem; font-weight: 600; color: var(--artdup-gray-900); }
+.artdup-modal-close {
+    background: none; border: none; cursor: pointer;
+    color: var(--artdup-gray-400); padding: 4px; border-radius: 4px;
+    line-height: 1; transition: color .15s, background .15s;
+}
+.artdup-modal-close:hover { color: var(--artdup-gray-900); background: var(--artdup-gray-100); }
+.artdup-modal-body   { padding: 24px; flex: 1; }
+.artdup-modal-footer {
+    padding: 16px 24px; border-top: 1px solid var(--artdup-gray-200);
+    display: flex; justify-content: flex-end; gap: 10px;
+}
+
+/* =========================================================
+   FILTER BAR
+========================================================= */
+.artdup-filter-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+.artdup-filter-bar input[type="search"],
+.artdup-filter-bar input[type="text"],
+.artdup-filter-bar select {
+    font-size: .88rem; padding: 7px 10px;
+    border: 1px solid var(--artdup-gray-200); border-radius: 6px;
+    color: var(--artdup-gray-900); background: #fff; outline: none;
+    transition: border-color .15s, box-shadow .15s;
+}
+.artdup-filter-bar input:focus,
+.artdup-filter-bar select:focus {
+    border-color: var(--artdup-primary);
+    box-shadow: 0 0 0 3px rgba(26,86,219,.15);
+}
+
+/* =========================================================
+   PAGINATION
+========================================================= */
+.artdup-pagination { display: flex; align-items: center; gap: 6px; margin-top: 20px; flex-wrap: wrap; }
+.artdup-pagination a,
+.artdup-pagination span {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 32px; height: 32px; padding: 0 8px;
+    border-radius: 6px; font-size: .82rem; font-weight: 500;
+    text-decoration: none; transition: background .15s, color .15s;
+}
+.artdup-pagination a          { color: var(--artdup-gray-700); background: var(--artdup-gray-100); }
+.artdup-pagination a:hover    { background: var(--artdup-gray-200); color: var(--artdup-gray-900); }
+.artdup-page-current { background: var(--artdup-primary); color: #fff; cursor: default; }
+.artdup-page-dots    { color: var(--artdup-gray-400); background: none; }
+
+/* =========================================================
+   TOOLTIP
+========================================================= */
+.artdup-tooltip-wrap { position: relative; display: inline-flex; align-items: center; }
+.artdup-tooltip {
+    position: absolute; bottom: calc(100% + 6px); left: 50%;
+    transform: translateX(-50%); background: var(--artdup-gray-900);
+    color: #fff; font-size: .75rem; padding: 5px 10px; border-radius: 5px;
+    white-space: nowrap; pointer-events: none; opacity: 0;
+    transition: opacity .15s; z-index: 9999;
+}
+.artdup-tooltip::after {
+    content: ''; position: absolute; top: 100%; left: 50%;
+    transform: translateX(-50%); border: 5px solid transparent;
+    border-top-color: var(--artdup-gray-900);
+}
+.artdup-tooltip-wrap:hover .artdup-tooltip { opacity: 1; }
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+@media (max-width: 600px) {
+    .artdup-panel      { padding: 16px; }
+    .artdup-modal      { width: 100%; max-width: 100%; border-radius: 0; }
+    .artdup-btn-row    { flex-direction: column; align-items: stretch; }
+    .artdup-btn-row .artdup-btn { justify-content: center; }
+    .artdup-filter-bar { flex-direction: column; align-items: stretch; }
+}
+
+/* =========================================================
+   PRINT
+========================================================= */
+@media print {
+    .artdup-btn, .artdup-quick-actions,
+    .artdup-filter-bar, .artdup-modal-overlay { display: none !important; }
+    .artdup-panel { box-shadow: none; border: 1px solid #ccc; }
+}
