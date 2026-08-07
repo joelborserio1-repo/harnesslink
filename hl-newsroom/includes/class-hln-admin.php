@@ -75,12 +75,41 @@ class HLN_Admin {
 			[ $this, 'page_intake_log' ]
 		);
 
-		/*
-		 * Later-phase screens, added here once they exist:
-		 *
-		 * add_submenu_page( 'hl-newsroom', __( 'Story Candidates', 'hl-newsroom' ), __( 'Story Candidates', 'hl-newsroom' ), 'manage_options', 'edit.php?post_type=hln_candidate' ); // Phase 4
-		 * add_submenu_page( 'hl-newsroom', __( 'Editorial Dashboard', 'hl-newsroom' ), __( 'Editorial Dashboard', 'hl-newsroom' ), 'manage_options', 'hln-dashboard', [ $this, 'page_editorial_dashboard' ] ); // Phase 6
-		 */
+		add_submenu_page(
+			'hl-newsroom',
+			__( 'Story Candidates', 'hl-newsroom' ),
+			__( 'Story Candidates', 'hl-newsroom' ),
+			'manage_options',
+			'edit.php?post_type=' . HLN_Candidate_CPT::POST_TYPE
+		);
+
+		add_submenu_page(
+			'hl-newsroom',
+			__( 'Editorial Dashboard', 'hl-newsroom' ),
+			__( 'Editorial Dashboard', 'hl-newsroom' ),
+			'manage_options',
+			'hln-dashboard',
+			[ 'HLN_Dashboard', 'render_dashboard' ]
+		);
+
+		add_submenu_page(
+			'hl-newsroom',
+			__( 'Review Story', 'hl-newsroom' ),
+			__( 'Review Story', 'hl-newsroom' ),
+			'manage_options',
+			'hln-review',
+			[ 'HLN_Dashboard', 'render_review' ]
+		);
+		remove_submenu_page( 'hl-newsroom', 'hln-review' ); // Reached only via a direct link from the dashboard, not its own menu item.
+
+		add_submenu_page(
+			'hl-newsroom',
+			__( 'Style Templates', 'hl-newsroom' ),
+			__( 'Style Templates', 'hl-newsroom' ),
+			'manage_options',
+			'hln-templates',
+			[ $this, 'page_templates' ]
+		);
 	}
 
 	/* =========================================================
@@ -103,6 +132,7 @@ class HLN_Admin {
 			'processed'    => sprintf( __( 'Processed (%d)', 'hl-newsroom' ), $counts['processed'] ),
 			'unclassified' => sprintf( __( 'Unclassified (%d)', 'hl-newsroom' ), $counts['unclassified'] ),
 			'quarantined'  => sprintf( __( 'Quarantined (%d)', 'hl-newsroom' ), $counts['quarantined'] ),
+			'discarded'    => sprintf( __( 'Discarded (%d)', 'hl-newsroom' ), $counts['discarded'] ),
 		];
 		$channels = [ '' => __( 'All Channels', 'hl-newsroom' ), 'email' => 'Email', 'race-data' => 'Race Data', 'rss' => 'RSS', 'x' => 'X' ];
 		?>
@@ -649,6 +679,133 @@ class HLN_Admin {
 	}
 
 	/* =========================================================
+	   PAGE: STYLE TEMPLATES  (Phase 5)
+	========================================================= */
+
+	public function page_templates() {
+		$notice = '';
+		if ( isset( $_POST['hln_save_template'] ) ) {
+			check_admin_referer( 'hln_save_template_nonce' );
+			$this->save_template_from_post();
+			$notice = __( 'Template saved.', 'hl-newsroom' );
+		}
+
+		$edit_type = isset( $_GET['edit'] ) ? sanitize_text_field( wp_unslash( $_GET['edit'] ) ) : '';
+		$templates = HLN_Templates::get_all();
+		$edit      = $edit_type ? ( $templates[ $edit_type ] ?? null ) : null;
+		?>
+		<div class="wrap hln-wrap">
+			<h1 class="hln-page-title"><span class="dashicons dashicons-media-text"></span> <?php _e( 'Style Templates', 'hl-newsroom' ); ?></h1>
+			<p class="description"><?php _e( 'Stored as data, not hardcoded into any prompt — editable here without a code change. Every generated draft records which template version produced it.', 'hl-newsroom' ); ?></p>
+
+			<?php if ( $notice ) : ?>
+				<div class="notice notice-success is-dismissible"><p><?php echo esc_html( $notice ); ?></p></div>
+			<?php endif; ?>
+
+			<?php if ( $edit ) : ?>
+			<div class="hln-panel">
+				<h2><?php printf( esc_html__( 'Edit: %s (v%d)', 'hl-newsroom' ), esc_html( $edit['label'] ), (int) $edit['template_version'] ); ?></h2>
+				<form method="post" action="">
+					<?php wp_nonce_field( 'hln_save_template_nonce' ); ?>
+					<input type="hidden" name="hln_save_template" value="1" />
+					<input type="hidden" name="hln_story_type" value="<?php echo esc_attr( $edit_type ); ?>" />
+					<table class="form-table hln-form-table">
+						<tr>
+							<th><label for="hln-tpl-word-count"><?php _e( 'Target Word Count', 'hl-newsroom' ); ?></label></th>
+							<td><input type="number" name="hln_target_word_count" id="hln-tpl-word-count" class="small-text" value="<?php echo esc_attr( $edit['target_word_count'] ); ?>" /></td>
+						</tr>
+						<tr>
+							<th><label for="hln-tpl-structure"><?php _e( 'Structure Order', 'hl-newsroom' ); ?></label></th>
+							<td>
+								<input type="text" name="hln_structure_order" id="hln-tpl-structure" class="large-text" value="<?php echo esc_attr( implode( ', ', $edit['structure_order'] ) ); ?>" />
+								<p class="description"><?php _e( 'Comma-separated, in order.', 'hl-newsroom' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="hln-tpl-headline-formula"><?php _e( 'Headline Formula', 'hl-newsroom' ); ?></label></th>
+							<td><input type="text" name="hln_headline_formula" id="hln-tpl-headline-formula" class="regular-text" value="<?php echo esc_attr( $edit['headline_formula'] ); ?>" /></td>
+						</tr>
+						<tr>
+							<th><?php _e( 'Source Credit Required', 'hl-newsroom' ); ?></th>
+							<td>
+								<label><input type="checkbox" name="hln_source_credit_required" value="1" <?php checked( ! empty( $edit['source_credit_required'] ) ); ?> /> <?php _e( 'Required', 'hl-newsroom' ); ?></label>
+								<br><label><input type="checkbox" name="hln_source_credit_confirmed" value="1" <?php checked( ! empty( $edit['source_credit_confirmed'] ) ); ?> /> <?php _e( 'Confirmed with editorial (unchecked = still a placeholder default)', 'hl-newsroom' ); ?></label>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="hln-tpl-byline-case"><?php _e( 'Byline Case', 'hl-newsroom' ); ?></label></th>
+							<td>
+								<select name="hln_byline_case" id="hln-tpl-byline-case">
+									<option value="capitalized" <?php selected( $edit['byline_case'], 'capitalized' ); ?>><?php _e( 'Capitalized ("By")', 'hl-newsroom' ); ?></option>
+									<option value="lowercase" <?php selected( $edit['byline_case'], 'lowercase' ); ?>><?php _e( 'Lowercase ("by")', 'hl-newsroom' ); ?></option>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<th><?php _e( 'Premium by Default', 'hl-newsroom' ); ?></th>
+							<td><label><input type="checkbox" name="hln_is_premium_default" value="1" <?php checked( ! empty( $edit['is_premium_default'] ) ); ?> /> <?php _e( 'Premium', 'hl-newsroom' ); ?></label></td>
+						</tr>
+					</table>
+					<p class="submit">
+						<button type="submit" class="button button-primary"><?php _e( 'Save Changes', 'hl-newsroom' ); ?></button>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=hln-templates' ) ); ?>" class="button"><?php _e( 'Cancel', 'hl-newsroom' ); ?></a>
+					</p>
+				</form>
+			</div>
+			<?php endif; ?>
+
+			<div class="hln-panel">
+				<table class="wp-list-table widefat fixed striped">
+					<thead>
+						<tr>
+							<th><?php _e( 'Story Type', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Version', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Word Count', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Source Credit', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Byline Case', 'hl-newsroom' ); ?></th>
+							<th><?php _e( 'Actions', 'hl-newsroom' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $templates as $type => $tpl ) : ?>
+							<tr>
+								<td><strong><?php echo esc_html( $tpl['label'] ); ?></strong></td>
+								<td><?php echo (int) $tpl['template_version']; ?></td>
+								<td><?php echo (int) $tpl['target_word_count']; ?></td>
+								<td>
+									<?php echo ! empty( $tpl['source_credit_required'] ) ? esc_html__( 'Required', 'hl-newsroom' ) : esc_html__( 'Not required', 'hl-newsroom' ); ?>
+									<?php if ( empty( $tpl['source_credit_confirmed'] ) ) : ?><br><span class="description"><?php _e( '(unconfirmed default)', 'hl-newsroom' ); ?></span><?php endif; ?>
+								</td>
+								<td><?php echo esc_html( $tpl['byline_case'] ); ?></td>
+								<td><a href="<?php echo esc_url( admin_url( 'admin.php?page=hln-templates&edit=' . rawurlencode( $type ) ) ); ?>"><?php _e( 'Edit', 'hl-newsroom' ); ?></a></td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<?php
+	}
+
+	private function save_template_from_post() {
+		$story_type = sanitize_text_field( wp_unslash( $_POST['hln_story_type'] ?? '' ) );
+		if ( ! in_array( $story_type, HLN_Templates::STORY_TYPES, true ) ) {
+			return;
+		}
+		$structure = array_map( 'trim', explode( ',', wp_unslash( $_POST['hln_structure_order'] ?? '' ) ) );
+
+		HLN_Templates::save_override( $story_type, [
+			'target_word_count'       => absint( $_POST['hln_target_word_count'] ?? 500 ),
+			'structure_order'         => array_filter( $structure ),
+			'headline_formula'        => sanitize_text_field( wp_unslash( $_POST['hln_headline_formula'] ?? '' ) ),
+			'source_credit_required'  => ! empty( $_POST['hln_source_credit_required'] ),
+			'source_credit_confirmed' => ! empty( $_POST['hln_source_credit_confirmed'] ),
+			'byline_case'             => sanitize_text_field( wp_unslash( $_POST['hln_byline_case'] ?? 'capitalized' ) ),
+			'is_premium_default'      => ! empty( $_POST['hln_is_premium_default'] ),
+		] );
+	}
+
+	/* =========================================================
 	   PAGE: SETTINGS
 	========================================================= */
 
@@ -742,7 +899,7 @@ class HLN_Admin {
 
 				<div class="hln-panel">
 					<h2><?php _e( 'Premium Defaults by Story Type', 'hl-newsroom' ); ?></h2>
-					<p class="description"><?php _e( 'is_premium is an access-tier flag, independent of category. Story types themselves are defined by templates starting in Phase 5 — this list is a fixed placeholder until then.', 'hl-newsroom' ); ?></p>
+					<p class="description"><?php _e( 'is_premium is an access-tier flag, independent of category. Superseded in practice by the per-template is_premium default on the Style Templates screen, which is what generated drafts actually use — kept here as the original Phase 1 scaffold rather than silently dropped.', 'hl-newsroom' ); ?></p>
 					<table class="form-table hln-form-table">
 						<?php foreach ( self::STORY_TYPES as $story_type ) : ?>
 							<tr>
@@ -755,6 +912,25 @@ class HLN_Admin {
 								</td>
 							</tr>
 						<?php endforeach; ?>
+					</table>
+				</div>
+
+				<div class="hln-panel">
+					<h2><?php _e( 'Syndication (Phase 7 — stubs, off by default)', 'hl-newsroom' ); ?></h2>
+					<p class="description"><?php _e( 'No partner integrations exist yet. Enabling one of these only means the stub method will run on publish — most will still no-op without an endpoint configured via the corresponding filter.', 'hl-newsroom' ); ?></p>
+					<table class="form-table hln-form-table">
+						<tr>
+							<th><?php _e( 'Partner Push', 'hl-newsroom' ); ?></th>
+							<td><label><input type="checkbox" name="hln_syndication_partner_push_enabled" value="1" <?php checked( get_option( 'hln_syndication_partner_push_enabled', false ) ); ?> /> <?php _e( 'Enabled', 'hl-newsroom' ); ?></label></td>
+						</tr>
+						<tr>
+							<th><?php _e( 'Governing-Body Distribution', 'hl-newsroom' ); ?></th>
+							<td><label><input type="checkbox" name="hln_syndication_governing_body_enabled" value="1" <?php checked( get_option( 'hln_syndication_governing_body_enabled', false ) ); ?> /> <?php _e( 'Enabled', 'hl-newsroom' ); ?></label></td>
+						</tr>
+						<tr>
+							<th><?php _e( 'Social Auto-Post', 'hl-newsroom' ); ?></th>
+							<td><label><input type="checkbox" name="hln_syndication_social_autopost_enabled" value="1" <?php checked( get_option( 'hln_syndication_social_autopost_enabled', false ) ); ?> /> <?php _e( 'Enabled', 'hl-newsroom' ); ?></label></td>
+						</tr>
 					</table>
 				</div>
 
@@ -779,5 +955,9 @@ class HLN_Admin {
 			$premium_defaults[ $story_type ] = ! empty( $posted[ $story_type ] );
 		}
 		update_option( 'hln_is_premium_defaults', $premium_defaults );
+
+		foreach ( [ 'hln_syndication_partner_push_enabled', 'hln_syndication_governing_body_enabled', 'hln_syndication_social_autopost_enabled' ] as $toggle ) {
+			update_option( $toggle, ! empty( $_POST[ $toggle ] ) );
+		}
 	}
 }

@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 class HLN_DB {
 
-	const SCHEMA_VERSION = '1.1.0';
+	const SCHEMA_VERSION = '1.3.0';
 
 	public static function install() {
 		global $wpdb;
@@ -62,9 +62,11 @@ class HLN_DB {
 			verify_against_official    TINYINT(1)   NOT NULL DEFAULT 0,
 			confirm_status             VARCHAR(30)  DEFAULT NULL,
 			reason                     TEXT         DEFAULT NULL,
+			candidate_id               BIGINT(20) UNSIGNED DEFAULT NULL,
 			PRIMARY KEY  (id),
 			KEY status (status),
-			KEY channel (channel)
+			KEY channel (channel),
+			KEY candidate_id (candidate_id)
 		) $charset;" );
 
 		dbDelta( "CREATE TABLE $calendar (
@@ -113,6 +115,21 @@ class HLN_DB {
 			PRIMARY KEY  (id),
 			KEY term (term(191)),
 			KEY detected_at (detected_at)
+		) $charset;" );
+
+		// Hard Requirement 5's audit-trail log table. Every candidate's
+		// full lifecycle (source detected, duplicate check, tier
+		// assigned, draft generated, QC result, pending post created,
+		// reviewer action) is appended here, never overwritten.
+		$audit = $wpdb->prefix . 'hln_audit_log';
+		dbDelta( "CREATE TABLE $audit (
+			id            BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			candidate_id  BIGINT(20) UNSIGNED NOT NULL,
+			event         VARCHAR(50)  NOT NULL,
+			detail        TEXT         DEFAULT NULL,
+			created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY candidate_id (candidate_id)
 		) $charset;" );
 
 		update_option( 'hln_db_version', self::SCHEMA_VERSION );

@@ -35,29 +35,27 @@ require_once HLN_PLUGIN_DIR . 'includes/class-hln-rss-intake.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-x-poller.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-trending-signal.php';
 
-/* ---- Phase 4: triage gate, Story Candidate CPT, dedup, trending score ----
+/* ---- Phase 4: triage gate, Story Candidate CPT, dedup, trending score ---- */
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-candidate-cpt.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-triage.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-dedup.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-trending.php';
-*/
 
-/* ---- Phase 5: templates, story generator ----
+/* ---- Phase 7 (loaded early: Phase 4/5's own code reads from HLN_Popular) ---- */
+require_once HLN_PLUGIN_DIR . 'includes/class-hln-popular.php';
+
+/* ---- Phase 5: templates, story generator ---- */
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-templates.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-story-generator.php';
-*/
 
-/* ---- Phase 6: editorial dashboard ----
+/* ---- Phase 6: editorial dashboard ---- */
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-dashboard.php';
-*/
 
-/* ---- Phase 7: outbound RSS, public API, syndication, popular, insider ----
+/* ---- Phase 7: outbound RSS, public API, syndication, insider ---- */
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-outbound-rss.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-public-api.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-syndication.php';
-require_once HLN_PLUGIN_DIR . 'includes/class-hln-popular.php';
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-insider.php';
-*/
 
 require_once HLN_PLUGIN_DIR . 'includes/class-hln-admin.php';
 
@@ -81,6 +79,12 @@ function hln_activate() {
 		],
 		'hln_source_overrides'           => [],
 		'hln_verified_social_accounts'   => [],
+		'hln_template_overrides'         => [],
+		'hln_global_kill_switch'         => false,
+		'hln_source_kill_switches'       => [],
+		'hln_syndication_partner_push_enabled'      => false,
+		'hln_syndication_governing_body_enabled'    => false,
+		'hln_syndication_social_autopost_enabled'   => false,
 	];
 	foreach ( $defaults as $key => $val ) {
 		if ( false === get_option( $key ) ) {
@@ -89,6 +93,15 @@ function hln_activate() {
 	}
 
 	HLN_DB::install();
+
+	$cpt = new HLN_Candidate_CPT();
+	$cpt->register_post_type();
+	$cpt->register_statuses();
+
+	$feeds = new HLN_Outbound_RSS();
+	$feeds->register_feeds();
+
+	flush_rewrite_rules();
 }
 
 function hln_deactivate() {
@@ -105,7 +118,11 @@ function hln_deactivate() {
 	}
 	wp_clear_scheduled_hook( 'hln_trending_signal_scan' );
 
-	// Later phases clear their own scheduled hooks here (Insider, etc.).
+	wp_clear_scheduled_hook( 'hln_triage_run' );
+	wp_clear_scheduled_hook( 'hln_dedup_run' );
+	wp_clear_scheduled_hook( 'hln_trending_run' );
+	wp_clear_scheduled_hook( 'hln_candidate_ttl_sweep' );
+	wp_clear_scheduled_hook( 'hln_insider_weekly' );
 }
 
 function hln_init() {
@@ -118,24 +135,18 @@ function hln_init() {
 	new HLN_RSS_Intake();
 	new HLN_X_Poller();
 	new HLN_Trending_Signal();
-	// HLN_Stewards_Parser, HLN_Parsing_Utils, and HLN_Cron_Utils are
-	// stateless static helpers, called directly by the classes above —
-	// nothing to wire here.
-
-	/*
-	 * Later-phase classes, instantiated here once they exist:
-	 *
-	 * new HLN_Candidate_CPT();         // Phase 4
-	 * new HLN_Triage();                // Phase 4
-	 * new HLN_Dedup();                 // Phase 4
-	 * new HLN_Trending();              // Phase 4
-	 * new HLN_Story_Generator();       // Phase 5
-	 * new HLN_Dashboard();             // Phase 6
-	 * new HLN_Outbound_RSS();          // Phase 7
-	 * new HLN_Public_API();            // Phase 7
-	 * new HLN_Syndication();           // Phase 7
-	 * new HLN_Popular();               // Phase 7
-	 * new HLN_Insider();               // Phase 7
-	 */
+	new HLN_Candidate_CPT();
+	new HLN_Triage();
+	new HLN_Dedup();
+	new HLN_Trending();
+	new HLN_Dashboard();
+	new HLN_Outbound_RSS();
+	new HLN_Public_API();
+	new HLN_Syndication();
+	new HLN_Insider();
+	// HLN_Stewards_Parser, HLN_Parsing_Utils, HLN_Cron_Utils, HLN_Templates,
+	// and HLN_Popular are stateless static helpers — nothing to wire here.
+	// HLN_Story_Generator is instantiated on demand by HLN_Dashboard when
+	// a human triggers "Generate Draft," not eagerly on every request.
 }
 add_action( 'plugins_loaded', 'hln_init' );

@@ -11,9 +11,11 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 class HLN_Intake_Log {
 
-	const STATUS_PROCESSED   = 'processed';
+	const STATUS_PROCESSED    = 'processed';
 	const STATUS_UNCLASSIFIED = 'unclassified';
-	const STATUS_QUARANTINED = 'quarantined';
+	const STATUS_QUARANTINED  = 'quarantined';
+	/** Stage A rejection (spec §10) — kept for audit, never becomes a candidate. */
+	const STATUS_DISCARDED    = 'discarded';
 
 	private static function table() {
 		global $wpdb;
@@ -105,6 +107,41 @@ class HLN_Intake_Log {
 	}
 
 	/**
+	 * Rows ready for triage: processed or quarantined, not yet linked to
+	 * a candidate. Unclassified rows never reach this query — they never
+	 * become a Story Candidate.
+	 *
+	 * @param  int $limit
+	 * @return object[]
+	 */
+	public static function get_untriaged( $limit = 50 ) {
+		global $wpdb;
+		$table = self::table();
+		return $wpdb->get_results( $wpdb->prepare(
+			"SELECT * FROM $table WHERE status IN (%s, %s) AND candidate_id IS NULL ORDER BY ingested_at ASC LIMIT %d",
+			self::STATUS_PROCESSED, self::STATUS_QUARANTINED, $limit
+		) );
+	}
+
+	/**
+	 * @param int    $id
+	 * @param string $status
+	 */
+	public static function set_status( $id, $status ) {
+		global $wpdb;
+		$wpdb->update( self::table(), [ 'status' => $status ], [ 'id' => (int) $id ] );
+	}
+
+	/**
+	 * @param int $id
+	 * @param int $candidate_id
+	 */
+	public static function link_candidate( $id, $candidate_id ) {
+		global $wpdb;
+		$wpdb->update( self::table(), [ 'candidate_id' => (int) $candidate_id ], [ 'id' => (int) $id ] );
+	}
+
+	/**
 	 * @return array [ status => count ]
 	 */
 	public static function counts_by_status() {
@@ -112,7 +149,7 @@ class HLN_Intake_Log {
 		$table   = self::table();
 		$results = $wpdb->get_results( "SELECT status, COUNT(*) AS total FROM $table GROUP BY status", ARRAY_A );
 
-		$counts = [ self::STATUS_PROCESSED => 0, self::STATUS_UNCLASSIFIED => 0, self::STATUS_QUARANTINED => 0 ];
+		$counts = [ self::STATUS_PROCESSED => 0, self::STATUS_UNCLASSIFIED => 0, self::STATUS_QUARANTINED => 0, self::STATUS_DISCARDED => 0 ];
 		foreach ( $results as $row ) {
 			$counts[ $row['status'] ] = (int) $row['total'];
 		}

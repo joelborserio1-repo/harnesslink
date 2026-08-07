@@ -73,3 +73,32 @@
 	background: #f6f7f7;
 	color: #6b7280;
 }
+
+.hln-dashboard-columns {
+	display: flex;
+	gap: 12px;
+	overflow-x: auto;
+	padding-bottom: 8px;
+}
+
+.hln-dash-column {
+	flex: 0 0 220px;
+	background: #f6f7f7;
+	border-radius: 4px;
+	padding: 10px;
+}
+
+.hln-dash-count {
+	color: #6b7280;
+	font-weight: 400;
+	font-size: 13px;
+}
+
+.hln-dash-card {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 8px;
+	margin-bottom: 8px;
+	font-size: 13px;
+}
