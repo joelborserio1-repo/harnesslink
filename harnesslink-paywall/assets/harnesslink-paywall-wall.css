@@ -1,0 +1,579 @@
+/**
+ * HarnessLink PayWall — registration wall styling
+ *
+ * Cosmetic only. This file styles the Leaky Paywall "subscribe nag" wall so it
+ * reads as a polished news paywall: a frosted lead-in teaser with a clean
+ * signup card floating over it, in the HarnessLink brand navy.
+ *
+ * It does NOT change metering, restriction counts, access levels or any
+ * server-side gating. The full article is never placed in the page — only the
+ * short excerpt LP already exposes is blurred, and blur is purely visual.
+ *
+ * Override strategy: rules are prefixed with `body` and use !important on the
+ * structural properties so they win against (a) Leaky Paywall's own CSS and
+ * (b) any older paywall CSS sitting in Appearance > Customize > Additional CSS,
+ * which WordPress prints AFTER plugin stylesheets. The plugin also prints this
+ * file late (after Additional CSS) for belt-and-suspenders ordering.
+ *
+ * Real selectors targeted (confirmed against the rendered plugin markup):
+ *   .leaky_paywall_message_wrap          - the wall container (LP core)
+ *   #leaky_paywall_message               - the message card (LP core, id)
+ *   .hl-paywall-teaser                   - the lead-in excerpt wrapper (added)
+ *   #email_address / [name="email_address"] - the email field
+ *   #leaky-paywall-submit                - the Continue / Subscribe button
+ *   #leaky-paywall-registration-next     - the Next button
+ *
+ * Brand navy confirmed from the HarnessLink palette: #0A2A66.
+ */
+
+:root {
+	--hlpw-navy:        #0A2A66; /* HarnessLink brand navy (confirmed)        */
+	--hlpw-navy-hover:  #081D47; /* slightly darker for :hover                */
+	--hlpw-navy-accent: #123C8C; /* lighter navy for accents/links           */
+	--hlpw-card-bg:     #FFFFFF; /* clean pop-up card background              */
+	--hlpw-card-border: #E3E8F1;
+	--hlpw-text:        #0F172A; /* readable body text on the light card      */
+	--hlpw-heading:     #0A2A66; /* readable heading (fixes dark-on-dark bug) */
+	--hlpw-muted:       #667085;
+}
+
+/* ------------------------------------------------------------------ *
+ * 1. Lead-in teaser — frosted "there's more below" tease
+ * ------------------------------------------------------------------ */
+body .hl-paywall-teaser {
+	display: block !important;
+	filter: blur(5px) !important;
+	opacity: 0.55 !important;
+	user-select: none !important;
+	-webkit-user-select: none !important;
+	pointer-events: none !important;
+	-webkit-mask-image: linear-gradient(to bottom, #000 35%, rgba(0,0,0,0.15) 100%);
+	        mask-image: linear-gradient(to bottom, #000 35%, rgba(0,0,0,0.15) 100%);
+	margin-bottom: 0 !important;
+}
+
+/* ------------------------------------------------------------------ *
+ * 2. Wall container + signup card (sits over the blurred teaser)
+ * ------------------------------------------------------------------ */
+body .leaky_paywall_message_wrap {
+	position: relative !important;
+	z-index: 2 !important;
+	width: 100% !important;
+	max-width: 560px !important;
+	margin: -3.5em auto 2.5em !important;   /* overlap the blurred teaser */
+	padding: 0 !important;
+	background: none !important;            /* drop LP's white gradient veil */
+}
+
+body #leaky_paywall_message {
+	background: var(--hlpw-card-bg) !important;
+	background-color: var(--hlpw-card-bg) !important;
+	color: var(--hlpw-text) !important;
+	border: 1px solid var(--hlpw-card-border) !important;
+	border-radius: 14px !important;
+	box-shadow: 0 18px 50px rgba(10, 42, 102, 0.18) !important;
+	padding: 2em 2em 2.25em !important;
+	font-size: 1em !important;
+	line-height: 1.6 !important;
+	text-align: center !important;
+}
+
+/* ------------------------------------------------------------------ *
+ * 3. Readable heading + body text (fixes dark-on-dark heading bug)
+ * ------------------------------------------------------------------ */
+body #leaky_paywall_message h1,
+body #leaky_paywall_message h2,
+body #leaky_paywall_message h3,
+body #leaky_paywall_message h4 {
+	color: var(--hlpw-heading) !important;
+	margin-top: 0 !important;
+	margin-bottom: 0.5em !important;
+	font-weight: 800 !important;
+	line-height: 1.25 !important;
+}
+
+body #leaky_paywall_message,
+body #leaky_paywall_message p,
+body #leaky_paywall_message li,
+body #leaky_paywall_message label {
+	color: var(--hlpw-text) !important;
+}
+
+body #leaky_paywall_message a:not(.button) {
+	color: var(--hlpw-navy-accent) !important;
+	font-weight: 600 !important;
+	text-decoration: underline !important;
+}
+
+/* ------------------------------------------------------------------ *
+ * 4. Email field
+ * ------------------------------------------------------------------ */
+body #leaky_paywall_message #email_address,
+body #leaky_paywall_message input[name="email_address"],
+body #leaky_paywall_message input[type="email"],
+body #leaky_paywall_message input[type="text"] {
+	width: 100% !important;
+	box-sizing: border-box !important;
+	padding: 0.75em 0.9em !important;
+	margin: 0.35em 0 0.25em !important;
+	border: 1px solid var(--hlpw-card-border) !important;
+	border-radius: 10px !important;
+	font-size: 1em !important;
+	background: #F8FAFC !important;
+	color: var(--hlpw-text) !important;
+}
+
+body #leaky_paywall_message #email_address:focus,
+body #leaky_paywall_message input[type="email"]:focus,
+body #leaky_paywall_message input[type="text"]:focus {
+	outline: none !important;
+	border-color: var(--hlpw-navy-accent) !important;
+	box-shadow: 0 0 0 4px rgba(31, 95, 191, 0.12) !important;
+	background: #fff !important;
+}
+
+/* ------------------------------------------------------------------ *
+ * 5. Buttons + accents — HarnessLink navy, white text, rounded,
+ *    darker on hover. Covers Continue/Subscribe, Next, and any
+ *    subscribe/login buttons rendered inside the wall.
+ * ------------------------------------------------------------------ */
+body #leaky_paywall_message #leaky-paywall-submit,
+body #leaky_paywall_message #leaky-paywall-registration-next,
+body .leaky_paywall_message_wrap #leaky-paywall-submit,
+body .leaky_paywall_message_wrap #leaky-paywall-registration-next,
+body .leaky_paywall_message_wrap button,
+body .leaky_paywall_message_wrap input[type="submit"],
+body .leaky_paywall_message_wrap .leaky-paywall-payment-button a,
+body .leaky_paywall_message_wrap .leaky-paywall-free-button a,
+body .leaky_paywall_message_wrap a.button {
+	background-color: var(--hlpw-navy) !important;
+	background-image: none !important;
+	color: #fff !important;
+	border: 1px solid var(--hlpw-navy) !important;
+	border-radius: 10px !important;
+	padding: 0.85em 1.6em !important;
+	font-weight: 700 !important;
+	text-transform: none !important;
+	text-decoration: none !important;
+	box-shadow: 0 6px 18px rgba(10, 42, 102, 0.22) !important;
+	cursor: pointer !important;
+	transition: background-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+body #leaky_paywall_message #leaky-paywall-submit:hover,
+body #leaky_paywall_message #leaky-paywall-registration-next:hover,
+body .leaky_paywall_message_wrap #leaky-paywall-submit:hover,
+body .leaky_paywall_message_wrap #leaky-paywall-registration-next:hover,
+body .leaky_paywall_message_wrap button:hover,
+body .leaky_paywall_message_wrap input[type="submit"]:hover,
+body .leaky_paywall_message_wrap .leaky-paywall-payment-button a:hover,
+body .leaky_paywall_message_wrap .leaky-paywall-free-button a:hover,
+body .leaky_paywall_message_wrap a.button:hover {
+	background-color: var(--hlpw-navy-hover) !important;
+	border-color: var(--hlpw-navy-hover) !important;
+	text-decoration: none !important;
+	box-shadow: 0 8px 22px rgba(10, 42, 102, 0.30) !important;
+}
+
+body .leaky_paywall_message_wrap #leaky-paywall-submit:disabled,
+body .leaky_paywall_message_wrap #leaky-paywall-registration-next:disabled {
+	opacity: 0.5 !important;
+	cursor: not-allowed !important;
+	pointer-events: none !important;
+}
+
+/* Re-accent LP's teal order-summary trim to navy. */
+body .leaky_paywall_message_wrap .leaky-paywall-form-login-toggle {
+	border-top-color: var(--hlpw-navy) !important;
+	background: #EAF1FF !important;
+}
+
+/* ------------------------------------------------------------------ *
+ * 6. Small-screen polish
+ * ------------------------------------------------------------------ */
+@media (max-width: 600px) {
+	body .leaky_paywall_message_wrap { margin-top: -2em !important; }
+	body #leaky_paywall_message { padding: 1.5em 1.25em 1.75em !important; }
+}
+
+/* ================================================================== *
+ * PART B — LEAKY PAYWALL "LIST BUILDER" OVERLAY
+ *
+ * This is the wall actually shown on harnesslink.com: a full-screen
+ * slide-up overlay (NOT the classic #leaky_paywall_message nag above).
+ * Confirmed selectors from include/list-builder/class-lp-list-builder.php:
+ *   #lplb-mask                 - full-viewport backdrop (frost this)
+ *   #lplb-portal               - the overlay layer
+ *   #lplb-subscribe-panel      - the signup panel (-> our card)
+ *   .Slider__ExpandedHeader    - heading (the dark-on-dark one)  [h1]
+ *   .Slider__ExpandedSubHeader - sub-heading / body copy
+ *   .Slider__EmailAddressField input - the email field
+ *   .Slider__ExpandedButton    - the Continue / Upgrade button (was orange)
+ *   .Slider__Policy            - the opt-in / terms line
+ *
+ * The plugin themes this overlay via CSS variables it prints on :root
+ * (--lplb-bg-color #000, --lplb-button-color #E45637, etc.). We re-point
+ * those variables on #lplb-portal (ID beats :root) for a clean recolour,
+ * then add a centred card + frosted backdrop on top.
+ * ================================================================== */
+
+/* Re-point the plugin's theme variables: light card, dark text, navy button */
+body #lplb-portal {
+	--lplb-bg-color: #FFFFFF;
+	--lplb-text-color: #0F172A;
+	--lplb-button-color: #0A2A66;
+	--lplb-button-text-color: #FFFFFF;
+}
+
+/* Frosted "there's more below" backdrop (blurs the page behind the modal) */
+body #lplb-mask {
+	background: rgba(10, 42, 102, 0.55) !important;
+	-webkit-backdrop-filter: blur(6px) !important;
+	        backdrop-filter: blur(6px) !important;
+}
+body #lplb-mask.is-active { opacity: 1 !important; }
+
+/* Neutralise the slide-up transform/positioning so we can reliably centre
+   the card. (A transformed ancestor otherwise traps fixed/absolute children.)
+   Show/hide still works via the .is-visible / .is-active classes. */
+body #lplb-portal {
+	position: fixed !important;
+	inset: 0 !important;
+	top: 0 !important;
+	width: 100% !important;
+	height: 100% !important;
+	min-height: 0 !important;
+	transform: none !important;
+}
+body #lplb-portal.is-active { transform: none !important; }
+
+body #lplb-portal .Slider__Container,
+body #lplb-portal .Slider,
+body #lplb-portal .Slider--scrolled {
+	position: absolute !important;
+	inset: 0 !important;
+	top: 0 !important;
+	width: 100% !important;
+	height: 100% !important;
+}
+
+/* The signup panel -> a clean, centred white card */
+body #lplb-portal .Slider__InnerContainer {
+	position: absolute !important;
+	top: 50% !important;
+	left: 50% !important;
+	bottom: auto !important;
+	transform: translate(-50%, -50%) !important;
+	width: min(92vw, 520px) !important;
+	height: auto !important;
+	max-height: 88vh !important;
+	overflow-y: auto !important;
+	background: #FFFFFF !important;
+	background-color: #FFFFFF !important;
+	color: var(--hlpw-text) !important;
+	border-radius: 16px !important;
+	box-shadow: 0 30px 80px rgba(10, 42, 102, 0.35) !important;
+	padding: 40px 32px !important;
+	gap: 14px !important;
+}
+
+/* The order-summary form box inside the panel: drop its black bg */
+body #lplb-portal .Slider .Form__Container {
+	background: transparent !important;
+	width: 100% !important;
+	max-width: 100% !important;
+	padding: 0 !important;
+}
+
+/* Heading — fixes the dark-on-dark bug (navy on the white card) */
+body #lplb-portal .Slider__ExpandedHeader {
+	color: var(--hlpw-heading) !important;
+	font-size: 26px !important;
+	line-height: 1.25 !important;
+	font-weight: 800 !important;
+	margin: 0 0 4px !important;
+}
+
+/* Sub-heading / body copy — readable dark, no fixed 523px width */
+body #lplb-portal .Slider__ExpandedSubHeader {
+	color: var(--hlpw-text) !important;
+	width: auto !important;
+	max-width: 100% !important;
+}
+
+body #lplb-portal .Slider,
+body #lplb-portal .Slider__InputRow label {
+	color: var(--hlpw-text) !important;
+}
+
+/* Email field */
+body #lplb-portal .TextField input {
+	background: #F8FAFC !important;
+	color: var(--hlpw-text) !important;
+	border: 1px solid var(--hlpw-card-border) !important;
+	border-radius: 10px !important;
+}
+body #lplb-portal .TextField input:focus {
+	border-color: var(--hlpw-navy-accent) !important;
+	box-shadow: 0 0 0 4px rgba(31, 95, 191, 0.15) !important;
+}
+
+/* Continue / Upgrade button — HarnessLink navy, darker on hover */
+body #lplb-portal .Slider__ExpandedButton {
+	background: var(--hlpw-navy) !important;
+	background-color: var(--hlpw-navy) !important;
+	color: #FFFFFF !important;
+	border: 1px solid var(--hlpw-navy) !important;
+	border-radius: 10px !important;
+	font-weight: 700 !important;
+	box-shadow: 0 6px 18px rgba(10, 42, 102, 0.25) !important;
+}
+body #lplb-portal .Slider__ExpandedButton:hover {
+	background: var(--hlpw-navy-hover) !important;
+	background-color: var(--hlpw-navy-hover) !important;
+	opacity: 1 !important;
+	box-shadow: 0 8px 22px rgba(10, 42, 102, 0.32) !important;
+}
+
+/* Opt-in / terms line — muted but legible on the white card */
+body #lplb-portal .Slider__Policy p,
+body #lplb-portal .Slider__Policy p a {
+	color: var(--hlpw-muted) !important;
+	opacity: 1 !important;
+}
+body #lplb-portal .Slider a:not(.Slider__ExpandedButton) {
+	color: var(--hlpw-navy-accent) !important;
+}
+
+/* Close button — labelled pill, top-right (clear for older visitors) */
+body #lplb-portal .hlpw-wall-close {
+	position: absolute !important;
+	top: 20px !important;
+	right: 22px !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	padding: 9px 16px !important;
+	margin: 0 !important;
+	font-size: 15px !important;
+	font-weight: 600 !important;
+	line-height: 1 !important;
+	color: #FFFFFF !important;
+	background: rgba(255, 255, 255, 0.16) !important;
+	border: 1px solid rgba(255, 255, 255, 0.5) !important;
+	border-radius: 999px !important;
+	cursor: pointer !important;
+	z-index: 10000 !important;
+	transition: background 0.15s ease !important;
+}
+body #lplb-portal .hlpw-wall-close span { font-size: 20px !important; line-height: 1 !important; }
+body #lplb-portal .hlpw-wall-close:hover {
+	background: rgba(255, 255, 255, 0.3) !important;
+}
+body #lplb-portal .hlpw-wall-close:focus-visible {
+	outline: 2px solid #FFFFFF !important;
+	outline-offset: 2px !important;
+}
+
+/* "Maybe later — keep reading" worded escape inside the card */
+body #lplb-portal .hlpw-keep-reading {
+	display: block !important;
+	margin: 14px auto 0 !important;
+	padding: 6px !important;
+	background: none !important;
+	border: 0 !important;
+	color: var(--hlpw-muted) !important;
+	font-size: 14px !important;
+	text-decoration: underline !important;
+	cursor: pointer !important;
+}
+body #lplb-portal .hlpw-keep-reading:hover { color: var(--hlpw-text) !important; }
+
+/* "FREE" badge — bold, capitalised, unmistakable, gently pulsing */
+body #lplb-portal .hlpw-free-badge {
+	display: inline-block !important;
+	align-self: center !important;
+	margin: 0 auto 10px !important;
+	padding: 8px 18px !important;
+	background: #0D7A4F !important;   /* HarnessLink green = "free / go" */
+	color: #FFFFFF !important;
+	font-size: 14px !important;
+	font-weight: 800 !important;
+	letter-spacing: 0.08em !important;
+	text-transform: uppercase !important;
+	line-height: 1.2 !important;
+	border-radius: 999px !important;
+	animation: hlpw-pulse 2.2s ease-in-out infinite !important;
+}
+
+@keyframes hlpw-pulse {
+	0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(13, 122, 79, 0); }
+	50%      { transform: scale(1.04); box-shadow: 0 0 0 7px rgba(13, 122, 79, 0.14); }
+}
+
+/* Reassurance line under the button — kills "will this cost me?" doubt */
+body #lplb-portal .hlpw-free-reassure {
+	margin: 10px auto 0 !important;
+	text-align: center !important;
+	font-size: 13px !important;
+	font-weight: 600 !important;
+	line-height: 1.4 !important;
+	color: #0D7A4F !important;
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+	body #lplb-portal .hlpw-free-badge { animation: none !important; }
+}
+
+/* When the visitor closes the wall, keep it hidden for this pageview
+   even if Leaky Paywall tries to re-show it. */
+body.hlpw-wall-dismissed #lplb-mask,
+body.hlpw-wall-dismissed #lplb-portal {
+	display: none !important;
+	visibility: hidden !important;
+	pointer-events: none !important;
+}
+
+@media (max-width: 600px) {
+	body #lplb-portal .Slider__InnerContainer { padding: 28px 20px !important; }
+	body #lplb-portal .Slider__ExpandedHeader { font-size: 22px !important; }
+}
+
+/* ================================================================== *
+ * POST-SIGNUP "COMPLETE YOUR PROFILE" PROMPT (footer card)
+ * Shown to logged-in members who haven't completed it. Separate from the
+ * wall overlay, so styled standalone (!important to beat theme defaults).
+ * ================================================================== */
+.hlpw-profile-prompt {
+	position: fixed !important;
+	right: 20px !important;
+	bottom: 20px !important;
+	z-index: 99990 !important;
+	width: 340px !important;
+	max-width: calc(100vw - 32px) !important;
+	background: #FFFFFF !important;
+	color: var(--hlpw-text) !important;
+	border: 1px solid var(--hlpw-card-border) !important;
+	border-radius: 14px !important;
+	box-shadow: 0 18px 50px rgba(10, 42, 102, 0.22) !important;
+	padding: 20px !important;
+	font-size: 14px !important;
+	line-height: 1.5 !important;
+	text-align: left !important;
+}
+.hlpw-profile-prompt .hlpw-pp-title {
+	margin: 0 0 4px !important;
+	font-size: 17px !important;
+	font-weight: 800 !important;
+	color: var(--hlpw-heading) !important;
+}
+.hlpw-profile-prompt .hlpw-pp-sub {
+	margin: 0 0 14px !important;
+	font-size: 13px !important;
+	color: var(--hlpw-muted) !important;
+}
+.hlpw-profile-prompt .hlpw-pp-close {
+	position: absolute !important;
+	top: 10px !important;
+	right: 12px !important;
+	width: 28px !important;
+	height: 28px !important;
+	padding: 0 !important;
+	background: transparent !important;
+	border: 0 !important;
+	font-size: 22px !important;
+	line-height: 1 !important;
+	color: var(--hlpw-muted) !important;
+	cursor: pointer !important;
+}
+.hlpw-profile-prompt .hlpw-pp-row { margin-bottom: 10px !important; }
+.hlpw-profile-prompt .hlpw-pp-row label {
+	display: block !important;
+	margin: 0 0 4px !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	color: var(--hlpw-text) !important;
+}
+.hlpw-profile-prompt .hlpw-req { color: #C0392B !important; }
+.hlpw-profile-prompt input[type="text"],
+.hlpw-profile-prompt input[type="tel"] {
+	width: 100% !important;
+	box-sizing: border-box !important;
+	padding: 9px 11px !important;
+	border: 1px solid var(--hlpw-card-border) !important;
+	border-radius: 9px !important;
+	font-size: 14px !important;
+	background: #F8FAFC !important;
+	color: var(--hlpw-text) !important;
+}
+.hlpw-profile-prompt input:focus {
+	outline: none !important;
+	border-color: var(--hlpw-navy-accent) !important;
+	box-shadow: 0 0 0 3px rgba(31, 95, 191, 0.12) !important;
+	background: #FFFFFF !important;
+}
+.hlpw-profile-prompt .hlpw-pp-check {
+	display: flex !important;
+	align-items: flex-start !important;
+	gap: 9px !important;
+	margin: 8px 0 14px !important;
+	font-size: 13px !important;
+	color: var(--hlpw-text) !important;
+	cursor: pointer !important;
+}
+.hlpw-profile-prompt .hlpw-pp-check input[type="checkbox"] {
+	flex: 0 0 auto !important;
+	width: 17px !important;
+	height: 17px !important;
+	margin: 1px 0 0 !important;
+	accent-color: var(--hlpw-navy) !important;
+}
+.hlpw-profile-prompt .hlpw-pp-fineprint {
+	margin: 0 0 12px !important;
+	font-size: 11px !important;
+	line-height: 1.4 !important;
+	color: var(--hlpw-muted) !important;
+}
+.hlpw-profile-prompt .hlpw-pp-fineprint a {
+	color: var(--hlpw-navy-accent) !important;
+	text-decoration: underline !important;
+}
+.hlpw-profile-prompt .hlpw-pp-actions {
+	display: flex !important;
+	align-items: center !important;
+	gap: 12px !important;
+}
+.hlpw-profile-prompt .hlpw-pp-save {
+	background: var(--hlpw-navy) !important;
+	color: #FFFFFF !important;
+	border: 0 !important;
+	border-radius: 9px !important;
+	padding: 9px 18px !important;
+	font-size: 14px !important;
+	font-weight: 700 !important;
+	cursor: pointer !important;
+}
+.hlpw-profile-prompt .hlpw-pp-save:hover { background: var(--hlpw-navy-hover) !important; }
+.hlpw-profile-prompt .hlpw-pp-skip {
+	background: transparent !important;
+	border: 0 !important;
+	padding: 6px !important;
+	font-size: 13px !important;
+	color: var(--hlpw-muted) !important;
+	cursor: pointer !important;
+}
+.hlpw-profile-prompt .hlpw-pp-msg {
+	margin-top: 8px !important;
+	min-height: 1em !important;
+	font-size: 13px !important;
+	color: #0D7A4F !important;
+}
+@media (max-width: 600px) {
+	.hlpw-profile-prompt {
+		right: 12px !important;
+		left: 12px !important;
+		bottom: 12px !important;
+		width: auto !important;
+	}
+}
