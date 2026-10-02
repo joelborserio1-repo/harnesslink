@@ -38,31 +38,35 @@ export default function SubscribeForm({
   if (state === "done") {
     return (
       <p className={`text-sm font-semibold ${dark ? "text-white" : "text-navy"}`}>
-        ✓ You&apos;re in — look out for The Insider on Thursday.
+        You&apos;re in — look out for The Insider on Thursday.
       </p>
     );
   }
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-2.5 sm:flex-row">
-      <input
-        type="email"
-        required
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="you@email.com"
-        aria-label="Email address"
-        className="w-full rounded-lg px-3 py-2.5 text-sm text-neutral-900"
-      />
-      <button
-        type="submit"
-        disabled={state === "loading"}
-        className="shrink-0 rounded-lg bg-amber px-4 py-2.5 text-sm font-bold text-[#241a00] hover:brightness-105 disabled:opacity-60"
-      >
-        {state === "loading" ? "…" : cta}
-      </button>
+    <form onSubmit={submit}>
+      <div className={`flex border ${dark ? "border-white/40" : "border-navy"}`}>
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email address"
+          aria-label="Email address"
+          className="w-full min-w-0 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none placeholder:text-neutral-500 focus:bg-mist"
+        />
+        <button
+          type="submit"
+          disabled={state === "loading"}
+          className={`btn shrink-0 disabled:opacity-60 ${dark ? "btn-gold" : ""}`}
+        >
+          {state === "loading" ? "…" : cta}
+        </button>
+      </div>
       {state === "error" && (
-        <span className={`text-xs ${dark ? "text-amber" : "text-red-600"}`}>Enter a valid email.</span>
+        <p className={`mt-1.5 text-xs ${dark ? "text-amber" : "text-red"}`}>
+          That didn&apos;t go through — check the address and try again.
+        </p>
       )}
     </form>
   );

@@ -32,7 +32,7 @@ export default async function SearchPage({
   return (
     <div className="mx-auto max-w-5xl px-5 py-8">
       <div className="card p-6 sm:p-8">
-        <p className="eyebrow text-[15px]">Search</p>
+        <p className="kicker kicker-gold">Search</p>
         <h1 className="font-headline text-3xl font-extrabold text-navy">Search Harnesslink</h1>
 
         <form action="/search/" className="mt-4 flex gap-2">
@@ -42,9 +42,9 @@ export default async function SearchPage({
             defaultValue={q}
             autoFocus
             placeholder="Search race reports, drivers, trainers…"
-            className="w-full rounded-lg border border-black/15 px-4 py-2.5 text-[15px]"
+            className="w-full border border-black/15 px-4 py-2.5 text-[15px]"
           />
-          <button className="shrink-0 rounded-lg bg-navy px-5 py-2.5 font-semibold text-white hover:bg-navy-deep">
+          <button className="shrink-0 bg-navy px-5 py-2.5 font-semibold text-white hover:bg-navy-deep">
             Search
           </button>
         </form>
@@ -70,12 +70,12 @@ export default async function SearchPage({
         {total > articles.length && (
           <div className="mt-8 flex justify-center gap-3">
             {page > 1 && (
-              <Link href={`/search/?q=${encodeURIComponent(q)}&page=${page - 1}`} className="rounded border border-navy/20 px-4 py-2 text-sm font-semibold text-navy">
+              <Link href={`/search/?q=${encodeURIComponent(q)}&page=${page - 1}`} className="border border-navy/20 px-4 py-2 text-sm font-semibold text-navy">
                 ← Newer
               </Link>
             )}
             {page * 20 < total && (
-              <Link href={`/search/?q=${encodeURIComponent(q)}&page=${page + 1}`} className="rounded border border-navy/20 px-4 py-2 text-sm font-semibold text-navy">
+              <Link href={`/search/?q=${encodeURIComponent(q)}&page=${page + 1}`} className="border border-navy/20 px-4 py-2 text-sm font-semibold text-navy">
                 Older →
               </Link>
             )}

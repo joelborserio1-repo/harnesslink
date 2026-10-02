@@ -3,8 +3,10 @@
 module Api
   module V1
     module Admin
-      # Ad manager (HTTP Basic gated). CRUD + the zone registry for the UI.
+      # Ad manager (admins only). CRUD + the zone registry for the UI.
       class AdsController < BaseController
+        before_action :require_admin!
+
         def index
           render json: {
             ads: Ad.order(:zone, :name).map { |a| serialize(a) },

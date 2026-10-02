@@ -41,9 +41,9 @@ export default function RegistrationWall({ slug }: { slug: string }) {
 
   return (
     <div className="fixed inset-x-0 bottom-0 top-[42%] z-50 flex items-end justify-center bg-gradient-to-b from-transparent via-white/85 to-white">
-      <div className="card mb-10 w-[min(560px,92vw)] p-6 text-center shadow-[0_10px_40px_rgba(8,31,91,0.22)] sm:p-8">
-        <p className="eyebrow text-[15px]">Keep reading — free</p>
-        <h2 className="font-headline text-2xl font-extrabold text-navy sm:text-3xl">
+      <div className="sheet mb-10 w-[min(560px,92vw)] border-t-[3px] border-t-navy p-6 text-center sm:p-8">
+        <p className="kicker kicker-gold">Keep reading — free</p>
+        <h2 className="font-headline mt-2 text-2xl font-bold text-navy sm:text-3xl">
           You&apos;ve read your {FREE_LIMIT} free stories
         </h2>
         <p className="mx-auto mt-2 max-w-[42ch] text-[15px] text-[#41454e]">

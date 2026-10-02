@@ -13,18 +13,17 @@ export default function InternationalGrid({ articles }: { articles: ArticleSumma
 
   return (
     <>
-      <div className="mt-4 grid gap-[18px] sm:grid-cols-2">
+      <div className="mt-6 grid gap-x-7 gap-y-9 sm:grid-cols-2">
         {visible.map((a) => (
           <ArticleTile key={a.id} article={a} />
         ))}
       </div>
       {hasMore && (
-        <button
-          onClick={() => setShown((s) => s + STEP)}
-          className="mx-auto mt-6 block rounded-[9px] bg-navy px-6 py-3 text-[13px] font-bold uppercase tracking-wide text-white hover:bg-navy-deep"
-        >
-          Load More
-        </button>
+        <div className="mt-9 border-t border-line pt-6 text-center">
+          <button onClick={() => setShown((s) => s + STEP)} className="btn">
+            Load more stories
+          </button>
+        </div>
       )}
     </>
   );

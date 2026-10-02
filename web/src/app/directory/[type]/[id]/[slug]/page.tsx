@@ -40,9 +40,9 @@ export default async function DirectoryProfile({ params }: Params) {
 
       <article className="card p-6 sm:p-10">
         <div className="flex items-center gap-2">
-          <span className="eyebrow text-[13px]">{l.type_label}</span>
+          <span className="kicker kicker-gold">{l.type_label}</span>
           {l.is_featured && (
-            <span className="rounded bg-amber px-1.5 py-0.5 text-[10px] font-bold uppercase text-[#241a00]">Featured</span>
+            <span className="bg-amber px-1.5 py-0.5 text-[10px] font-bold uppercase text-[#241a00]">Featured</span>
           )}
         </div>
         <h1 className="font-headline text-4xl font-extrabold text-navy">{l.name}</h1>
@@ -59,7 +59,7 @@ export default async function DirectoryProfile({ params }: Params) {
 
         {/* Contact — paid-tier only */}
         {l.contact ? (
-          <div className="mt-6 rounded-lg border border-black/10 bg-page p-5">
+          <div className="mt-6 border border-black/10 bg-page p-5">
             <h2 className="font-headline text-lg font-bold text-navy">Contact</h2>
             <ul className="mt-2 space-y-1 text-sm text-[#333]">
               {l.contact.phone && <li>📞 {l.contact.phone}</li>}
@@ -69,9 +69,9 @@ export default async function DirectoryProfile({ params }: Params) {
             </ul>
           </div>
         ) : (
-          <div className="mt-6 rounded-lg border border-dashed border-navy/25 bg-page p-5 text-sm text-[#41454e]">
+          <div className="mt-6 border border-dashed border-navy/25 bg-page p-5 text-sm text-[#41454e]">
             Contact details are available for enhanced listings.{" "}
-            <Link href="/contact/" className="font-semibold text-blue hover:underline">Claim this listing →</Link>
+            <Link href="/contact-us/" className="font-semibold text-blue hover:underline">Claim this listing →</Link>
           </div>
         )}
 

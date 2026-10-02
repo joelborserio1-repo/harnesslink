@@ -12,10 +12,13 @@ module Ads
       { key: "home-rail-2",      size: "mpu",         label: "Home — rail MPU" },
       { key: "home-rail-3",      size: "halfpage",    label: "Home — rail half-page" },
       { key: "home-rail-mobile", size: "mpu",         label: "Home — mobile MPU" },
+      { key: "article-top",      size: "leaderboard", label: "Article — top leaderboard" },
       { key: "article-rail-1",   size: "mpu",         label: "Article — rail MPU (top)" },
       { key: "article-rail-2",   size: "mpu",         label: "Article — rail MPU (mid)" },
       { key: "article-rail-3",   size: "halfpage",    label: "Article — rail half-page" },
-      { key: "article-mobile",   size: "mpu",         label: "Article — mobile MPU" }
+      { key: "article-mobile",   size: "mpu",         label: "Article — mobile MPU" },
+      { key: "archive-rail-1",   size: "mpu",         label: "Country / archive — rail MPU" },
+      { key: "archive-rail-2",   size: "halfpage",    label: "Country / archive — rail half-page" }
     ].freeze
 
     def self.all

@@ -4,6 +4,8 @@ module Api
   module V1
     module Admin
       class AuthorsController < BaseController
+        before_action :require_editor!, only: :update
+
         # GET /api/v1/admin/authors
         def index
           authors = Author.left_joins(:articles)

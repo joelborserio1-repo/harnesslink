@@ -1,62 +1,63 @@
 import type { Thumb as ThumbData } from "@/lib/api";
 
-const PALETTES = [
-  ["#0a2a6b", "#1f5bd0"],
-  ["#0f5f63", "#12857f"],
-  ["#3b2a5e", "#6a3fae"],
-  ["#7c2d12", "#c2620a"],
-  ["#334155", "#5b6b86"],
-  ["#12603a", "#1f9d5e"],
-];
-
-// Renders the real featured image (responsive) or a branded gradient stand-in.
-// Never produces a broken <img>.
+// Renders the real featured image (responsive) or a plain navy stand-in with
+// the wordmark. Never produces a broken <img>. `eager` is for the one image
+// that is the page's LCP candidate.
 export default function Thumb({
   image,
   seed,
   alt,
   sizes,
   className = "",
+  eager = false,
 }: {
   image: ThumbData;
   seed: number;
   alt: string;
   sizes: string;
   className?: string;
+  eager?: boolean;
 }) {
   if (image?.src) {
-    // eslint-disable-next-line @next/next/no-img-element
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={image.src}
         srcSet={image.srcset}
         sizes={sizes}
-        alt={image.alt || alt}
+        alt={alt === "" ? "" : image.alt || alt}
         width={image.width ?? undefined}
         height={image.height ?? undefined}
-        loading="lazy"
+        loading={eager ? "eager" : "lazy"}
+        fetchPriority={eager ? "high" : undefined}
+        decoding="async"
         className={`h-full w-full object-cover ${className}`}
       />
     );
   }
-  const [a, b] = PALETTES[seed % PALETTES.length];
-  const id = `t${seed}`;
+  const shade = ["#081F5B", "#0b2a73", "#06163f"][seed % 3];
   return (
-    <svg viewBox="0 0 400 250" preserveAspectRatio="xMidYMid slice" className={`h-full w-full ${className}`} aria-label={alt} role="img">
-      <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor={a} />
-          <stop offset="1" stopColor={b} />
-        </linearGradient>
-      </defs>
-      <rect width="400" height="250" fill={`url(#${id})`} />
-      <path d="M0,205 Q200,150 400,205 L400,250 L0,250Z" fill="rgba(0,0,0,.16)" />
-      <g stroke="rgba(255,255,255,.5)" strokeWidth="3" fill="none" strokeLinecap="round">
-        <path d="M150,196 l10,-18 l13,3 l7,15" />
-        <path d="M188,196 l9,-18 l13,3 l7,15" />
-      </g>
-      <text x="380" y="235" textAnchor="end" fontFamily="Georgia" fontSize="15" fill="rgba(255,255,255,.10)">
-        HARNESSLINK
+    <svg
+      viewBox="0 0 600 400"
+      preserveAspectRatio="xMidYMid slice"
+      className={`h-full w-full ${className}`}
+      role="img"
+      aria-label={alt || "Harnesslink"}
+    >
+      <rect width="600" height="400" fill={shade} />
+      <text
+        x="300"
+        y="212"
+        textAnchor="middle"
+        fontFamily="'Playfair Display', Georgia, serif"
+        fontSize="34"
+        fontWeight="700"
+        letterSpacing="3"
+        fill="#ffffff"
+        fillOpacity="0.22"
+        style={{ fontVariantCaps: "small-caps" }}
+      >
+        HarnessLink
       </text>
     </svg>
   );

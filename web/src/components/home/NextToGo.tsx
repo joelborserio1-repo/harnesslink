@@ -48,7 +48,7 @@ function Silk({ seed }: { seed: number }) {
   const a = cols[seed % cols.length];
   const b = cols[(seed + 2) % cols.length];
   return (
-    <svg viewBox="0 0 22 26" className="h-[26px] w-[22px] rounded-[3px] shadow" aria-hidden="true">
+    <svg viewBox="0 0 22 26" className="h-[26px] w-[22px]" aria-hidden="true">
       {seed % 3 === 0 && (<><rect width="22" height="26" fill={a} /><rect width="22" height="9" fill={b} /></>)}
       {seed % 3 === 1 && (<><rect width="22" height="26" fill={b} /><rect x="8" width="6" height="26" fill={a} /></>)}
       {seed % 3 === 2 && (<><rect width="22" height="26" fill={a} /><circle cx="11" cy="13" r="6" fill={b} /></>)}
@@ -90,7 +90,7 @@ export default function NextToGo() {
           ? RACES.map((r, i) => (
               <a key={i} href="/" className="grid grid-cols-[52px_1fr_auto_auto] items-center gap-3 border-b border-line px-3.5 py-3 last:border-0 hover:bg-[#f7f9fd]">
                 <div className="flex flex-col items-center gap-1">
-                  <span className={`grid h-[34px] w-[34px] place-items-center rounded-full text-[13px] font-extrabold ${BADGE[r.col]}`}>{r.no}</span>
+                  <span className={`grid h-[34px] w-[34px] place-items-center text-[13px] font-extrabold ${BADGE[r.col]}`}>{r.no}</span>
                   <span className={`text-[11px] font-bold tabular-nums ${secs[i] < 300 ? "text-red" : "text-neutral-400"}`}>{fmt(secs[i])}</span>
                 </div>
                 <div>
@@ -102,7 +102,7 @@ export default function NextToGo() {
                   <Silk seed={i} />
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-[#eef0f4] px-2.5 py-1 text-[13px] font-bold tabular-nums text-[#2b303a]">{r.odds}{r.star ? " *" : ""}</span>
+                  <span className="bg-[#eef0f4] px-2.5 py-1 text-[13px] font-bold tabular-nums text-[#2b303a]">{r.odds}{r.star ? " *" : ""}</span>
                   <span className="text-lg text-neutral-300">›</span>
                 </div>
               </a>
@@ -110,7 +110,7 @@ export default function NextToGo() {
           : RESULTS.map((r, i) => (
               <a key={i} href="/" className="grid grid-cols-[52px_1fr_auto_auto] items-center gap-3 border-b border-line px-3.5 py-3 last:border-0 hover:bg-[#f7f9fd]">
                 <div className="flex flex-col items-center gap-1">
-                  <span className={`grid h-[34px] w-[34px] place-items-center rounded-full text-[13px] font-extrabold ${BADGE[r.col]}`}>{r.no}</span>
+                  <span className={`grid h-[34px] w-[34px] place-items-center text-[13px] font-extrabold ${BADGE[r.col]}`}>{r.no}</span>
                   <span className="text-[10px] font-bold text-neutral-400">FINAL</span>
                 </div>
                 <div>
@@ -122,7 +122,7 @@ export default function NextToGo() {
                   <Silk seed={i} />
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-[#eef0f4] px-2.5 py-1 text-[13px] font-bold tabular-nums text-[#2b303a]">{r.odds}</span>
+                  <span className="bg-[#eef0f4] px-2.5 py-1 text-[13px] font-bold tabular-nums text-[#2b303a]">{r.odds}</span>
                   <span className="text-lg text-neutral-300">›</span>
                 </div>
               </a>

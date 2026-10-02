@@ -51,26 +51,26 @@ end
 puts "Seeding articles…"
 # [slug, title, wp_id, published_at, category, author]
 ARTICLES = [
-  ["lexus-kody-wins-the-300000-g2-spirit-of-massachusetts-trot", "Lexus Kody wins the $300,000 G2 Spirit of Massachusetts Trot", 2387693, "2026-07-20 11:28:06", :usa, :bojarski],
-  ["nz-cup-could-host-harness-racings-ultimate-decider", "NZ Cup could host harness racing's ultimate decider", 2387683, "2026-07-20 10:16:10", :new_zealand, :guerin],
-  ["todd-targets-rising-stars-with-talented-trio", "Todd targets Rising Stars with talented trio", 2387686, "2026-07-20 11:15:25", :new_zealand, :disomma],
-  ["ruthless-hanover-shows-no-mercy-in-fast-class-feature", "Ruthless Hanover shows no mercy in fast-class feature", 2387703, "2026-07-20 09:46:37", :usa, :weingartner],
-  ["nebraska-de-ginier-posts-quick-151-4-in-prix-henri-cravoisier", "Nebraska de Ginier posts quick 1:51.4 in Prix Henri Cravoisier", 2387668, "2026-07-20 04:36:29", :europe, :gange],
-  ["king-opera-wins-trophee-vert-leg-10", "King Opera Wins Trophee Vert Leg 10", 2387665, "2026-07-20 04:25:20", :europe, :gange],
-  ["sporting-greats-hail-inter-dominion-final-for-the-ages", "Sporting greats hail Inter Dominion final for the ages", 2387629, "2026-07-19 18:40:41", :australia, :adam],
-  ["captains-mistress-triumphs-over-leap-to-fame-in-epic-inter-dominion-final", "Captains Mistress triumphs over Leap to Fame in epic Inter Dominion Final", 2387521, "2026-07-19 05:48:39", :australia, :adam],
-  ["gus-staying-prowess-gives-him-the-inter-dominion", "Gus staying prowess gives him the Inter Dominion", 2387517, "2026-07-19 05:32:29", :australia, :tony],
-  ["get-wings-captures-50000-governors-plate-58", "Get Wings captures $50,000 Governor's Plate 58", 2387625, "2026-07-19 17:10:54", :canada, :bruce],
-  ["woodmere-dougal-sets-summerside-track-record-in-p-e-i-colt-stakes", "Woodmere Dougal sets track record in P.E.I. Colt Stakes", 2387423, "2026-07-17 15:33:01", :canada, :bruce],
-  ["major-boost-for-new-york-standardbred-breeding-industry", "Major boost for New York Standardbred Breeding industry", 2387552, "2026-07-18 18:12:21", :usa, :weingartner],
-  ["record-wager-highlights-historic-night-at-summerside", "Record wager highlights historic night at Summerside", 2387480, "2026-07-18 15:53:47", :canada, :bruce],
-  ["canadian-wildfire-smoke-forces-widespread-harness-racing-cancellations", "Canadian wildfire smoke forces widespread harness racing cancellations", 2387491, "2026-07-18 07:08:15", :canada, :bruce],
-  ["hrnsw-and-tabcorp-strengthen-long-term-partnership", "HRNSW and Tabcorp strengthen long-term partnership", 2387494, "2026-07-17 22:11:22", :australia, :adam],
-  ["queensland-derby-favourite-out-with-fractured-pastern-bone", "Queensland Derby favourite out with fractured pastern bone", 2387386, "2026-07-17 14:01:06", :australia, :adam],
-  ["ripples-breaks-through-for-group-1-success-in-queensland-oaks", "Ripples breaks through for Group 1 success in Queensland Oaks", 2387508, "2026-07-19 00:31:19", :australia, :tony],
-  ["odds-on-mr-mamba-al-papi-victorious-in-grade-1-adios-eliminations", "Odds On Mr Mamba, Al Papi victorious in Grade 1 Adios eliminations", 2387569, "2026-07-19 09:20:58", :usa, :bojarski],
-  ["beckwith-memorial-pace-attracts-star-studded-field", "Beckwith Memorial Pace attracts star studded field", 2387555, "2026-07-19 08:32:24", :usa, :weingartner],
-  ["five-winners-for-long", "Five winners for Long", 2387611, "2026-07-19 16:56:14", :usa, :bojarski]
+  [ "lexus-kody-wins-the-300000-g2-spirit-of-massachusetts-trot", "Lexus Kody wins the $300,000 G2 Spirit of Massachusetts Trot", 2387693, "2026-07-20 11:28:06", :usa, :bojarski ],
+  [ "nz-cup-could-host-harness-racings-ultimate-decider", "NZ Cup could host harness racing's ultimate decider", 2387683, "2026-07-20 10:16:10", :new_zealand, :guerin ],
+  [ "todd-targets-rising-stars-with-talented-trio", "Todd targets Rising Stars with talented trio", 2387686, "2026-07-20 11:15:25", :new_zealand, :disomma ],
+  [ "ruthless-hanover-shows-no-mercy-in-fast-class-feature", "Ruthless Hanover shows no mercy in fast-class feature", 2387703, "2026-07-20 09:46:37", :usa, :weingartner ],
+  [ "nebraska-de-ginier-posts-quick-151-4-in-prix-henri-cravoisier", "Nebraska de Ginier posts quick 1:51.4 in Prix Henri Cravoisier", 2387668, "2026-07-20 04:36:29", :europe, :gange ],
+  [ "king-opera-wins-trophee-vert-leg-10", "King Opera Wins Trophee Vert Leg 10", 2387665, "2026-07-20 04:25:20", :europe, :gange ],
+  [ "sporting-greats-hail-inter-dominion-final-for-the-ages", "Sporting greats hail Inter Dominion final for the ages", 2387629, "2026-07-19 18:40:41", :australia, :adam ],
+  [ "captains-mistress-triumphs-over-leap-to-fame-in-epic-inter-dominion-final", "Captains Mistress triumphs over Leap to Fame in epic Inter Dominion Final", 2387521, "2026-07-19 05:48:39", :australia, :adam ],
+  [ "gus-staying-prowess-gives-him-the-inter-dominion", "Gus staying prowess gives him the Inter Dominion", 2387517, "2026-07-19 05:32:29", :australia, :tony ],
+  [ "get-wings-captures-50000-governors-plate-58", "Get Wings captures $50,000 Governor's Plate 58", 2387625, "2026-07-19 17:10:54", :canada, :bruce ],
+  [ "woodmere-dougal-sets-summerside-track-record-in-p-e-i-colt-stakes", "Woodmere Dougal sets track record in P.E.I. Colt Stakes", 2387423, "2026-07-17 15:33:01", :canada, :bruce ],
+  [ "major-boost-for-new-york-standardbred-breeding-industry", "Major boost for New York Standardbred Breeding industry", 2387552, "2026-07-18 18:12:21", :usa, :weingartner ],
+  [ "record-wager-highlights-historic-night-at-summerside", "Record wager highlights historic night at Summerside", 2387480, "2026-07-18 15:53:47", :canada, :bruce ],
+  [ "canadian-wildfire-smoke-forces-widespread-harness-racing-cancellations", "Canadian wildfire smoke forces widespread harness racing cancellations", 2387491, "2026-07-18 07:08:15", :canada, :bruce ],
+  [ "hrnsw-and-tabcorp-strengthen-long-term-partnership", "HRNSW and Tabcorp strengthen long-term partnership", 2387494, "2026-07-17 22:11:22", :australia, :adam ],
+  [ "queensland-derby-favourite-out-with-fractured-pastern-bone", "Queensland Derby favourite out with fractured pastern bone", 2387386, "2026-07-17 14:01:06", :australia, :adam ],
+  [ "ripples-breaks-through-for-group-1-success-in-queensland-oaks", "Ripples breaks through for Group 1 success in Queensland Oaks", 2387508, "2026-07-19 00:31:19", :australia, :tony ],
+  [ "odds-on-mr-mamba-al-papi-victorious-in-grade-1-adios-eliminations", "Odds On Mr Mamba, Al Papi victorious in Grade 1 Adios eliminations", 2387569, "2026-07-19 09:20:58", :usa, :bojarski ],
+  [ "beckwith-memorial-pace-attracts-star-studded-field", "Beckwith Memorial Pace attracts star studded field", 2387555, "2026-07-19 08:32:24", :usa, :weingartner ],
+  [ "five-winners-for-long", "Five winners for Long", 2387611, "2026-07-19 16:56:14", :usa, :bojarski ]
 ]
 
 ARTICLES.each do |slug, title, wp_id, date, cat_key, author_key|
@@ -203,3 +203,36 @@ admin_email = ENV.fetch("ADMIN_EMAIL", "admin@harnesslink.com")
 admin_pass  = ENV["ADMIN_PASSWORD"].presence || "change-me-now"
 AdminUser.find_or_create_by!(email: admin_email) { |u| u.password = admin_pass }
 puts "  admin: #{admin_email}"
+
+# The same person's login for the editorial portal (/admin on the site). Staff
+# accounts live on User; this first admin creates everyone else's from
+# /admin/users.
+staff_admin = User.find_or_initialize_by(email: admin_email)
+if staff_admin.new_record? || staff_admin.password_digest.blank?
+  staff_admin.assign_attributes(name: staff_admin.name.presence || "Site Admin", role: :admin,
+                                password: admin_pass)
+  # Use ADMIN_PASSWORD exactly as given, even if it is shorter than the 10
+  # characters new staff passwords must have — but say so.
+  staff_admin.save!(validate: false)
+  puts "  portal admin: #{admin_email}"
+  puts "  WARNING: ADMIN_PASSWORD is under 10 characters — change it under Staff." if admin_pass.length < 10
+end
+
+# Local development only: one login per role so the portal can be tried
+# without touching the real admin account. Never created outside development.
+if Rails.env.development?
+  dev_password = ENV.fetch("DEV_STAFF_PASSWORD", "trackside-dev-only")
+  [
+    [ "journo@harnesslink.test", "Dev Journalist", :contributor, "adam-hamilton" ],
+    [ "editor@harnesslink.test", "Dev Editor", :editor, nil ],
+    [ "admin@harnesslink.test", "Dev Admin", :admin, nil ]
+  ].each do |email, name, role, byline|
+    user = User.find_or_initialize_by(email: email)
+    next unless user.new_record?
+
+    user.assign_attributes(name: name, role: role, password: dev_password,
+                           author: byline && Author.find_by(slug: byline))
+    user.save!
+  end
+  puts "  dev staff logins: journo@ / editor@ / admin@harnesslink.test (DEV_STAFF_PASSWORD)"
+end

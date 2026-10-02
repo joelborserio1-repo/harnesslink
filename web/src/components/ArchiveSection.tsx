@@ -1,4 +1,5 @@
 import ArticleTile from "@/components/home/ArticleTile";
+import AdSlot from "@/components/AdSlot";
 import type { ArticleSummary } from "@/lib/api";
 
 export default function ArchiveSection({
@@ -13,20 +14,31 @@ export default function ArchiveSection({
   articles: ArticleSummary[];
 }) {
   return (
-    <div className="mx-auto max-w-5xl px-5 py-8">
-      <div className="card p-6 sm:p-8">
-        {eyebrow && <p className="eyebrow text-[15px]">{eyebrow}</p>}
-        <h1 className="font-headline text-3xl font-extrabold text-navy [text-wrap:balance]">{title}</h1>
-        {subtitle && <p className="mt-2 max-w-[64ch] text-[15px] text-[#41454e]">{subtitle}</p>}
-        {articles.length === 0 ? (
-          <p className="py-10 text-neutral-500">No articles yet.</p>
-        ) : (
-          <div className="mt-6 grid gap-[18px] sm:grid-cols-2 lg:grid-cols-3">
-            {articles.map((a) => (
-              <ArticleTile key={a.id} article={a} />
-            ))}
-          </div>
-        )}
+    <div className="wrap py-7">
+      <header className="mb-6 border-b border-line pb-5">
+        {eyebrow && <p className="kicker kicker-gold">{eyebrow}</p>}
+        <h1 className="font-headline mt-1 text-[36px] font-bold leading-[1.05] text-navy [text-wrap:balance] sm:text-[46px]">
+          {title}
+        </h1>
+        {subtitle && <p className="mt-3 max-w-[64ch] text-[15px] text-[#474b54]">{subtitle}</p>}
+      </header>
+
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+        <div className="sheet min-w-0 p-6">
+          {articles.length === 0 ? (
+            <p className="py-10 text-neutral-500">No articles yet.</p>
+          ) : (
+            <div className="grid gap-x-6 gap-y-9 sm:grid-cols-2 xl:grid-cols-3">
+              {articles.map((a) => (
+                <ArticleTile key={a.id} article={a} />
+              ))}
+            </div>
+          )}
+        </div>
+        <aside className="hidden flex-col gap-7 lg:sticky lg:top-4 lg:flex">
+          <AdSlot size="mpu" zone="archive-rail-1" />
+          <AdSlot size="halfpage" zone="archive-rail-2" />
+        </aside>
       </div>
     </div>
   );

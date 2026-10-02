@@ -6,14 +6,14 @@ export const metadata: Metadata = {
   title: "Contact Us",
   description:
     "Get in touch with the Harnesslink team — news tips, corrections, advertising and general enquiries.",
-  alternates: { canonical: "https://harnesslink.com/contact/" },
+  alternates: { canonical: "https://harnesslink.com/contact-us/" },
 };
 
 export default function ContactPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 py-8">
       <div className="card p-6 sm:p-10">
-        <p className="eyebrow text-[15px]">Get in touch</p>
+        <p className="kicker kicker-gold">Get in touch</p>
         <h1 className="font-headline text-3xl font-extrabold text-navy sm:text-4xl">Contact Us</h1>
         <p className="mt-2 max-w-[60ch] text-[15px] text-[#41454e]">
           Have a news tip, a correction, an advertising enquiry, or just want to say hello? Send us a
@@ -28,7 +28,7 @@ export default function ContactPage() {
                 type="text"
                 name="name"
                 required
-                className="rounded-lg border border-black/15 px-3 py-2.5 font-normal text-neutral-900"
+                className="border border-black/15 px-3 py-2.5 font-normal text-neutral-900"
               />
             </label>
             <label className="flex flex-col gap-1.5 text-sm font-semibold text-navy">
@@ -37,7 +37,7 @@ export default function ContactPage() {
                 type="email"
                 name="email"
                 required
-                className="rounded-lg border border-black/15 px-3 py-2.5 font-normal text-neutral-900"
+                className="border border-black/15 px-3 py-2.5 font-normal text-neutral-900"
               />
             </label>
           </div>
@@ -46,7 +46,7 @@ export default function ContactPage() {
             <input
               type="text"
               name="subject"
-              className="rounded-lg border border-black/15 px-3 py-2.5 font-normal text-neutral-900"
+              className="border border-black/15 px-3 py-2.5 font-normal text-neutral-900"
             />
           </label>
           <label className="flex flex-col gap-1.5 text-sm font-semibold text-navy">
@@ -55,12 +55,12 @@ export default function ContactPage() {
               name="message"
               required
               rows={6}
-              className="rounded-lg border border-black/15 px-3 py-2.5 font-normal text-neutral-900"
+              className="border border-black/15 px-3 py-2.5 font-normal text-neutral-900"
             />
           </label>
           <button
             type="submit"
-            className="self-start rounded-lg bg-navy px-6 py-3 font-bold text-white hover:bg-navy-deep"
+            className="self-start bg-navy px-6 py-3 font-bold text-white hover:bg-navy-deep"
           >
             Send message
           </button>

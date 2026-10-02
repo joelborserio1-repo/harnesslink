@@ -3,14 +3,15 @@
 module Api
   module V1
     class AuthorsController < ApplicationController
-      # GET /api/v1/authors/:slug — an author archive (WP: /author/{slug}/)
+      # GET /api/v1/authors/:slug — an author archive. The live site serves these
+      # at /writers/{slug}/ (Molongui Authorship) and 301s /author/{slug}/ there.
       def show
         author = Author.find_by(slug: params[:slug])
         return head :not_found unless author
 
         # A merged duplicate points at its canonical author's archive.
         if author.merged_into
-          return render json: { redirect_to: "/author/#{author.merged_into.slug}/" }
+          return render json: { redirect_to: "/writers/#{author.merged_into.slug}/" }
         end
 
         # Include the canonical author's articles plus any merged aliases'.
@@ -22,7 +23,7 @@ module Api
 
         render json: {
           author: { name: author.name, slug: author.slug, bio: author.bio,
-                    role_title: author.role_title, url: "/author/#{author.slug}/" },
+                    role_title: author.role_title, url: "/writers/#{author.slug}/" },
           articles: articles.map { |a| ArticleSerializer.summary(a) }
         }
       end

@@ -37,7 +37,25 @@ bin/rails server
 
 ## Not yet done (next steps)
 
-- Auth: `User` has a `password_digest` column but `has_secure_password` is
-  deferred pending the **bcrypt** dependency (needs sign-off).
-- API controllers, routing (the `/%postname%/` resolver), Redirect middleware,
-  the SEO parity harness, and the importer — all still to come per BUILD_V1.
+- Reader accounts: the registration wall signs readers up, but returning
+  readers have no login yet (magic-link planned; `User` role `reader`).
+- Avo (`/avo`) still signs in through Devise `AdminUser`; the editorial portal
+  uses `User` (see "Staff accounts" below). Folding the two together is open.
+- Advertiser billing / Xero, The Eureka partnership page, scheduled publishing
+  job — see `../docs/PLATFORM_ASSESSMENT.md`.
+
+## Staff accounts (editorial portal)
+
+- Staff are `User` rows with role `contributor` (journalist), `editor` or
+  `admin`, `has_secure_password`, and an `active` flag. Never delete a staff
+  user — deactivate, so stories and revisions keep their owner.
+- `POST /api/v1/admin/session` returns a token (`generates_token_for
+  :staff_session`, 14 days, invalidated by a password change). Every
+  `Api::V1::Admin` controller requires it as `Authorization: Bearer`.
+- Roles are enforced in the API, not the UI: contributors see and edit only
+  their own stories and can only set `draft` / `in_review`; editors publish and
+  manage the directory; admins also manage ads and staff
+  (`require_editor!` / `require_admin!` in `AdminAuthenticatable`).
+- Each admin-API edit to title/body snapshots the previous version into
+  `article_revisions`.
+- Tests sign in with `staff_headers(users(:editor))`.

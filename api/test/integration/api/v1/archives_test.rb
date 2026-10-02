@@ -16,7 +16,7 @@ module Api
       test "a merged author archive resolves to the canonical one" do
         get "/api/v1/authors/#{authors(:bruce_dup).slug}"
         assert_response :success
-        assert_equal "/author/#{authors(:bruce).slug}/", JSON.parse(response.body)["redirect_to"]
+        assert_equal "/writers/#{authors(:bruce).slug}/", JSON.parse(response.body)["redirect_to"]
       end
 
       test "unknown author is 404" do
@@ -37,7 +37,7 @@ module Api
         get "/api/v1/sitemap/archives"
         assert_response :success
         assert_includes response.body, "https://harnesslink.com/category/usa/"
-        assert_includes response.body, "https://harnesslink.com/author/#{authors(:adam).slug}/"
+        assert_includes response.body, "https://harnesslink.com/writers/#{authors(:adam).slug}/"
         assert_includes response.body, "https://harnesslink.com/tag/#{tags(:the_meadowlands).slug}/"
       ensure
         ENV.delete("SITE_URL")

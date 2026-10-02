@@ -7,6 +7,7 @@ export type RacingCountry = {
   flag: string; // emoji flag
   fields: string;
   results: string;
+  calendar?: string; // our own feature race calendar page, where we publish one
 };
 
 export const RACING: RacingCountry[] = [
@@ -16,6 +17,7 @@ export const RACING: RacingCountry[] = [
     flag: "🇦🇺",
     fields: "https://www.harness.org.au/racing/fields",
     results: "https://www.harness.org.au/racing/results/?event=resultsIndex&search_type=daily",
+    calendar: "/feature-race-calendar-au/",
   },
   {
     code: "NZ",
@@ -23,6 +25,7 @@ export const RACING: RacingCountry[] = [
     flag: "🇳🇿",
     fields: "https://www.hrnz.co.nz/",
     results: "https://www.hrnz.co.nz/",
+    calendar: "/feature-race-calendar-nz/",
   },
   {
     code: "USA",
@@ -30,6 +33,7 @@ export const RACING: RacingCountry[] = [
     flag: "🇺🇸",
     fields: "https://www.ustrotting.com/",
     results: "https://www.ustrotting.com/",
+    calendar: "/united-states-race-calendar/",
   },
   {
     code: "CA",
@@ -37,6 +41,7 @@ export const RACING: RacingCountry[] = [
     flag: "🇨🇦",
     fields: "https://standardbredcanada.ca/",
     results: "https://standardbredcanada.ca/",
+    calendar: "/canada-race-calendar/",
   },
   {
     code: "SWE",

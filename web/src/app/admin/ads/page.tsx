@@ -10,7 +10,7 @@ export default async function AdminAds() {
     <div className="mx-auto max-w-5xl px-4 py-8">
       <div className="flex items-baseline justify-between">
         <h1 className="text-2xl font-bold text-neutral-900">Ad Manager</h1>
-        <Link href="/admin/ads/new" className="rounded bg-navy px-3 py-1.5 text-sm font-semibold text-white">
+        <Link href="/admin/ads/new" className="bg-navy px-3 py-1.5 text-sm font-semibold text-white">
           + New ad
         </Link>
       </div>

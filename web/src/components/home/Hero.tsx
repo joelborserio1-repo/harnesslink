@@ -6,6 +6,9 @@ import Thumb from "@/components/Thumb";
 import type { ArticleSummary } from "@/lib/api";
 import { formatCardDate } from "@/lib/format";
 
+// The lead-story stage. One story at a time over a full-bleed photograph; the
+// reader steps through the top stories with the numbered controls (no
+// auto-advance — a carousel that moves on its own costs INP and annoys).
 export default function Hero({ slides }: { slides: ArticleSummary[] }) {
   const [i, setI] = useState(0);
   if (slides.length === 0) return null;
@@ -13,40 +16,56 @@ export default function Hero({ slides }: { slides: ArticleSummary[] }) {
   const go = (d: number) => setI((prev) => (prev + d + slides.length) % slides.length);
 
   return (
-    <section className="relative aspect-[16/9] overflow-hidden rounded-xl bg-navy shadow-[0_6px_20px_rgba(8,31,91,0.15)] md:aspect-[16/8]" aria-label="Featured story">
+    <section className="relative min-h-[380px] overflow-hidden bg-navy-deep lg:min-h-0" aria-label="Top stories">
       <div className="absolute inset-0">
-        <Thumb image={a.image} seed={a.id} alt={a.title} sizes="(max-width: 1024px) 100vw, 800px" />
+        <Thumb image={a.image} seed={a.id} alt={a.title} sizes="(max-width: 1024px) 100vw, 640px" eager />
       </div>
-      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(4,12,38,.05) 30%, rgba(4,12,38,.86) 100%)" }} />
+      <div
+        className="absolute inset-0"
+        style={{ background: "linear-gradient(180deg, rgba(4,12,38,.10) 25%, rgba(4,12,38,.55) 60%, rgba(4,12,38,.93) 100%)" }}
+      />
 
       <div className="absolute inset-x-0 bottom-0 p-6 text-white sm:p-8">
         {a.category && (
-          <span className="inline-flex items-center gap-1.5 rounded bg-navy px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white">
-            🌐 {a.category.name}
-          </span>
+          <Link href={a.category.url} className="kicker border-l-2 border-amber pl-2 !text-white">
+            {a.category.name}
+          </Link>
         )}
-        <h1 className="font-headline mt-3 max-w-[20ch] text-2xl font-bold leading-[1.12] [text-wrap:balance] sm:text-4xl" style={{ textShadow: "0 2px 18px rgba(0,0,0,.35)" }}>
-          <Link href={a.url}>{a.title}</Link>
-        </h1>
-        <div className="mt-2 text-sm text-[#d6def4]">
-          {a.author && <span>By {a.author.name} · </span>}
-          {a.published_at && <time>{formatCardDate(a.published_at)}</time>}
+        <h2 className="font-headline mt-3 max-w-[22ch] break-words text-[28px] font-bold leading-[1.1] [text-wrap:balance] sm:text-[36px] lg:text-[27px] xl:text-[38px]">
+          <Link href={a.url} className="hl-link">
+            {a.title}
+          </Link>
+        </h2>
+        <div className="mt-4 flex items-end justify-between gap-4">
+          <p className="meta !text-white/75">
+            {a.author && <>By <b className="!text-white">{a.author.name}</b> · </>}
+            {a.published_at && <time dateTime={a.published_at}>{formatCardDate(a.published_at)}</time>}
+          </p>
+          {slides.length > 1 && (
+            <div className="flex shrink-0 items-center gap-3 text-white">
+              <span className="text-[12px] font-semibold tabular-nums tracking-[0.12em] text-white/75" aria-live="polite">
+                {String(i + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}
+              </span>
+              <span className="flex border border-white/40">
+                <button onClick={() => go(-1)} aria-label="Previous story" className="grid h-9 w-9 place-items-center hover:bg-white hover:text-navy">
+                  <Arrow dir="left" />
+                </button>
+                <button onClick={() => go(1)} aria-label="Next story" className="grid h-9 w-9 place-items-center border-l border-white/40 hover:bg-white hover:text-navy">
+                  <Arrow dir="right" />
+                </button>
+              </span>
+            </div>
+          )}
         </div>
       </div>
-
-      {slides.length > 1 && (
-        <>
-          <div className="absolute bottom-6 left-7 flex gap-2" aria-hidden="true">
-            {slides.map((_, n) => (
-              <i key={n} className={`h-2 rounded-full transition-all ${n === i ? "w-5 bg-white" : "w-2 bg-white/45"}`} />
-            ))}
-          </div>
-          <div className="absolute bottom-5 right-5 flex gap-2">
-            <button onClick={() => go(-1)} aria-label="Previous" className="grid h-9 w-9 place-items-center rounded-full border border-white/50 bg-[#0814364d] text-white hover:bg-navy">‹</button>
-            <button onClick={() => go(1)} aria-label="Next" className="grid h-9 w-9 place-items-center rounded-full border border-white/50 bg-[#0814364d] text-white hover:bg-navy">›</button>
-          </div>
-        </>
-      )}
     </section>
+  );
+}
+
+function Arrow({ dir }: { dir: "left" | "right" }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+      <path d={dir === "left" ? "M19 12H5m6-6l-6 6 6 6" : "M5 12h14m-6-6l6 6-6 6"} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }

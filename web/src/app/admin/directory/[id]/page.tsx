@@ -72,11 +72,11 @@ export default async function EditListing({ params }: { params: Promise<{ id: st
       <Link href="/admin/directory" className="text-sm text-blue hover:underline">← Directory</Link>
       <h1 className="mt-2 text-2xl font-bold text-neutral-900">{isNew ? "New listing" : `Edit — ${listing?.name}`}</h1>
 
-      <form action={save} className="mt-6 space-y-4 rounded-lg border border-neutral-200 bg-white p-6">
+      <form action={save} className="mt-6 space-y-4 border border-neutral-200 bg-white p-6">
         <label className="block text-sm font-semibold text-neutral-700">
           Type
           <select name="directory_type" defaultValue={listing?.directory_type ?? "stallion"}
-                  className="mt-1 block w-full rounded border border-neutral-300 px-3 py-2 font-normal">
+                  className="mt-1 block w-full border border-neutral-300 px-3 py-2 font-normal">
             {types.map((t) => <option key={t.key} value={t.key}>{t.plural}</option>)}
           </select>
         </label>
@@ -85,14 +85,14 @@ export default async function EditListing({ params }: { params: Promise<{ id: st
           <label key={key} className="block text-sm font-semibold text-neutral-700">
             {label}
             <input name={key} defaultValue={v(key)}
-                   className="mt-1 block w-full rounded border border-neutral-300 px-3 py-2 font-normal" />
+                   className="mt-1 block w-full border border-neutral-300 px-3 py-2 font-normal" />
           </label>
         ))}
 
         <label className="block text-sm font-semibold text-neutral-700">
           Gait
           <select name="gait" defaultValue={listing?.gait ?? "Pacer"}
-                  className="mt-1 block w-full rounded border border-neutral-300 px-3 py-2 font-normal">
+                  className="mt-1 block w-full border border-neutral-300 px-3 py-2 font-normal">
             <option>Pacer</option>
             <option>Trotter</option>
           </select>
@@ -101,17 +101,17 @@ export default async function EditListing({ params }: { params: Promise<{ id: st
         <label className="block text-sm font-semibold text-neutral-700">
           Bio
           <textarea name="profile_bio" defaultValue={v("profile_bio")} rows={4}
-                    className="mt-1 block w-full rounded border border-neutral-300 px-3 py-2 font-normal" />
+                    className="mt-1 block w-full border border-neutral-300 px-3 py-2 font-normal" />
         </label>
         <label className="block text-sm font-semibold text-neutral-700">
           Progeny note
           <textarea name="progeny_note" defaultValue={v("progeny_note")} rows={2}
-                    className="mt-1 block w-full rounded border border-neutral-300 px-3 py-2 font-normal" />
+                    className="mt-1 block w-full border border-neutral-300 px-3 py-2 font-normal" />
         </label>
         <label className="block text-sm font-semibold text-neutral-700">
           Address
           <textarea name="contact_address" defaultValue={v("contact_address")} rows={2}
-                    className="mt-1 block w-full rounded border border-neutral-300 px-3 py-2 font-normal" />
+                    className="mt-1 block w-full border border-neutral-300 px-3 py-2 font-normal" />
         </label>
 
         <div className="flex gap-6">
@@ -123,7 +123,7 @@ export default async function EditListing({ params }: { params: Promise<{ id: st
           </label>
         </div>
 
-        <button className="rounded bg-navy px-4 py-2 text-sm font-semibold text-white">Save</button>
+        <button className="bg-navy px-4 py-2 text-sm font-semibold text-white">Save</button>
       </form>
 
       {!isNew && (

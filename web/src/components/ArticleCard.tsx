@@ -62,7 +62,7 @@ export default function ArticleCard({ article }: { article: ArticleSummary }) {
       : article.category?.name;
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-lg border border-neutral-200 bg-white">
+    <article className="group flex flex-col overflow-hidden border border-neutral-200 bg-white">
       <Link href={article.url} className="relative block aspect-[16/10] overflow-hidden bg-navy">
         {article.image?.src ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -80,7 +80,7 @@ export default function ArticleCard({ article }: { article: ArticleSummary }) {
           <PlaceholderThumb seed={article.id} />
         )}
         {badge && (
-          <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded bg-black/60 px-2.5 py-1 text-xs font-semibold text-white">
+          <span className="absolute left-3 top-3 flex items-center gap-1.5 bg-black/60 px-2.5 py-1 text-xs font-semibold text-white">
             <GlobeIcon />
             {badge}
           </span>

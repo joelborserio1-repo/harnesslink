@@ -3,16 +3,33 @@ import Thumb from "@/components/Thumb";
 import type { ArticleSummary } from "@/lib/api";
 import { formatCardDate } from "@/lib/format";
 
-export default function TrendingTile({ article }: { article: ArticleSummary }) {
+// Numbered trending story — the rank is set in the serif as a typographic
+// device, not a badge.
+export default function TrendingTile({ article, rank }: { article: ArticleSummary; rank: number }) {
   return (
-    <article className="group flex flex-col gap-2">
-      <Link href={article.url} className="block aspect-[16/10] overflow-hidden rounded-[9px] shadow-[0_1px_4px_rgba(8,31,91,0.12)]">
-        <Thumb image={article.image} seed={article.id + 100} alt={article.title} sizes="(max-width: 1024px) 100vw, 240px" className="transition duration-300 group-hover:scale-105" />
+    <article className="group flex flex-col">
+      <Link href={article.url} className="block aspect-[3/2] overflow-hidden bg-mist" tabIndex={-1} aria-hidden>
+        <Thumb
+          image={article.image}
+          seed={article.id + 100}
+          alt=""
+          sizes="(max-width: 640px) 100vw, 260px"
+          className="transition duration-500 group-hover:scale-[1.03]"
+        />
       </Link>
-      <h3 className="font-headline text-base font-bold leading-tight text-navy [text-wrap:balance] group-hover:text-blue">
-        <Link href={article.url}>{article.title}</Link>
-      </h3>
-      {article.published_at && <div className="text-xs text-muted">{formatCardDate(article.published_at)}</div>}
+      <div className="mt-3 flex gap-3">
+        <span className="font-headline text-[30px] font-bold leading-none text-navy/25" aria-hidden>
+          {rank}
+        </span>
+        <div>
+          <h3 className="font-headline text-[17px] font-bold leading-[1.22] text-navy [text-wrap:balance]">
+            <Link href={article.url} className="hl-link">
+              {article.title}
+            </Link>
+          </h3>
+          {article.published_at && <p className="meta mt-1.5">{formatCardDate(article.published_at)}</p>}
+        </div>
+      </div>
     </article>
   );
 }

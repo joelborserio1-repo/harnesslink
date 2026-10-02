@@ -5,8 +5,8 @@ module Api
     class ArticlesController < ApplicationController
       # GET /api/v1/articles
       def index
-        page     = [params.fetch(:page, 1).to_i, 1].max
-        per_page = [[params.fetch(:per_page, 12).to_i, 1].max, 50].min
+        page     = [ params.fetch(:page, 1).to_i, 1 ].max
+        per_page = [ [ params.fetch(:per_page, 12).to_i, 1 ].max, 50 ].min
 
         scope = Article.live
                        .includes(:primary_category, :categories, :featured_media, article_authors: :author)
@@ -31,6 +31,8 @@ module Api
 
         json = ArticleSerializer.full(article)
         json[:related] = related_articles(article).map { |a| ArticleSerializer.summary(a) }
+        json[:previous] = adjacent(article, :older)
+        json[:next] = adjacent(article, :newer)
         render json: { article: json }
       end
 
@@ -42,6 +44,22 @@ module Api
       end
 
       private
+
+      # The story published immediately before / after this one — the live
+      # site's Previous / Next links at the foot of every article. Uses the
+      # published_at index; returns { title, url } or nil at either end.
+      def adjacent(article, direction)
+        return nil unless article.published_at
+
+        scope = Article.live.where.not(id: article.id)
+        neighbour =
+          if direction == :older
+            scope.where(published_at: ...article.published_at).order(published_at: :desc).first
+          else
+            scope.where("published_at > ?", article.published_at).order(published_at: :asc).first
+          end
+        neighbour && { title: neighbour.title, url: "/#{neighbour.slug}/" }
+      end
 
       # "More from {region}" — recent live stories in the same primary category
       # (falls back to site-wide recent), excluding the article itself. Internal

@@ -11,6 +11,10 @@
  *
  * Then upload harnesslink-posts.json — the importer loads it directly.
  * Set EXPORT_LIMIT=0 to export everything (large!). EXPORT_TYPES defaults to "post".
+ *
+ * Static pages (privacy policy, terms, …) use the same shape:
+ *   EXPORT_TYPES=page EXPORT_LIMIT=0 wp eval-file migration/export_posts.php > harnesslink-pages.json
+ * and load through Wordpress::PageImporter.
  */
 
 $limit = (int) (getenv('EXPORT_LIMIT') !== false ? getenv('EXPORT_LIMIT') : 500);
@@ -24,6 +28,7 @@ $meta_keys = [
   'rank_math_facebook_title', 'rank_math_facebook_description',
   'rank_math_twitter_title', 'rank_math_twitter_description',
   '_molongui_main_author', '_thumbnail_id', '_elementor_data',
+  '_wp_page_template',
 ];
 
 $query = new WP_Query([
@@ -55,14 +60,47 @@ foreach ($query->posts as $p) {
     $tags[] = ['name' => $t->name, 'slug' => $t->slug, 'legacy_term_id' => $t->term_id];
   }
 
-  // Baseline byline = WP author. (Co-Authors/Molongui resolution comes later.)
+  // Byline. The live site prints the Molongui Authorship byline, NOT the WP
+  // post author (almost every post is owned by one WP user). Molongui stores
+  // one `_molongui_author` meta row per author, valued "user-{ID}" or
+  // "guest-{ID}" (a `guest_author` post), with `_molongui_main_author` naming
+  // the lead. Author archives live at /writers/{slug}/, so the slug exported
+  // here is the guest post_name / the user's nicename. Falls back to the WP
+  // author only when a post carries no Molongui rows.
   $authors = [];
-  $uid = $p->post_author;
-  if ($uid) {
+  $refs = array_values(array_unique(array_filter(array_merge(
+    [(string) get_post_meta($id, '_molongui_main_author', true)],
+    array_map('strval', (array) get_post_meta($id, '_molongui_author'))
+  ))));
+  foreach ($refs as $ref) {
+    if (!preg_match('/^(user|guest)-(\d+)$/', $ref, $m)) continue;
+    $aid = (int) $m[2];
+    if ($m[1] === 'guest') {
+      $g = get_post($aid);
+      if (!$g || $g->post_type !== 'guest_author') continue;
+      $authors[] = [
+        'name' => $g->post_title,
+        'slug' => $g->post_name,
+        'bio'  => $g->post_content,
+        'refs' => ['molongui_guest_id' => $aid],
+      ];
+    } else {
+      $u = get_userdata($aid);
+      if (!$u) continue;
+      $authors[] = [
+        'name' => $u->display_name,
+        'slug' => $u->user_nicename,
+        'bio'  => get_user_meta($aid, 'description', true),
+        'refs' => ['wp_user_id' => $aid],
+      ];
+    }
+  }
+  $uid = (int) $p->post_author;
+  if (!$authors && $uid) {
     $authors[] = [
       'name' => get_the_author_meta('display_name', $uid),
       'slug' => get_the_author_meta('user_nicename', $uid),
-      'refs' => ['wp_user_id' => (int) $uid],
+      'refs' => ['wp_user_id' => $uid, 'source' => 'post_author_fallback'],
     ];
   }
 
@@ -99,6 +137,8 @@ foreach ($query->posts as $p) {
     'tags' => $tags,
     'authors' => $authors,
     'old_slugs' => get_post_meta($id, '_wp_old_slug'),
+    // Full path — differs from post_name for child pages (/the-insider/editions/).
+    'path' => wp_parse_url(get_permalink($id), PHP_URL_PATH),
   ];
 }
 

@@ -10,6 +10,9 @@ module ActiveSupport
     # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
 
-    # Add more helper methods to be used by all tests here...
+    # Bearer header for the editorial portal API, signed in as the given user.
+    def staff_headers(user = users(:admin))
+      { "Authorization" => "Bearer #{user.generate_token_for(:staff_session)}" }
+    end
   end
 end

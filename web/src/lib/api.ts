@@ -56,6 +56,8 @@ export type ArticleFull = ArticleSummary & {
   featured_image: Thumb;
   seo: ArticleSeo;
   related: ArticleSummary[];
+  previous: { title: string; url: string } | null;
+  next: { title: string; url: string } | null;
 };
 
 export type Category = { name: string; slug: string; kind: string; url: string };
@@ -117,6 +119,23 @@ export async function getTag(slug: string) {
   return get<{ tag: { name: string; slug: string; url: string }; articles: ArticleSummary[] }>(
     `/api/v1/tags/${encodeURIComponent(slug)}`
   );
+}
+
+// ---- Static pages (migrated WordPress pages) ----
+
+export type StaticPage = {
+  path: string;
+  url: string;
+  title: string;
+  body_html: string | null;
+  modified_at: string | null;
+  seo: { title: string; description: string | null; canonical_url: string; robots: string };
+};
+
+export async function getPage(path: string) {
+  const clean = path.split("/").filter(Boolean).map(encodeURIComponent).join("/");
+  const data = await get<{ page: StaticPage }>(`/api/v1/pages/${clean}`);
+  return data?.page ?? null;
 }
 
 // ---- Directory ----

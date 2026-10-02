@@ -20,26 +20,18 @@ export default function Breadcrumbs({ items }: { items: Crumb[] }) {
   };
 
   return (
-    <nav aria-label="Breadcrumb" className="text-xs text-muted">
+    <nav aria-label="Breadcrumb">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <ol className="flex flex-wrap items-center gap-1.5">
-        {items.map((c, i) => {
-          const last = i === items.length - 1;
-          return (
-            <li key={c.url} className="flex items-center gap-1.5">
-              {last ? (
-                <span className="line-clamp-1 text-[#6b7280]" aria-current="page">
-                  {c.name}
-                </span>
-              ) : (
-                <Link href={c.url} className="font-semibold text-navy hover:text-blue">
-                  {c.name}
-                </Link>
-              )}
-              {!last && <span className="text-black/25">›</span>}
-            </li>
-          );
-        })}
+      {/* The trail stops at the section: the story title is the H1 right below. */}
+      <ol className="kicker flex flex-wrap items-center gap-2">
+        {items.slice(0, -1).map((c, i) => (
+          <li key={c.url} className="flex items-center gap-2">
+            {i > 0 && <span className="text-navy/30" aria-hidden>/</span>}
+            <Link href={c.url} className={i === 0 ? "text-muted hover:text-navy" : "hover:text-blue"}>
+              {c.name}
+            </Link>
+          </li>
+        ))}
       </ol>
     </nav>
   );

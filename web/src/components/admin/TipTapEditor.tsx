@@ -21,7 +21,7 @@ function Btn({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded px-2 py-1 text-sm font-semibold ${active ? "bg-navy text-white" : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"}`}
+      className={` px-2 py-1 text-sm font-semibold ${active ? "bg-navy text-white" : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"}`}
     >
       {children}
     </button>
@@ -73,7 +73,7 @@ export default function TipTapEditor({ initialJSON }: { initialJSON?: object | n
   }, [editor]);
 
   return (
-    <div className="rounded-lg border border-neutral-300 bg-white">
+    <div className="border border-neutral-300 bg-white">
       {editor && <Toolbar editor={editor} />}
       <EditorContent
         editor={editor}

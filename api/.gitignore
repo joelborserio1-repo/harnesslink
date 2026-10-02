@@ -31,3 +31,6 @@
 
 # Ignore local build/coverage artifacts.
 /coverage/
+
+# Locally vendored gems
+/vendor/bundle

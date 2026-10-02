@@ -50,14 +50,14 @@ class ArticleSerializer
   def self.author(author)
     return nil unless author
     a = author.canonical
-    { name: a.name, slug: a.slug, url: "/author/#{a.slug}/" }
+    { name: a.name, slug: a.slug, url: "/writers/#{a.slug}/" }
   end
 
   # Richer author for the article page's author box (bio / role for E-E-A-T).
   def self.author_detail(author)
     return nil unless author
     a = author.canonical
-    { name: a.name, slug: a.slug, url: "/author/#{a.slug}/",
+    { name: a.name, slug: a.slug, url: "/writers/#{a.slug}/",
       bio: a.bio, role_title: a.role_title }
   end
 

@@ -1,43 +1,35 @@
 import Link from "next/link";
 import AdSlot from "@/components/AdSlot";
-import NextToGo from "@/components/home/NextToGo";
-import InsiderPanel from "@/components/home/InsiderPanel";
 import type { ArticleSummary } from "@/lib/api";
 
-// The article-page rail: interleaved ad units and widgets (Next To Go, Most
-// Read, The Insider). Sticky on desktop; hidden on mobile (a single in-flow
-// ad is rendered under the article instead).
+// The article-page rail: ad units with the latest-stories list between them,
+// mirroring the live article template (a column of advertiser creatives).
+// Sticky on desktop; hidden on mobile (a single in-flow ad is rendered under
+// the article instead).
 export default function ArticleSidebar({ mostRead }: { mostRead: ArticleSummary[] }) {
   return (
-    <aside className="hidden self-start lg:sticky lg:top-4 lg:flex lg:flex-col lg:gap-6">
+    <aside className="hidden self-start lg:sticky lg:top-4 lg:flex lg:flex-col lg:gap-7">
       <AdSlot size="mpu" zone="article-rail-1" />
 
-      <NextToGo />
-
       {mostRead.length > 0 && (
-        <div className="card p-5">
-          <p className="eyebrow text-[14px]">Trending</p>
-          <h2 className="mb-3 border-b-2 border-navy pb-2 font-headline text-lg font-extrabold text-navy">
-            Most Read
-          </h2>
-          <ol className="flex flex-col divide-y divide-black/[0.07]">
+        <section className="sheet p-5">
+          <h2 className="rule-head font-headline text-[19px] font-bold text-navy">Latest stories</h2>
+          <ol className="mt-1">
             {mostRead.map((a, i) => (
-              <li key={a.id} className="flex gap-3 py-2.5">
-                <span className="font-headline text-xl font-extrabold text-blue/40">{i + 1}</span>
-                <Link
-                  href={a.url}
-                  className="font-headline text-[14px] font-semibold leading-snug text-navy [text-wrap:balance] hover:text-blue"
-                >
-                  {a.title}
+              <li key={a.id} className="group flex gap-3 border-b border-line py-3 last:border-b-0 last:pb-0">
+                <span className="font-headline text-[22px] font-bold leading-none text-navy/25" aria-hidden>
+                  {i + 1}
+                </span>
+                <Link href={a.url} className="font-headline text-[15px] font-bold leading-snug text-navy [text-wrap:balance]">
+                  <span className="hl-link">{a.title}</span>
                 </Link>
               </li>
             ))}
           </ol>
-        </div>
+        </section>
       )}
 
       <AdSlot size="mpu" zone="article-rail-2" />
-      <InsiderPanel />
       <AdSlot size="halfpage" zone="article-rail-3" />
     </aside>
   );

@@ -1,21 +1,34 @@
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
-import { getArticle, listCategories, listAuthors, updateArticle } from "@/lib/admin";
+import { getArticle, listCategories, listAuthors, updateArticle, getMe, canPublish } from "@/lib/admin";
 import TipTapEditor from "@/components/admin/TipTapEditor";
 
 export const dynamic = "force-dynamic";
 
-const STATUSES = ["published", "draft", "in_review", "scheduled", "archived"];
+const STATUS_LABEL: Record<string, string> = {
+  draft: "Draft",
+  in_review: "Awaiting review",
+  scheduled: "Scheduled",
+  published: "Published",
+  archived: "Archived",
+};
+const DESK_STATUSES = ["draft", "in_review", "published", "scheduled", "archived"];
+const JOURNALIST_STATUSES = ["draft", "in_review"];
 
 export default async function EditArticle({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [article, categories, authors] = await Promise.all([
+  const [article, categories, authors, me] = await Promise.all([
     getArticle(id),
     listCategories(),
     listAuthors(),
+    getMe(),
   ]);
   if (!article) notFound();
+  const desk = canPublish(me);
+  const statuses = desk ? DESK_STATUSES : JOURNALIST_STATUSES;
+  // A journalist's story is read-only to them once the desk has taken it.
+  const locked = !desk && !JOURNALIST_STATUSES.includes(article.status);
 
   async function save(formData: FormData) {
     "use server";
@@ -41,20 +54,26 @@ export default async function EditArticle({ params }: { params: Promise<{ id: st
     }
   }
 
-  const input = "w-full rounded border border-neutral-300 px-3 py-2 text-sm";
+  const input = "w-full border border-neutral-300 px-3 py-2 text-sm";
   const label = "block text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-1";
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
       <div className="mb-4 flex items-center justify-between">
-        <Link href="/admin" className="text-sm text-neutral-500 hover:text-navy">← All articles</Link>
+        <Link href="/admin/" className="text-sm text-neutral-500 hover:text-navy">← Stories</Link>
         <a href={article.legacy_url ?? `/${article.slug}/`} className="text-sm font-semibold text-accent">
           View on site ↗
         </a>
       </div>
-      <h1 className="text-xl font-bold text-neutral-900">Edit article</h1>
+      <h1 className="font-headline text-2xl font-bold text-navy">Edit story</h1>
+      {locked && (
+        <p className="mt-3 border-l-[3px] border-navy bg-white px-3 py-2.5 text-sm text-neutral-700">
+          This story is {STATUS_LABEL[article.status]?.toLowerCase() ?? article.status} and now sits with the desk. Ask an
+          editor if it needs a change.
+        </p>
+      )}
 
-      <form action={save} className="mt-6 space-y-5 rounded-lg border border-neutral-200 bg-white p-6">
+      <form action={save} className="mt-6 space-y-5 border border-neutral-200 bg-white p-6">
         <div>
           <label className={label}>Title</label>
           <input name="title" defaultValue={article.title} className={input} />
@@ -71,7 +90,7 @@ export default async function EditArticle({ params }: { params: Promise<{ id: st
           <div>
             <label className={label}>Status</label>
             <select name="status" defaultValue={article.status} className={input}>
-              {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+              {(locked ? [article.status] : statuses).map((s) => <option key={s} value={s}>{STATUS_LABEL[s] ?? s}</option>)}
             </select>
           </div>
         </div>
@@ -109,7 +128,7 @@ export default async function EditArticle({ params }: { params: Promise<{ id: st
           )}
         </div>
 
-        <fieldset className="rounded border border-neutral-200 p-4">
+        <fieldset className="border border-neutral-200 p-4">
           <legend className="px-1 text-xs font-bold uppercase tracking-wide text-neutral-500">SEO</legend>
           <div className="space-y-3">
             <div>
@@ -127,16 +146,16 @@ export default async function EditArticle({ params }: { params: Promise<{ id: st
           </div>
         </fieldset>
 
-        <label className="flex items-center gap-2 text-sm text-neutral-700">
-          <input type="checkbox" name="needs_review" defaultChecked={article.needs_review} />
-          Needs review
-        </label>
+        {desk && (
+          <label className="flex items-center gap-2 text-sm text-neutral-700">
+            <input type="checkbox" name="needs_review" defaultChecked={article.needs_review} />
+            Import flag — needs a human check
+          </label>
+        )}
 
         <div className="flex gap-3">
-          <button className="rounded bg-accent px-5 py-2 font-semibold text-white hover:brightness-110">
-            Save
-          </button>
-          <Link href="/admin" className="rounded border border-neutral-300 px-5 py-2 font-semibold text-neutral-600">
+          {!locked && <button className="btn">Save</button>}
+          <Link href="/admin" className="border border-neutral-300 px-5 py-2 font-semibold text-neutral-600">
             Cancel
           </Link>
         </div>

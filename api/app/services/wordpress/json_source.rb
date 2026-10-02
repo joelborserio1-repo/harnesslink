@@ -19,6 +19,7 @@ module Wordpress
       {
         id: h["id"].to_i,
         post_name: h["post_name"],
+        path: h["path"],
         post_title: h["post_title"],
         post_content: h["post_content"],
         post_excerpt: h["post_excerpt"],
@@ -29,7 +30,9 @@ module Wordpress
         meta: h["meta"] || {},
         categories: terms(h["categories"]),
         tags: terms(h["tags"]),
-        authors: (h["authors"] || []).map { |a| { name: a["name"], slug: a["slug"], refs: a["refs"] || {} } },
+        authors: (h["authors"] || []).map do |a|
+          { name: a["name"], slug: a["slug"], bio: a["bio"].presence, refs: a["refs"] || {} }
+        end,
         old_slugs: h["old_slugs"] || [],
         featured: featured(h["featured"])
       }

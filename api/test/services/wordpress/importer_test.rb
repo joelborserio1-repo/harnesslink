@@ -35,6 +35,17 @@ module Wordpress
       assert article.status_published?
     end
 
+    test "a guest byline arrives with its bio and its /writers/ slug" do
+      guest = { name: "Adam Hamilton II", slug: "adam-hamilton-ii", bio: "Covers Australian racing.",
+                refs: { "molongui_guest_id" => 812 } }
+      Importer.new(source: source([wp_post(id: 5009, slug: "guest-story", title: "Guest", authors: [guest])])).call
+
+      author = Article.find_by(legacy_wp_id: 5009).authors.first
+      assert_equal "adam-hamilton-ii", author.slug
+      assert_equal "Covers Australian racing.", author.bio
+      assert_equal 812, author.legacy_refs["molongui_guest_id"]
+    end
+
     test "generates 301 redirects from old slugs" do
       Importer.new(source: source([
         wp_post(id: 5002, slug: "current-slug", title: "Story", old_slugs: %w[old-one old-two])

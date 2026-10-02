@@ -4,3 +4,6 @@ harnesslink-directory.zip
 
 # Local secrets
 .env
+
+# Local dev scratch (live sample export, etc.)
+/tmp/

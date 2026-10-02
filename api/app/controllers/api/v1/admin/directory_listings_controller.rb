@@ -3,12 +3,14 @@
 module Api
   module V1
     module Admin
-      # Editorial admin for the directory. HTTP Basic gated (BaseController).
+      # Editorial admin for the directory (editors and admins).
       class DirectoryListingsController < BaseController
+        before_action :require_editor!
+
         # GET /api/v1/admin/directory_listings?type=&q=&page=
         def index
-          page     = [params.fetch(:page, 1).to_i, 1].max
-          per_page = [[params.fetch(:per_page, 50).to_i, 1].max, 200].min
+          page     = [ params.fetch(:page, 1).to_i, 1 ].max
+          per_page = [ [ params.fetch(:per_page, 50).to_i, 1 ].max, 200 ].min
 
           scope = DirectoryListing.order(:directory_type, :name)
           scope = scope.of_type(params[:type]) if params[:type].present?
@@ -51,7 +53,7 @@ module Api
         # POST /api/v1/admin/directory_listings/import  (multipart: file, type)
         def import
           file = params[:file]
-          return render json: { errors: ["No CSV file uploaded."] }, status: :unprocessable_entity unless file
+          return render json: { errors: [ "No CSV file uploaded." ] }, status: :unprocessable_entity unless file
 
           file.rewind if file.respond_to?(:rewind)
           csv = (file.respond_to?(:read) ? file.read : file.to_s).to_s.force_encoding("UTF-8")

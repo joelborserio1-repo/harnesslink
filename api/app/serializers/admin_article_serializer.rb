@@ -12,7 +12,9 @@ class AdminArticleSerializer
       import_flags: a.import_flags,
       published_at: a.published_at&.iso8601,
       primary_category: a.primary_category&.name,
-      authors: a.authors.map(&:name)
+      authors: a.authors.map(&:name),
+      created_by: a.created_by&.name.presence || a.created_by&.email,
+      updated_at: a.updated_at&.iso8601
     }
   end
 

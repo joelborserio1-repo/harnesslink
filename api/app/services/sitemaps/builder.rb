@@ -64,9 +64,13 @@ module Sitemaps
     def archives_xml
       paths = []
       Category.order(:id).pluck(:slug).each { |s| paths << "/category/#{s}/" }
+      # The live site also serves each country at /country/{slug}/ (its own
+      # taxonomy, self-canonical) — the URL its navigation links to.
+      Country.ordered.includes(:category).each { |c| paths << "/country/#{c.category.slug}/" if c.category }
+      Page.live.order(:path).pluck(:path).each { |path| paths << "/#{path}/" }
       # DISTINCT requires the ORDER BY column in the select list, so order by
       # the slug we're plucking rather than id.
-      Author.where(merged_into_id: nil).joins(:article_authors).distinct.order(:slug).pluck(:slug).each { |s| paths << "/author/#{s}/" }
+      Author.where(merged_into_id: nil).joins(:article_authors).distinct.order(:slug).pluck(:slug).each { |s| paths << "/writers/#{s}/" }
       Tag.joins(:article_tags).distinct.order(:slug).pluck(:slug).each { |s| paths << "/tag/#{s}/" }
 
       # Directory — hub, type archives, and each listing profile (URL parity).

@@ -126,7 +126,8 @@ module Wordpress
       authors.each_with_index do |descriptor, position|
         author = Author.find_or_initialize_by(slug: descriptor[:slug])
         if author.new_record?
-          author.assign_attributes(name: descriptor[:name], legacy_refs: descriptor[:refs] || {})
+          author.assign_attributes(name: descriptor[:name], legacy_refs: descriptor[:refs] || {},
+                                   bio: descriptor[:bio].presence)
           author.save!
           @run.bump("authors")
         end

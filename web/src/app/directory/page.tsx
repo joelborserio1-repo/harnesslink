@@ -17,7 +17,7 @@ export default async function DirectoryHub() {
   return (
     <div className="mx-auto max-w-5xl px-5 py-8">
       <div className="card p-6 sm:p-8">
-        <p className="eyebrow text-[15px]">The Industry</p>
+        <p className="kicker kicker-gold">The Industry</p>
         <h1 className="font-headline text-3xl font-extrabold text-navy sm:text-4xl">Harness Racing Directory</h1>
         <p className="mt-2 max-w-[64ch] text-[15px] text-[#41454e]">
           Stallions and studs, trainers, drivers and the services that keep the industry moving —
@@ -29,7 +29,7 @@ export default async function DirectoryHub() {
             <Link
               key={t.key}
               href={`/directory/${t.url}/`}
-              className="group flex items-center justify-between rounded-lg border border-black/10 bg-page p-4 hover:border-navy/40"
+              className="group flex items-center justify-between border border-black/10 bg-page p-4 hover:border-navy/40"
             >
               <div>
                 <h2 className="font-headline text-lg font-bold text-navy group-hover:text-blue">{t.plural}</h2>

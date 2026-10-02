@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_20_080000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -97,6 +97,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_080000) do
     t.string "byline_text"
     t.string "canonical_url"
     t.datetime "created_at", null: false
+    t.bigint "created_by_id"
     t.text "excerpt"
     t.string "featured_image_caption"
     t.string "featured_image_credit"
@@ -129,6 +130,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_080000) do
     t.string "twitter_title"
     t.datetime "updated_at", null: false
     t.bigint "view_count", default: 0, null: false
+    t.index ["created_by_id"], name: "index_articles_on_created_by_id"
     t.index ["featured_media_id"], name: "index_articles_on_featured_media_id"
     t.index ["legacy_url"], name: "index_articles_on_legacy_url", unique: true
     t.index ["legacy_wp_id"], name: "index_articles_on_legacy_wp_id", unique: true
@@ -295,6 +297,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_080000) do
     t.index ["path"], name: "index_missed_paths_on_path", unique: true
   end
 
+  create_table "pages", force: :cascade do |t|
+    t.text "body_html"
+    t.string "canonical_url"
+    t.datetime "created_at", null: false
+    t.datetime "legacy_modified_at"
+    t.string "legacy_url"
+    t.bigint "legacy_wp_id"
+    t.string "path", null: false
+    t.datetime "published_at"
+    t.string "robots"
+    t.text "seo_description"
+    t.string "seo_title"
+    t.integer "status", default: 3, null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["legacy_wp_id"], name: "index_pages_on_legacy_wp_id", unique: true
+    t.index ["path"], name: "index_pages_on_path", unique: true
+  end
+
   create_table "redirects", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "from_path", null: false
@@ -319,13 +340,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_080000) do
   end
 
   create_table "users", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.bigint "author_id"
     t.datetime "created_at", null: false
     t.string "email", null: false
+    t.datetime "last_sign_in_at"
     t.bigint "legacy_wp_user_id"
     t.string "name"
     t.string "password_digest"
     t.integer "role", default: 0, null: false
     t.datetime "updated_at", null: false
+    t.index ["author_id"], name: "index_users_on_author_id"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["legacy_wp_user_id"], name: "index_users_on_legacy_wp_user_id", unique: true
   end
@@ -342,9 +367,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_080000) do
   add_foreign_key "articles", "media_assets", column: "featured_media_id"
   add_foreign_key "articles", "media_assets", column: "og_image_id"
   add_foreign_key "articles", "media_assets", column: "twitter_image_id"
+  add_foreign_key "articles", "users", column: "created_by_id"
   add_foreign_key "authors", "authors", column: "merged_into_id"
   add_foreign_key "categories", "categories", column: "parent_id"
   add_foreign_key "countries", "categories"
   add_foreign_key "directory_enquiries", "directory_listings"
   add_foreign_key "directory_progeny", "directory_listings"
+  add_foreign_key "users", "authors"
 end

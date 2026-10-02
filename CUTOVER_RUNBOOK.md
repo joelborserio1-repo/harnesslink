@@ -157,6 +157,9 @@ Owner: SEO/analytics + backend, in the cutover channel.
    `<loc>` host is production.
 5. `https://harnesslink.com/robots.txt` → 200, references the production
    sitemap, does **not** `Disallow: /`.
+   And `curl -sI https://harnesslink.com/ | grep -i x-robots-tag` prints
+   **nothing** — the staging `NOINDEX=true` setting must not be in the
+   production `.env`. A noindex header on production would de-index the site.
 6. Confirm analytics is recording pageviews on the new stack.
 7. Confirm error rate / 5xx on the app is flat (app logs, `MissedPath` 404 log).
 
@@ -211,6 +214,7 @@ Cutover lead reads this aloud; each owner answers **GO** or **NO-GO**.
 - [ ] Final content sync done, counts reconciled (backend) — **GO / NO-GO**
 - [ ] TTL lowered ≥48h ago and propagated (DNS) — **GO / NO-GO**
 - [ ] TLS valid for apex + www on new stack (DNS/infra) — **GO / NO-GO**
+- [ ] `NOINDEX` is unset in the production `.env` (infra) — **GO / NO-GO**
 - [ ] Rollback DNS values saved + revert rehearsed (DNS) — **GO / NO-GO**
 - [ ] Monitoring dashboards + on-call ready (SEO) — **GO / NO-GO**
 

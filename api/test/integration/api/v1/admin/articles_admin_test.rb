@@ -6,18 +6,8 @@ module Api
   module V1
     module Admin
       class ArticlesAdminTest < ActionDispatch::IntegrationTest
-        setup do
-          @prev = [ENV["ADMIN_USER"], ENV["ADMIN_PASSWORD"]]
-          ENV["ADMIN_USER"] = "admin"
-          ENV["ADMIN_PASSWORD"] = "secret"
-        end
-
-        teardown do
-          ENV["ADMIN_USER"], ENV["ADMIN_PASSWORD"] = @prev
-        end
-
         def auth
-          { "Authorization" => ActionController::HttpAuthentication::Basic.encode_credentials("admin", "secret") }
+          staff_headers(users(:admin))
         end
 
         test "requires authentication" do
@@ -50,14 +40,14 @@ module Api
           articles(:lead).update!(needs_review: true)
           patch "/api/v1/admin/articles/#{articles(:lead).id}",
                 params: { article: { title: "Edited headline", status: "published",
-                                     needs_review: false, author_ids: [authors(:bruce).id, authors(:adam).id] } },
+                                     needs_review: false, author_ids: [ authors(:bruce).id, authors(:adam).id ] } },
                 headers: auth
           assert_response :success
 
           lead = articles(:lead).reload
           assert_equal "Edited headline", lead.title
           assert_not lead.needs_review
-          assert_equal [authors(:bruce).id, authors(:adam).id],
+          assert_equal [ authors(:bruce).id, authors(:adam).id ],
                        lead.article_authors.order(:position).pluck(:author_id)
         end
 

@@ -10,12 +10,15 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       # Articles are addressed by slug (the whole /%postname%/ path).
-      resources :articles, only: [:index, :show], param: :slug do
+      resources :articles, only: [ :index, :show ], param: :slug do
         post :view, on: :member
       end
-      resources :categories, only: [:index, :show], param: :slug
-      resources :authors, only: [:show], param: :slug
-      resources :tags, only: [:show], param: :slug
+      resources :categories, only: [ :index, :show ], param: :slug
+      resources :authors, only: [ :show ], param: :slug
+      resources :tags, only: [ :show ], param: :slug
+
+      # Static pages migrated from WordPress, addressed by full path.
+      get "pages/*path", to: "pages#show", format: false
 
       # Directory — /directory hub, /directory/{type}, /directory/{type}/{id}.
       get "directory", to: "directory#index"
@@ -34,7 +37,7 @@ Rails.application.routes.draw do
       post "ads/:id/impression", to: "ads#impression"
 
       get "redirects/resolve", to: "redirects#resolve"
-      resources :missed_paths, only: [:create]
+      resources :missed_paths, only: [ :create ]
 
       # SEO — served at the public domain via Next.js rewrites.
       get "sitemap", to: "sitemaps#index"
@@ -44,14 +47,16 @@ Rails.application.routes.draw do
       get "feed", to: "sitemaps#feed"
 
       namespace :admin do
+        resource :session, only: [ :create, :show ]
+        resources :users, only: [ :index, :create, :update ]
         get "stats", to: "stats#show"
-        resources :articles, only: [:index, :show, :create, :update]
-        resources :authors, only: [:index, :update]
-        resources :categories, only: [:index]
-        resources :directory_listings, only: [:index, :show, :create, :update, :destroy] do
+        resources :articles, only: [ :index, :show, :create, :update ]
+        resources :authors, only: [ :index, :update ]
+        resources :categories, only: [ :index ]
+        resources :directory_listings, only: [ :index, :show, :create, :update, :destroy ] do
           post :import, on: :collection
         end
-        resources :ads, only: [:index, :show, :create, :update, :destroy]
+        resources :ads, only: [ :index, :show, :create, :update, :destroy ]
       end
     end
   end

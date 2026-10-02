@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title: data.author.name,
     description: `Articles by ${data.author.name} on Harnesslink.`,
-    alternates: { canonical: `https://harnesslink.com/author/${data.author.slug}/` },
+    alternates: { canonical: `https://harnesslink.com/writers/${data.author.slug}/` },
   };
 }
 

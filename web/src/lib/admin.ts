@@ -1,21 +1,83 @@
-// Server-only admin client (used exclusively from server components / actions). Talks to the Rails admin API with HTTP Basic creds
-// held on the server (never exposed to the browser). The /admin routes are
-// gated separately by middleware.ts.
+// Server-only admin client (used exclusively from server components / actions).
+// Talks to the Rails admin API as the signed-in staff member: the session token
+// lives in an httpOnly cookie and is replayed as a Bearer token, so it is never
+// readable by browser JavaScript. /admin routes are also gated in proxy.ts.
+import { cookies } from "next/headers";
 
 const API_BASE = process.env.API_BASE || "http://127.0.0.1:3001";
 
-function authHeader() {
-  const user = process.env.ADMIN_USER || "";
-  const pass = process.env.ADMIN_PASSWORD || "";
-  return "Basic " + Buffer.from(`${user}:${pass}`).toString("base64");
+export const SESSION_COOKIE = "hl_staff";
+
+async function authHeader() {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  return token ? `Bearer ${token}` : "";
 }
 
 async function adminFetch(path: string, init: RequestInit = {}) {
   return fetch(`${API_BASE}/api/v1/admin${path}`, {
     ...init,
-    headers: { Authorization: authHeader(), "Content-Type": "application/json", ...(init.headers || {}) },
+    headers: { Authorization: await authHeader(), "Content-Type": "application/json", ...(init.headers || {}) },
     cache: "no-store",
   });
+}
+
+// ---- Session + staff accounts ----
+
+export type Role = "contributor" | "editor" | "admin";
+
+export type StaffUser = {
+  id: number;
+  email: string;
+  name: string | null;
+  role: Role;
+  active: boolean;
+  author_id: number | null;
+  author_name: string | null;
+  last_sign_in_at: string | null;
+};
+
+export const canPublish = (u: StaffUser | null) => u?.role === "editor" || u?.role === "admin";
+
+// Exchange email + password for a session token. Returns the token or an error
+// message suitable for showing on the login form.
+export async function signIn(email: string, password: string): Promise<{ token?: string; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/admin/session`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+      cache: "no-store",
+    });
+    const data = (await res.json().catch(() => ({}))) as { token?: string; error?: string };
+    if (res.ok && data.token) return { token: data.token };
+    return { error: data.error || "Sign-in failed. Try again." };
+  } catch {
+    return { error: "The editorial system isn't reachable right now. Try again in a minute." };
+  }
+}
+
+export async function getMe(): Promise<StaffUser | null> {
+  if (!(await authHeader())) return null;
+  const res = await adminFetch(`/session`);
+  if (!res.ok) return null;
+  return ((await res.json()) as { user: StaffUser }).user;
+}
+
+export async function listUsers() {
+  const res = await adminFetch(`/users`);
+  if (!res.ok) return [] as StaffUser[];
+  return ((await res.json()) as { users: StaffUser[] }).users;
+}
+
+// Returns null on success, or the validation messages.
+export async function saveUser(id: number | null, body: Record<string, unknown>): Promise<string[] | null> {
+  const res = await adminFetch(id ? `/users/${id}` : `/users`, {
+    method: id ? "PATCH" : "POST",
+    body: JSON.stringify({ user: body }),
+  });
+  if (res.ok) return null;
+  const data = (await res.json().catch(() => ({}))) as { errors?: string[]; error?: string };
+  return data.errors ?? [data.error ?? "Couldn't save that account."];
 }
 
 export type AdminArticleSummary = {
@@ -28,6 +90,8 @@ export type AdminArticleSummary = {
   published_at: string | null;
   primary_category: string | null;
   authors: string[];
+  created_by: string | null;
+  updated_at: string | null;
 };
 
 export type AdminArticle = AdminArticleSummary & {
@@ -136,10 +200,8 @@ export async function deleteDirectoryListing(id: string) {
 
 // Multipart CSV upload — forwards the file to the Rails import endpoint.
 export async function importDirectoryCsv(form: FormData) {
-  const user = process.env.ADMIN_USER || "";
-  const pass = process.env.ADMIN_PASSWORD || "";
-  const auth = "Basic " + Buffer.from(`${user}:${pass}`).toString("base64");
-  const base = process.env.API_BASE || "http://127.0.0.1:3001";
+  const auth = await authHeader();
+  const base = API_BASE;
   const res = await fetch(`${base}/api/v1/admin/directory_listings/import`, {
     method: "POST",
     headers: { Authorization: auth }, // let fetch set the multipart boundary
@@ -205,6 +267,8 @@ export type AdminStats = {
   published: number;
   drafts: number;
   needs_review: number;
+  in_review: number;
+  my_drafts: number;
   total_views: number;
   subscribers: number;
   listings: number;

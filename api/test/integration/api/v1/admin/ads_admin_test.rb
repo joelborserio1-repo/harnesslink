@@ -6,16 +6,8 @@ module Api
   module V1
     module Admin
       class AdsAdminTest < ActionDispatch::IntegrationTest
-        setup do
-          @prev = [ENV["ADMIN_USER"], ENV["ADMIN_PASSWORD"]]
-          ENV["ADMIN_USER"] = "admin"
-          ENV["ADMIN_PASSWORD"] = "secret"
-        end
-
-        teardown { ENV["ADMIN_USER"], ENV["ADMIN_PASSWORD"] = @prev }
-
         def auth
-          { "Authorization" => ActionController::HttpAuthentication::Basic.encode_credentials("admin", "secret") }
+          staff_headers(users(:admin))
         end
 
         test "requires authentication" do

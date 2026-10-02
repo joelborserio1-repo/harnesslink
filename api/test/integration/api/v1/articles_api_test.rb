@@ -33,6 +33,23 @@ module Api
                             "related must never include the article itself"
       end
 
+      test "show links the previous and next live stories by publish time" do
+        older = Article.create!(title: "Older story", slug: "older-story", body_format: :legacy_html,
+                                body_html: "<p>x</p>", status: :published, published_at: 5.days.ago)
+        Article.create!(title: "Unpublished", slug: "unpublished-story", body_format: :legacy_html,
+                        body_html: "<p>x</p>", status: :draft, published_at: 1.day.ago)
+
+        get "/api/v1/articles/#{articles(:lead).slug}"
+        a = JSON.parse(response.body).fetch("article")
+        assert_equal({ "title" => "Older story", "url" => "/older-story/" }, a["previous"])
+        assert_nil a["next"], "a draft must never be linked as the next story"
+
+        get "/api/v1/articles/#{older.slug}"
+        a = JSON.parse(response.body).fetch("article")
+        assert_nil a["previous"]
+        assert_equal "/#{articles(:lead).slug}/", a.dig("next", "url")
+      end
+
       test "view beacon increments the counter" do
         article = articles(:lead)
         assert_difference -> { article.reload.view_count }, 1 do

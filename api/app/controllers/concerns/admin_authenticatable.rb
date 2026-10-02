@@ -1,35 +1,39 @@
 # frozen_string_literal: true
 
-# Dependency-free gate for the editorial admin: HTTP Basic auth against
-# ADMIN_USER / ADMIN_PASSWORD env vars. This is a staging-grade gate; real
-# per-user logins (User + has_secure_password) land when bcrypt is approved.
+# Gate for the editorial portal API: a per-person staff session token
+# (`Authorization: Bearer …`, issued by Admin::SessionsController). Sets
+# `current_user`; role checks are explicit per controller via require_editor! /
+# require_admin!.
 module AdminAuthenticatable
   extend ActiveSupport::Concern
-  include ActionController::HttpAuthentication::Basic::ControllerMethods
 
   included do
-    before_action :authenticate_admin!
+    before_action :authenticate_staff!
+    attr_reader :current_user
   end
 
   private
 
-  def authenticate_admin!
-    expected_user = ENV["ADMIN_USER"].to_s
-    expected_pass = ENV["ADMIN_PASSWORD"].to_s
+  def authenticate_staff!
+    token = request.authorization.to_s[/\ABearer (.+)\z/, 1]
+    user = token.present? ? User.find_by_token_for(:staff_session, token) : nil
 
-    if expected_user.empty? || expected_pass.empty?
-      return render json: { error: "Admin auth is not configured (set ADMIN_USER / ADMIN_PASSWORD)." },
-                    status: :service_unavailable
-    end
-
-    authenticate_or_request_with_http_basic("Harnesslink Admin") do |user, pass|
-      secure_eq(user, expected_user) && secure_eq(pass, expected_pass)
+    if user&.staff? && user.active?
+      @current_user = user
+    else
+      render json: { error: "Sign in required." }, status: :unauthorized
     end
   end
 
-  def secure_eq(a, b)
-    ActiveSupport::SecurityUtils.secure_compare(
-      Digest::SHA256.hexdigest(a.to_s), Digest::SHA256.hexdigest(b.to_s)
-    )
+  def require_editor!
+    forbid! unless current_user.can_publish?
+  end
+
+  def require_admin!
+    forbid! unless current_user.role_admin?
+  end
+
+  def forbid!
+    render json: { error: "Your account does not have permission to do that." }, status: :forbidden
   end
 end

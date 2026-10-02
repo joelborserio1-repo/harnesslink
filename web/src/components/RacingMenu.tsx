@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { RACING } from "@/lib/racing";
 
 // The "Racing" mega-menu: hover to open, hover a country on the left to reveal
@@ -41,7 +42,7 @@ export default function RacingMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 whitespace-nowrap border-b-2 border-transparent py-3 text-sm font-semibold uppercase tracking-wide text-white/90 hover:border-accent hover:text-white"
+        className="flex items-center gap-1 whitespace-nowrap border-b-2 border-transparent py-2.5 text-[12px] sm:py-3 sm:text-[13px] font-semibold uppercase tracking-[0.12em] text-white/85 hover:border-amber hover:text-white"
       >
         Racing
         <span aria-hidden className={`text-[10px] transition-transform ${open ? "rotate-180" : ""}`}>
@@ -52,7 +53,7 @@ export default function RacingMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute left-0 top-full z-50 flex overflow-hidden rounded-b-md border border-white/10 bg-navy shadow-2xl"
+          className="absolute left-0 top-full z-50 flex overflow-hidden border border-white/15 border-t-2 border-t-amber bg-navy-deep"
         >
           {/* Countries */}
           <ul className="w-48 border-r border-white/10 py-1">
@@ -68,7 +69,6 @@ export default function RacingMenu() {
                   }`}
                 >
                   <span className="flex items-center gap-2.5">
-                    <span aria-hidden className="text-lg leading-none">{c.flag}</span>
                     {c.name}
                   </span>
                   <span aria-hidden className="text-white/50">›</span>
@@ -100,6 +100,24 @@ export default function RacingMenu() {
             >
               Results &amp; Replays
             </a>
+            {country.calendar && (
+              <Link
+                href={country.calendar}
+                role="menuitem"
+                onClick={() => setOpen(false)}
+                className="block px-4 py-2.5 text-[15px] font-semibold text-white/90 hover:bg-white/10 hover:text-white"
+              >
+                {country.name} Race Calendar
+              </Link>
+            )}
+            <Link
+              href="/international-race-calendar/"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="mt-1 block border-t border-white/15 px-4 py-2.5 text-[13px] font-bold uppercase tracking-[0.1em] text-amber hover:bg-white/10"
+            >
+              International Race Calendar →
+            </Link>
           </div>
         </div>
       )}

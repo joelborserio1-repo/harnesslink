@@ -30,11 +30,11 @@ export default async function AdSlot({
   const ad = ads[zone];
 
   return (
-    <div className={`flex justify-center ${className}`}>
+    <div className={`flex flex-col items-center ${className}`}>
       <div
         data-ad-zone={zone}
         style={{ width: "100%", maxWidth: s.w, height: s.h }}
-        className="flex items-center justify-center overflow-hidden rounded"
+        className="flex items-center justify-center overflow-hidden"
       >
         {ad ? <AdImpression id={ad.id} /> : null}
         {ad?.html ? (
@@ -47,13 +47,13 @@ export default async function AdSlot({
         ) : (
           <div
             aria-hidden="true"
-            className="flex h-full w-full items-center justify-center rounded border border-dashed border-neutral-300 bg-neutral-50"
+            className="flex h-full w-full items-center justify-center border border-line bg-white/60"
           >
             <div className="text-center leading-tight">
               <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
                 Advertisement
               </div>
-              <div className="text-[10px] text-neutral-300">{s.label}</div>
+              <div className="mt-0.5 text-[10px] text-neutral-400">{s.label}</div>
             </div>
           </div>
         )}

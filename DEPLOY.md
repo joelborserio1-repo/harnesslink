@@ -21,6 +21,8 @@ cp .env.example .env
 #   - SECRET_KEY_BASE: run  openssl rand -hex 64
 #   - DB_PASSWORD:     any strong password
 #   - WEB_PORT:        host port for the site (default 8080)
+#   - ADMIN_EMAIL / ADMIN_PASSWORD: the first admin's login for /admin
+#   - NOINDEX=true     keep it on staging so Google never indexes this copy
 $EDITOR .env
 
 # 3. Build and start
@@ -32,7 +34,27 @@ docker compose logs -f api
 
 Visit `http://<server-ip>:8080`. You should see the navy Harnesslink homepage
 with the card grid. The **editorial admin** is at `http://<server-ip>:8080/admin`
-(HTTP Basic — the `ADMIN_USER` / `ADMIN_PASSWORD` you set in `.env`).
+— sign in with `ADMIN_EMAIL` and the `ADMIN_PASSWORD` you set in `.env`, then create
+a personal account for each journalist and editor under **Staff**.
+
+## Updating a staging box that already runs an older build
+
+```bash
+git pull
+docker compose up -d --build                       # migrations run automatically
+docker compose exec api ./bin/rails staff:admin    # creates the /admin login
+```
+
+Seeds only run on a brand-new database, so on an existing one the last line is
+what creates your portal login (from `ADMIN_EMAIL` / `ADMIN_PASSWORD`). The old
+shared `ADMIN_USER` gate no longer exists; everyone signs in with their own
+account, which you create under **Staff** once you are in.
+
+Check staging is hidden from search engines:
+
+```bash
+curl -sI https://staging.harnesslink.com/ | grep -i x-robots-tag   # → noindex, nofollow
+```
 
 ## Putting it on staging.harnesslink.com with TLS
 

@@ -38,7 +38,7 @@ export default function NewsMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 whitespace-nowrap border-b-2 border-transparent py-3 text-sm font-semibold uppercase tracking-wide text-white/90 hover:border-accent hover:text-white"
+        className="flex items-center gap-1 whitespace-nowrap border-b-2 border-transparent py-2.5 text-[12px] sm:py-3 sm:text-[13px] font-semibold uppercase tracking-[0.12em] text-white/85 hover:border-amber hover:text-white"
       >
         News
         <span aria-hidden className={`text-[10px] transition-transform ${open ? "rotate-180" : ""}`}>
@@ -49,7 +49,7 @@ export default function NewsMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute left-0 top-full z-50 mt-0 w-52 overflow-hidden rounded-b-md border border-black/10 bg-white shadow-lg"
+          className="absolute left-0 top-full z-50 mt-0 w-52 overflow-hidden border border-line border-t-2 border-t-amber bg-white"
         >
           {COUNTRIES.map((c) => (
             <Link

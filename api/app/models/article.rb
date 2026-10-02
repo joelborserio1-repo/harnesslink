@@ -10,6 +10,7 @@ class Article < ApplicationRecord
   }, prefix: true
 
   belongs_to :primary_category, class_name: "Category", optional: true
+  belongs_to :created_by, class_name: "User", optional: true
   belongs_to :featured_media, class_name: "MediaAsset", optional: true
   belongs_to :og_image, class_name: "MediaAsset", optional: true
   belongs_to :twitter_image, class_name: "MediaAsset", optional: true
@@ -34,7 +35,7 @@ class Article < ApplicationRecord
 
   # Push to the social webhook the moment an article becomes published (once).
   # Imported articles carry social_posted_at already, so a bulk import is silent.
-  after_commit :share_socially_if_newly_published, on: [:create, :update]
+  after_commit :share_socially_if_newly_published, on: [ :create, :update ]
 
   scope :live, -> { status_published.where(published_at: ..Time.current) }
   scope :recent_first, -> { order(published_at: :desc) }

@@ -3,18 +3,20 @@
 /* Fonts are loaded via <link> in layout.tsx (runtime), so they work for end
    users even though this build environment can't reach fonts.googleapis.com. */
 
-/* Harnesslink brand tokens (homepage redesign spec). */
+/* Harnesslink brand tokens. The look is a racing broadsheet: square corners,
+   hairline rules, no drop shadows, no chips or pills around words. Section
+   labels are plain small-cap text; structure comes from rules and type. */
 @theme {
   --color-navy: #081F5B;       /* primary navy — masthead, nav, footer, headings */
   --color-navy-deep: #06163f;  /* darker shade for bands / hovers */
-  --color-page: #F2F2F2;       /* page background behind the white cards */
-  --color-blue: #1f5bd0;       /* brighter interactive blue (widget, links) */
-  --color-amber: #e8a317;      /* CTA accent (The Insider) */
-  --color-accent: #e8a317;     /* alias -> amber */
-  --color-red: #d62828;        /* semantic: urgent countdowns / live */
-  --color-ink: #15181f;
-  --color-muted: #6b7280;
-  --color-line: #e7e8ec;
+  --color-page: #F2F2F2;       /* page background behind the white sheets */
+  --color-blue: #1a4bb5;       /* link / hover blue */
+  --color-amber: #d9a53a;      /* gold — CTA on navy only */
+  --color-accent: #8a651a;     /* gold, dark enough for text on white */
+  --color-red: #b3202a;        /* semantic: urgent / live */
+  --color-ink: #14161b;
+  --color-muted: #666b76;
+  --color-line: #dcdde2;
   --color-mist: #f4f5f7;
   --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
   --font-sans: "Source Sans 3", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
@@ -28,38 +30,144 @@ html {
 body {
   font-family: var(--font-sans);
 }
-/* White card surface used across the homepage + article/category pages. */
+
+/* Page container — one width everywhere. */
+.wrap {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1240px;
+  padding-inline: 20px;
+}
+
+/* White sheet. Flat: a hairline, never a drop-shadow, never a curved corner. `.card`
+   is kept as an alias so older templates pick up the same surface. */
+.sheet,
 .card {
   background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(8, 31, 91, 0.06), 0 6px 20px rgba(8, 31, 91, 0.08);
+  border: 1px solid var(--color-line);
 }
+
+/* Section label — plain tracked small caps, no box around it. */
+.kicker,
 .eyebrow {
-  font-family: var(--font-serif);
-  font-style: italic;
-  color: var(--color-blue);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-navy);
 }
+.kicker-gold { color: var(--color-accent); }
+
+/* Section heading sitting on a heavy navy rule. */
+.rule-head {
+  border-top: 3px solid var(--color-navy);
+  padding-top: 12px;
+}
+
 .font-headline {
   font-family: var(--font-serif);
 }
 
+/* Meta line under a headline: byline · date. */
+.meta {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+.meta b { font-weight: 700; color: #33363d; }
+
+/* Buttons: square, solid, tracked caps. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--color-navy);
+  color: #fff;
+  padding: 11px 18px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: background 0.15s;
+}
+.btn:hover { background: var(--color-navy-deep); }
+.btn-gold { background: var(--color-amber); color: #1d1500; }
+.btn-gold:hover { background: #e6b54f; }
+
+/* Headline links: underline grows in on hover rather than changing colour. */
+.hl-link {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-size: 0 1px;
+  background-position: 0 100%;
+  transition: background-size 0.2s;
+}
+.group:hover .hl-link,
+.hl-link:hover { background-size: 100% 1px; }
+
 /* Rendered legacy article HTML — kept verbatim, styled for readability only. */
 .prose-article {
-  font-size: 1.075rem;
-  line-height: 1.75;
-  color: #262626;
+  font-size: 1.125rem;
+  line-height: 1.72;
+  color: #1f2126;
 }
-.prose-article p { margin: 0 0 1.15rem; }
-.prose-article h2 {
+.prose-article p { margin: 0 0 1.2rem; }
+.prose-article h2,
+.prose-article h3 {
   font-family: var(--font-serif);
-  margin: 1.8rem 0 0.75rem;
+  margin: 2rem 0 0.75rem;
   font-size: 1.5rem;
+  line-height: 1.25;
   font-weight: 700;
   color: var(--color-navy-deep);
 }
-.prose-article a { color: var(--color-navy); text-decoration: underline; }
-.prose-article a:hover { color: var(--color-accent); }
-.prose-article img { max-width: 100%; height: auto; margin: 1.25rem 0; }
+.prose-article h3 { font-size: 1.25rem; }
+.prose-article a { color: var(--color-blue); text-decoration: underline; text-underline-offset: 2px; }
+.prose-article a:hover { color: var(--color-navy); }
+.prose-article img { max-width: 100%; height: auto; }
+.prose-article figure { margin: 1.75rem 0; max-width: 100%; }
+/* WordPress writes an inline pixel width on caption figures. */
+.prose-article figure[style] { width: auto !important; }
+.prose-article figcaption,
+.prose-article .wp-caption-text {
+  margin-top: 0.5rem;
+  border-left: 2px solid var(--color-navy);
+  padding-left: 0.6rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--color-muted);
+}
+.prose-article figcaption strong { font-weight: 600; }
+.prose-article blockquote {
+  margin: 1.5rem 0;
+  border-left: 3px solid var(--color-navy);
+  padding: 0.1rem 0 0.1rem 1.1rem;
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  line-height: 1.5;
+  color: var(--color-navy-deep);
+}
+.prose-article blockquote p { margin-bottom: 0.6rem; }
+.prose-article ul,
+.prose-article ol { margin: 0 0 1.2rem 1.25rem; }
+.prose-article ul { list-style: disc; }
+.prose-article ol { list-style: decimal; }
+.prose-article li { margin-bottom: 0.35rem; }
+.prose-article table {
+  width: 100%;
+  margin: 1.5rem 0;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+.prose-article th,
+.prose-article td { border-bottom: 1px solid var(--color-line); padding: 0.5rem 0.6rem; text-align: left; }
+.prose-article th { border-bottom: 2px solid var(--color-navy); font-weight: 700; color: var(--color-navy); }
+.prose-article iframe { max-width: 100%; }
 .prose-article code {
-  background: #f5f5f5; padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-size: 0.9em;
+  background: #f5f5f5; padding: 0.1rem 0.3rem; font-size: 0.9em;
 }

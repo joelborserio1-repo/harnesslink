@@ -32,42 +32,42 @@ export default async function AdminDirectory({
       </div>
 
       {sp.imported && (
-        <p className="mt-3 rounded bg-green-50 px-3 py-2 text-sm text-green-800">
+        <p className="mt-3 bg-green-50 px-3 py-2 text-sm text-green-800">
           Import complete ({sp.imported.replace("+", " new, ")} updated).
         </p>
       )}
 
       {/* CSV import */}
-      <form action={upload} className="mt-4 flex flex-wrap items-end gap-3 rounded-lg border border-neutral-200 bg-white p-4">
+      <form action={upload} className="mt-4 flex flex-wrap items-end gap-3 border border-neutral-200 bg-white p-4">
         <div>
           <label className="block text-xs font-semibold uppercase text-neutral-500">CSV file</label>
           <input type="file" name="file" accept=".csv,text/csv" required className="mt-1 text-sm" />
         </div>
         <div>
           <label className="block text-xs font-semibold uppercase text-neutral-500">Into type</label>
-          <select name="type" defaultValue="stallion" className="mt-1 rounded border border-neutral-300 px-2 py-1.5 text-sm">
+          <select name="type" defaultValue="stallion" className="mt-1 border border-neutral-300 px-2 py-1.5 text-sm">
             {types.map((t) => (
               <option key={t.key} value={t.key}>{t.plural}</option>
             ))}
           </select>
         </div>
-        <button className="rounded bg-navy px-3 py-1.5 text-sm font-semibold text-white">Import CSV</button>
+        <button className="bg-navy px-3 py-1.5 text-sm font-semibold text-white">Import CSV</button>
         <span className="text-xs text-neutral-400">Columns: name, stud, country, region, type, is_paying, email, phone, website, bio, race_record</span>
       </form>
 
       {/* Filter + new */}
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
         <form className="flex flex-wrap gap-2" action="/admin/directory">
-          <input name="q" defaultValue={sp.q} placeholder="Search name / stud…" className="rounded border border-neutral-300 px-3 py-1.5 text-sm" />
-          <select name="type" defaultValue={sp.type} className="rounded border border-neutral-300 px-3 py-1.5 text-sm">
+          <input name="q" defaultValue={sp.q} placeholder="Search name / stud…" className="border border-neutral-300 px-3 py-1.5 text-sm" />
+          <select name="type" defaultValue={sp.type} className="border border-neutral-300 px-3 py-1.5 text-sm">
             <option value="">any type</option>
             {types.map((t) => (
               <option key={t.key} value={t.key}>{t.plural}</option>
             ))}
           </select>
-          <button className="rounded bg-neutral-800 px-3 py-1.5 text-sm font-semibold text-white">Filter</button>
+          <button className="bg-neutral-800 px-3 py-1.5 text-sm font-semibold text-white">Filter</button>
         </form>
-        <Link href="/admin/directory/new" className="rounded bg-navy px-3 py-1.5 text-sm font-semibold text-white">
+        <Link href="/admin/directory/new" className="bg-navy px-3 py-1.5 text-sm font-semibold text-white">
           + New listing
         </Link>
       </div>

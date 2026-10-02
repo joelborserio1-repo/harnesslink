@@ -47,7 +47,7 @@ export default async function DirectoryTypePage({ params }: Params) {
                         {l.name}
                       </h2>
                       {l.is_featured && (
-                        <span className="rounded bg-amber px-1.5 py-0.5 text-[10px] font-bold uppercase text-[#241a00]">
+                        <span className="bg-amber px-1.5 py-0.5 text-[10px] font-bold uppercase text-[#241a00]">
                           Featured
                         </span>
                       )}
