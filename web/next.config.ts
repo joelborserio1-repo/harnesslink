@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+// NOTE: read at BUILD time — rewrites are compiled into the build output. The
+// Docker image sets it via a build arg (see web/Dockerfile).
 const API_BASE = process.env.API_BASE || "http://127.0.0.1:3001";
 
 const nextConfig: NextConfig = {

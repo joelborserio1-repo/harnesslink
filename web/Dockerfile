@@ -11,7 +11,12 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# The build is API-independent (data fetches fail soft), so no API is needed here.
+# The build needs no running API (data fetches fail soft), but it does need the
+# API's ADDRESS: next.config.ts rewrites (sitemaps, feed, /api/subscribe, ad
+# click + view tracking) are baked into the build. Default = the compose
+# service name; override with --build-arg API_BASE=… for other topologies.
+ARG API_BASE=http://api
+ENV API_BASE=$API_BASE
 RUN npm run build
 
 FROM node:22-slim AS run
