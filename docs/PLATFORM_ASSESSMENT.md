@@ -210,10 +210,10 @@ Found while loading 300 current stories into the local preview.
    Nearly every post is owned by one WP user; the plugin swaps in the real
    byline at render time (the 602 `guest_author` posts). `export_posts.php` now
    reads `_molongui_author` / `_molongui_main_author` and resolves guests and
-   users, falling back to the WP author. **This PHP change has not been run** —
-   there is no WordPress here to run it against. Verify on the server: export
-   20 posts and compare each `authors[0].name` with the `<meta name="author">`
-   on the live page before trusting a full export. This answers open question 3
+   users, falling back to the WP author. **Verified 2 Oct 2026** on the live
+   server (read-only, 21 posts): every exported byline matched the
+   `<meta name="author">` on the live page (21/21), bodies arrive in full with
+   no paywall markup, and `path` is exported. This answers open question 3
    in `DISCOVERED_FACTS.md`.
 6. **The live `NewsArticle` JSON-LD names "Bevan Greig" as author on almost
    every article** (it uses the WP post author). The new build emits the real
