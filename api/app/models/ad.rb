@@ -19,7 +19,7 @@ class Ad < ApplicationRecord
   # different (weighted draw without replacement).
   def self.live_by_zone
     live.order(:zone, :id).group_by(&:zone).to_h do |zone, ads|
-      [zone, weighted_sample(ads, Ads::Zones.slots_for(zone))]
+      [ zone, weighted_sample(ads, Ads::Zones.slots_for(zone)) ]
     end
   end
 
