@@ -16,7 +16,7 @@ export default function AdImpression({ id }: { id: number }) {
       (entries) => {
         if (entries[0]?.isIntersecting && !fired.current) {
           fired.current = true;
-          fetch(`/ad/${id}/impression`, { method: "POST", keepalive: true }).catch(() => {});
+          fetch(`/ad/${id}/impression/`, { method: "POST", keepalive: true }).catch(() => {});
           io.disconnect();
         }
       },

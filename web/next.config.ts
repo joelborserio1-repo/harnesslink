@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
       { source: "/feed/", destination: `${API_BASE}/api/v1/feed` },
       // Ad click tracking — counts then redirects to the creative's target.
       { source: "/ad/:id/click", destination: `${API_BASE}/api/v1/ads/:id/click` },
-      // Ad viewable-impression beacon.
+      // Ad viewable-impression beacon. Callers use the trailing-slash form (trailingSlash is on).
       { source: "/ad/:id/impression", destination: `${API_BASE}/api/v1/ads/:id/impression` },
       // Free registration-wall / newsletter signup.
       { source: "/api/subscribe", destination: `${API_BASE}/api/v1/subscribe` },

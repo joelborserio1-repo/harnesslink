@@ -9,7 +9,7 @@ export default function ViewBeacon({ slug }: { slug: string }) {
   useEffect(() => {
     if (sent.current) return;
     sent.current = true;
-    const url = `/track/view/${encodeURIComponent(slug)}`;
+    const url = `/track/view/${encodeURIComponent(slug)}/`; // trailing slash: the site adds one, so skip the redirect
     // keepalive so it still sends if the user navigates away immediately.
     fetch(url, { method: "POST", keepalive: true }).catch(() => {});
   }, [slug]);
