@@ -1,16 +1,18 @@
-leaderboard_a:
-  name: Leaderboard A
-  zone: home-top
-  size: leaderboard
+billboard_a:
+  name: Billboard A
+  zone: home-billboard
+  size: billboard
   image_url: "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4="
+  image_width: 1360
+  image_height: 150
   link_url: "https://example.com/promo"
   is_active: true
   weight: 1
 
 expired:
   name: Expired ad
-  zone: home-top
-  size: leaderboard
+  zone: home-billboard
+  size: billboard
   is_active: true
   ends_at: <%= 2.days.ago.to_fs(:db) %>
   weight: 1
@@ -18,6 +20,19 @@ expired:
 paused:
   name: Paused ad
   zone: home-mid
-  size: leaderboard
+  size: banner
   is_active: false
   weight: 1
+
+<% %w[one two three four].each_with_index do |n, i| %>
+rail_<%= n %>:
+  name: Rail box <%= n %>
+  zone: article-rail
+  size: mpu
+  image_url: "https://example.com/box-<%= n %>.png"
+  image_width: 300
+  image_height: 250
+  link_url: "https://example.com/<%= n %>"
+  is_active: true
+  weight: <%= i + 1 %>
+<% end %>

@@ -214,13 +214,22 @@ export async function importDirectoryCsv(form: FormData) {
 
 // ---- Ads admin ----
 
-export type AdZone = { key: string; size: string; label: string };
+export type AdZone = {
+  key: string;
+  size: string;
+  format: string;
+  slots: number;
+  label: string;
+  dimensions: { width: number; height: number; label: string };
+};
 export type AdminAd = {
   id: number;
   name: string;
   zone: string;
   size: string;
   image_url: string;
+  image_width: number | null;
+  image_height: number | null;
   link_url: string;
   alt: string;
   html: string | null;

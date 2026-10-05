@@ -5,19 +5,30 @@ require "test_helper"
 module Api
   module V1
     class AdsTest < ActionDispatch::IntegrationTest
-      test "index returns one live ad per filled zone, excluding paused/expired" do
+      test "index returns the live ads per filled zone, excluding paused/expired" do
         get "/api/v1/ads"
         assert_response :success
         ads_map = JSON.parse(response.body)["ads"]
 
-        assert ads_map.key?("home-top"), "an active, in-window ad fills its zone"
-        # home-top has a live ad (leaderboard_a) and an expired one — only the live one is picked.
-        assert_equal "/ad/#{ads(:leaderboard_a).id}/click", ads_map["home-top"]["click_url"]
+        # home-billboard has a live ad and an expired one — only the live one.
+        assert_equal 1, ads_map["home-billboard"].size
+        billboard = ads_map["home-billboard"].first
+        assert_equal "/ad/#{ads(:billboard_a).id}/click", billboard["click_url"]
+        assert_equal [ 1360, 150 ], [ billboard["width"], billboard["height"] ]
         assert_not ads_map.key?("home-mid"), "paused ad's zone stays empty"
       end
 
+      test "a rail shows three different ads from its pool" do
+        20.times do
+          get "/api/v1/ads"
+          rail = JSON.parse(response.body).dig("ads", "article-rail")
+          assert_equal 3, rail.size
+          assert_equal 3, rail.map { |c| c["id"] }.uniq.size, "never the same advertiser twice in one rail"
+        end
+      end
+
       test "click increments the counter and redirects to the target" do
-        ad = ads(:leaderboard_a)
+        ad = ads(:billboard_a)
         assert_difference -> { ad.reload.clicks }, 1 do
           get "/api/v1/ads/#{ad.id}/click"
         end
@@ -30,7 +41,7 @@ module Api
       end
 
       test "impression beacon increments the counter" do
-        ad = ads(:leaderboard_a)
+        ad = ads(:billboard_a)
         assert_difference -> { ad.reload.impressions }, 1 do
           post "/api/v1/ads/#{ad.id}/impression"
         end

@@ -5,9 +5,10 @@ module Api
     # Public ad delivery. One live ad per zone (weighted), plus a click
     # tracker that counts and redirects to the creative's target.
     class AdsController < ApplicationController
-      # GET /api/v1/ads — { ads: { zone => creative } } for every filled zone.
+      # GET /api/v1/ads — { ads: { zone => [creative, …] } } for every filled
+      # zone (rails return up to three different ads).
       def index
-        ads = Ad.live_by_zone.transform_values { |ad| creative(ad) }
+        ads = Ad.live_by_zone.transform_values { |list| list.map { |ad| creative(ad) } }
         render json: { ads: ads }
       end
 
@@ -33,6 +34,8 @@ module Api
           zone: ad.zone,
           size: ad.size,
           image_url: ad.image_url.presence,
+          width: ad.image_width,
+          height: ad.image_height,
           html: ad.html.presence,
           alt: ad.alt.presence || ad.name,
           click_url: "/ad/#{ad.id}/click"

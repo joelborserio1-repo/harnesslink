@@ -41,7 +41,8 @@ module Api
         end
 
         def save_and_render(ad, ok_status)
-          ad.size = Ads::Zones.size_for(ad.zone) if ad.size.blank?
+          # The slot shape always follows the placement.
+          ad.size = Ads::Zones.size_for(ad.zone)
           if ad.save
             render json: { ad: serialize(ad) }, status: ok_status
           else
@@ -51,7 +52,7 @@ module Api
 
         def ad_params
           params.require(:ad).permit(
-            :name, :zone, :size, :image_url, :link_url, :alt, :html,
+            :name, :zone, :size, :image_url, :image_width, :image_height, :link_url, :alt, :html,
             :is_active, :starts_at, :ends_at, :weight
           )
         end
@@ -59,7 +60,8 @@ module Api
         def serialize(a)
           {
             id: a.id, name: a.name, zone: a.zone, size: a.size,
-            image_url: a.image_url, link_url: a.link_url, alt: a.alt, html: a.html,
+            image_url: a.image_url, image_width: a.image_width, image_height: a.image_height,
+            link_url: a.link_url, alt: a.alt, html: a.html,
             is_active: a.is_active, starts_at: a.starts_at, ends_at: a.ends_at,
             weight: a.weight, impressions: a.impressions, clicks: a.clicks
           }

@@ -39,9 +39,9 @@ export default async function HomePage() {
         </div>
       </div>
 
-      <AdSlot size="leaderboard" zone="home-top" className="my-7" />
+      <AdSlot format="billboard" zone="home-billboard" className="mt-6" />
 
-      <h1 className="border-y border-line bg-white py-4 text-center font-headline text-[28px] font-bold text-navy sm:text-[34px]">
+      <h1 className="mt-6 border-y border-line bg-white py-4 text-center font-headline text-[28px] font-bold text-navy sm:text-[34px]">
         International Harness Racing Updates
       </h1>
 
@@ -60,7 +60,7 @@ export default async function HomePage() {
             </div>
           </section>
 
-          <AdSlot size="leaderboard" zone="home-mid" />
+          <AdSlot format="banner" zone="home-mid" />
 
           <section className="sheet p-6">
             <div className="rule-head">
@@ -73,7 +73,7 @@ export default async function HomePage() {
             <InternationalGrid articles={international} />
           </section>
 
-          <AdSlot size="leaderboard" zone="home-bottom" />
+          <AdSlot format="banner" zone="home-bottom" />
 
           <section className="border-t border-line pt-5">
             <h2 className="font-headline text-xl font-bold text-navy">Harness racing news that feels close to the track</h2>
@@ -87,12 +87,12 @@ export default async function HomePage() {
           </section>
         </div>
 
-        {/* Rail — the running news list, then the ad units. */}
-        <aside className="flex flex-col gap-7 lg:sticky lg:top-4">
+        {/* Rail — three stacked 300 × 250 boxes level with Trending, as on the
+            live site, then the running news list. On phones the rail follows
+            the main column, so the boxes sit just above the footer. */}
+        <aside className="flex flex-col gap-7">
+          <AdSlot format="mpu" zone="home-rail" />
           <WireList articles={wire} />
-          <AdSlot size="mpu" zone="home-rail-2" className="hidden lg:flex" />
-          <AdSlot size="halfpage" zone="home-rail-3" className="hidden lg:flex" />
-          <AdSlot size="mpu" zone="home-rail-mobile" className="lg:hidden" />
         </aside>
       </div>
     </div>

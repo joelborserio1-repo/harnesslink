@@ -2,14 +2,13 @@ import Link from "next/link";
 import AdSlot from "@/components/AdSlot";
 import type { ArticleSummary } from "@/lib/api";
 
-// The article-page rail: ad units with the latest-stories list between them,
-// mirroring the live article template (a column of advertiser creatives).
-// Sticky on desktop; hidden on mobile (a single in-flow ad is rendered under
-// the article instead).
+// The article-page rail: three stacked 300 × 250 boxes at the top, as on the
+// live article template, then the latest-stories list. On phones it follows
+// the article, so the boxes sit just above the footer — again as live.
 export default function ArticleSidebar({ mostRead }: { mostRead: ArticleSummary[] }) {
   return (
-    <aside className="hidden self-start lg:sticky lg:top-4 lg:flex lg:flex-col lg:gap-7">
-      <AdSlot size="mpu" zone="article-rail-1" />
+    <aside className="flex flex-col gap-7 self-start">
+      <AdSlot format="mpu" zone="article-rail" />
 
       {mostRead.length > 0 && (
         <section className="sheet p-5">
@@ -29,8 +28,6 @@ export default function ArticleSidebar({ mostRead }: { mostRead: ArticleSummary[
         </section>
       )}
 
-      <AdSlot size="mpu" zone="article-rail-2" />
-      <AdSlot size="halfpage" zone="article-rail-3" />
     </aside>
   );
 }

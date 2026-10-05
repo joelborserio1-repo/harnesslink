@@ -1,63 +1,74 @@
-import { getAds } from "@/lib/api";
+import { getAds, type AdCreative } from "@/lib/api";
 import AdImpression from "@/components/AdImpression";
 
-// A reserved advertising location. It reserves its exact IAB dimensions so
-// filling it causes ZERO layout shift (CLS is part of the SEO constraint), and
-// serves the managed creative for its zone (image → click-tracked link, or raw
-// HTML). Empty zones fall back to a labelled placeholder.
+// An advertising placement, laid out the way harnesslink.com does it:
+//   billboard — full-width banner (1360 × 150 creative), scales down to fit
+//   banner    — in-column banner (800 × 120 creative), scales down to fit
+//   mpu       — 300 × 250 box; a zone with several slots stacks them
+// Creatives render with their own pixel size as width/height, so the browser
+// reserves exact space before the image loads (no layout shift — CLS is part
+// of the SEO constraint). A zone with nothing booked renders nothing, as on
+// the live site.
 
-type AdSize = "leaderboard" | "billboard" | "mpu" | "halfpage" | "mobile";
+export type AdFormat = "billboard" | "banner" | "mpu";
 
-const SIZES: Record<AdSize, { w: number; h: number; label: string }> = {
-  leaderboard: { w: 728, h: 90, label: "728 × 90" },
-  billboard: { w: 970, h: 250, label: "970 × 250" },
-  mpu: { w: 300, h: 250, label: "300 × 250" },
-  halfpage: { w: 300, h: 600, label: "300 × 600" },
-  mobile: { w: 320, h: 50, label: "320 × 50" },
+const FORMATS: Record<AdFormat, { w: number; h: number }> = {
+  billboard: { w: 1360, h: 150 },
+  banner: { w: 800, h: 120 },
+  mpu: { w: 300, h: 250 },
 };
 
-export default async function AdSlot({
-  size = "mpu",
-  zone,
-  className = "",
-}: {
-  size?: AdSize;
-  zone: string;
-  className?: string;
-}) {
-  const s = SIZES[size];
-  const ads = await getAds();
-  const ad = ads[zone];
+function Creative({ ad, format }: { ad: AdCreative; format: AdFormat }) {
+  const f = FORMATS[format];
+  const w = ad.width ?? f.w;
+  const h = ad.height ?? f.h;
+  // Boxes are a fixed 300 × 250 slot; banners keep the creative's own shape.
+  const box = format === "mpu";
 
   return (
-    <div className={`flex flex-col items-center ${className}`}>
-      <div
-        data-ad-zone={zone}
-        style={{ width: "100%", maxWidth: s.w, height: s.h }}
-        className="flex items-center justify-center overflow-hidden"
-      >
-        {ad ? <AdImpression id={ad.id} /> : null}
-        {ad?.html ? (
-          <div className="h-full w-full" dangerouslySetInnerHTML={{ __html: ad.html }} />
-        ) : ad?.image_url ? (
-          <a href={ad.click_url} target="_blank" rel="noopener sponsored" className="block h-full w-full">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={ad.image_url} alt={ad.alt} className="h-full w-full object-contain" />
-          </a>
-        ) : (
-          <div
-            aria-hidden="true"
-            className="flex h-full w-full items-center justify-center border border-line bg-white/60"
-          >
-            <div className="text-center leading-tight">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-                Advertisement
-              </div>
-              <div className="mt-0.5 text-[10px] text-neutral-400">{s.label}</div>
-            </div>
-          </div>
-        )}
-      </div>
+    <div
+      className="relative w-full overflow-hidden"
+      style={box ? { maxWidth: f.w, aspectRatio: `${f.w} / ${f.h}` } : { maxWidth: f.w, aspectRatio: `${w} / ${h}` }}
+    >
+      <AdImpression id={ad.id} />
+      {ad.html ? (
+        <div className="h-full w-full" dangerouslySetInnerHTML={{ __html: ad.html }} />
+      ) : ad.image_url ? (
+        <a href={ad.click_url} target="_blank" rel="noopener sponsored" className="block h-full w-full">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={ad.image_url}
+            alt={ad.alt}
+            width={w}
+            height={h}
+            loading={format === "billboard" ? "eager" : "lazy"}
+            decoding="async"
+            className={box ? "h-full w-full object-contain" : "block h-auto w-full"}
+          />
+        </a>
+      ) : null}
+    </div>
+  );
+}
+
+export default async function AdSlot({
+  zone,
+  format,
+  className = "",
+}: {
+  zone: string;
+  format: AdFormat;
+  className?: string;
+}) {
+  const entry = (await getAds())[zone];
+  const ads = Array.isArray(entry) ? entry : [];
+  if (ads.length === 0) return null;
+
+  return (
+    <div data-ad-zone={zone} className={`flex flex-col items-center gap-2.5 ${className}`}>
+      {ads.map((ad) => (
+        <Creative key={ad.id} ad={ad} format={format} />
+      ))}
     </div>
   );
 }

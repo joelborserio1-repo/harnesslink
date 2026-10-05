@@ -19,6 +19,8 @@ export default async function EditAd({ params }: { params: Promise<{ id: string 
       name: formData.get("name"),
       zone: formData.get("zone"),
       image_url: formData.get("image_url"),
+      image_width: formData.get("image_width") ? Number(formData.get("image_width")) : null,
+      image_height: formData.get("image_height") ? Number(formData.get("image_height")) : null,
       link_url: formData.get("link_url"),
       alt: formData.get("alt"),
       html: formData.get("html"),
@@ -59,7 +61,7 @@ export default async function EditAd({ params }: { params: Promise<{ id: string 
           Zone (placement)
           <select name="zone" defaultValue={ad?.zone ?? zones[0]?.key}
                   className="mt-1 block w-full border border-neutral-300 px-3 py-2 font-normal">
-            {zones.map((z) => <option key={z.key} value={z.key}>{z.label} — {z.size}</option>)}
+            {zones.map((z) => <option key={z.key} value={z.key}>{z.label} — {z.dimensions.label}</option>)}
           </select>
         </label>
 
@@ -68,6 +70,22 @@ export default async function EditAd({ params }: { params: Promise<{ id: string 
           <input name="image_url" defaultValue={ad?.image_url ?? ""} placeholder="https://… or data:…"
                  className="mt-1 block w-full border border-neutral-300 px-3 py-2 font-normal" />
         </label>
+        <div className="grid grid-cols-2 gap-4">
+          <label className="block text-sm font-semibold text-neutral-700">
+            Creative width (px)
+            <input type="number" name="image_width" min={1} defaultValue={ad?.image_width ?? ""} placeholder="e.g. 300"
+                   className="mt-1 block w-full border border-neutral-300 px-3 py-2 font-normal" />
+          </label>
+          <label className="block text-sm font-semibold text-neutral-700">
+            Creative height (px)
+            <input type="number" name="image_height" min={1} defaultValue={ad?.image_height ?? ""} placeholder="e.g. 250"
+                   className="mt-1 block w-full border border-neutral-300 px-3 py-2 font-normal" />
+          </label>
+          <p className="col-span-2 -mt-2 text-xs text-neutral-500">
+            Sizes used on the site: full-width banner 1360 × 150, in-column banner 800 × 120, box 300 × 250.
+            The exact size lets the page reserve space so nothing jumps while the ad loads.
+          </p>
+        </div>
         <label className="block text-sm font-semibold text-neutral-700">
           Click-through URL
           <input name="link_url" defaultValue={ad?.link_url ?? ""} placeholder="https://advertiser.example"

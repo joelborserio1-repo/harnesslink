@@ -130,7 +130,7 @@ export default async function ArticlePage({ params }: Params) {
               dangerouslySetInnerHTML={{ __html: JSON.stringify(newsArticleJsonLd(article)) }}
             />
 
-            <AdSlot size="leaderboard" zone="article-top" className="mb-7" />
+            <AdSlot format="banner" zone="article-top" className="mb-7" />
 
             <div className="mx-auto max-w-[720px]">
               <Breadcrumbs items={crumbs} />
@@ -201,6 +201,8 @@ export default async function ArticlePage({ params }: Params) {
                   <p className="text-neutral-500">(No content yet.)</p>
                 </div>
               )}
+
+              <AdSlot format="banner" zone="article-bottom" className="mt-8" />
 
               {/* Filed under — plain text links, as on the live site. */}
               <dl className="mt-9 grid gap-x-8 gap-y-4 border-t border-line pt-5 text-[14px] sm:grid-cols-[auto_1fr]">
@@ -278,10 +280,6 @@ export default async function ArticlePage({ params }: Params) {
             </section>
           )}
 
-          {/* Mobile: one in-flow ad below the article (sidebar is desktop-only) */}
-          <div className="mt-8 lg:hidden">
-            <AdSlot size="mpu" zone="article-mobile" />
-          </div>
         </div>
 
         <ArticleSidebar mostRead={mostRead} />

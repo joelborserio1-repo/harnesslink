@@ -11,8 +11,10 @@ class Avo::Resources::Ad < Avo::BaseResource
     field :clicks, as: :number, readonly: true
     field :impressions, as: :number, readonly: true, hide_on: :index
 
-    field :size, as: :text, hide_on: :index, help: "Auto-set from the zone if blank"
+    field :size, as: :text, hide_on: :index, readonly: true, help: "Set from the placement"
     field :image_url, as: :textarea, hide_on: :index, help: "Creative URL or data: URI"
+    field :image_width, as: :number, hide_on: :index, help: "Creative width in pixels, e.g. 300"
+    field :image_height, as: :number, hide_on: :index, help: "Creative height in pixels, e.g. 250"
     field :link_url, as: :text, hide_on: :index
     field :alt, as: :text, hide_on: :index
     field :html, as: :code, hide_on: :index, help: "Optional raw HTML creative (overrides image)"

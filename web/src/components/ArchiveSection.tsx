@@ -35,9 +35,10 @@ export default function ArchiveSection({
             </div>
           )}
         </div>
-        <aside className="hidden flex-col gap-7 lg:sticky lg:top-4 lg:flex">
-          <AdSlot size="mpu" zone="archive-rail-1" />
-          <AdSlot size="halfpage" zone="archive-rail-2" />
+        {/* Three stacked 300 × 250 boxes, as on the live archive pages; below
+            the stories on phones. */}
+        <aside className="flex flex-col gap-7">
+          <AdSlot format="mpu" zone="archive-rail" />
         </aside>
       </div>
     </div>

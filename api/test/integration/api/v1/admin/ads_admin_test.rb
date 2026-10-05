@@ -19,17 +19,27 @@ module Api
           get "/api/v1/admin/ads", headers: auth
           assert_response :success
           body = JSON.parse(response.body)
-          assert_includes body["ads"].map { |a| a["name"] }, "Leaderboard A"
-          assert_includes body["zones"].map { |z| z["key"] }, "article-rail-1"
+          assert_includes body["ads"].map { |a| a["name"] }, "Billboard A"
+          zone = body["zones"].find { |z| z["key"] == "article-rail" }
+          assert_equal 3, zone["slots"]
+          assert_equal 300, zone.dig("dimensions", "width")
         end
 
         test "creates an ad, defaulting size from the zone" do
           assert_difference "Ad.count", 1 do
             post "/api/v1/admin/ads", headers: auth,
-                 params: { ad: { name: "New MPU", zone: "article-rail-2", link_url: "https://x.example" } }
+                 params: { ad: { name: "New MPU", zone: "article-rail", link_url: "https://x.example",
+                                 image_width: 300, image_height: 250 } }
           end
           assert_response :created
-          assert_equal "mpu", JSON.parse(response.body).dig("ad", "size")
+          ad = JSON.parse(response.body)["ad"]
+          assert_equal "mpu", ad["size"]
+          assert_equal [ 300, 250 ], [ ad["image_width"], ad["image_height"] ]
+        end
+
+        test "rejects a placement that does not exist" do
+          post "/api/v1/admin/ads", headers: auth, params: { ad: { name: "Bad", zone: "home-top" } }
+          assert_response :unprocessable_entity
         end
 
         test "updates and deletes an ad" do

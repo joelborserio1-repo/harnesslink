@@ -187,13 +187,14 @@ demo_creative = lambda do |w, h, text|
 end
 
 [
-  { name: "House — Insider leaderboard", zone: "home-top",      size: "leaderboard", w: 728, h: 90,  link: "/the-insider/", text: "Subscribe to The Insider — free" },
-  { name: "House — Directory MPU",       zone: "home-rail-2",   size: "mpu",         w: 300, h: 250, link: "/directory/",   text: "Harness Racing Directory" },
-  { name: "House — Article MPU",         zone: "article-rail-1", size: "mpu",        w: 300, h: 250, link: "/the-insider/", text: "The Insider — every Thursday" }
+  { name: "House — Insider banner",      zone: "home-billboard", w: 1360, h: 150, link: "/the-insider/", text: "Subscribe to The Insider — free" },
+  { name: "House — Directory box",       zone: "home-rail",      w: 300,  h: 250, link: "/directory/",   text: "Harness Racing Directory" },
+  { name: "House — Insider box",         zone: "article-rail",   w: 300,  h: 250, link: "/the-insider/", text: "The Insider — every Thursday" }
 ].each do |a|
   ad = Ad.find_or_initialize_by(name: a[:name])
-  ad.assign_attributes(zone: a[:zone], size: a[:size], link_url: a[:link], alt: a[:text],
-                       image_url: demo_creative.call(a[:w], a[:h], a[:text]), is_active: true, weight: 1)
+  ad.assign_attributes(zone: a[:zone], size: Ads::Zones.size_for(a[:zone]), link_url: a[:link], alt: a[:text],
+                       image_url: demo_creative.call(a[:w], a[:h], a[:text]), image_width: a[:w], image_height: a[:h],
+                       is_active: true, weight: 1)
   ad.save!
 end
 puts "  #{Ad.count} ads."
