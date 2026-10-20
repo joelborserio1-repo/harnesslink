@@ -10,6 +10,9 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Server =>
   app: {
     keys: env.array('APP_KEYS')!,
   },
+  // Behind nginx (HTTPS terminated there): trust X-Forwarded-* so the admin's
+  // secure login cookie and generated URLs are right.
+  proxy: { koa: env.bool('IS_PROXIED', false) },
   webhooks: {
     populateRelations: env.bool('WEBHOOKS_POPULATE_RELATIONS', false),
   },

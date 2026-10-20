@@ -68,6 +68,7 @@ services:
     environment:
       NODE_ENV: production
       PUBLIC_URL: ${CMS_PUBLIC_URL:-}
+      IS_PROXIED: "true"
       DATABASE_CLIENT: postgres
       DATABASE_HOST: db
       DATABASE_PORT: "5432"
