@@ -49,6 +49,7 @@ async function authorsCannotPublish(strapi: Core.Strapi) {
 const INDEXES: Array<[name: string, table: string, columns: string]> = [
   ['hl_articles_slug', 'articles', 'slug'],
   ['hl_articles_legacy_wp_id', 'articles', 'legacy_wp_id'],
+  ['hl_articles_legacy_url', 'articles', 'legacy_url'], // checked for uniqueness on every publish
   ['hl_articles_publish_date', 'articles', 'publish_date DESC'],
   ['hl_articles_published_at', 'articles', 'published_at'],
   ['hl_redirects_from_path', 'redirects', 'from_path'],
