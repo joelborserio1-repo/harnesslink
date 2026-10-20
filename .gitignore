@@ -7,3 +7,6 @@ harnesslink-directory.zip
 
 # Local dev scratch (live sample export, etc.)
 /tmp/
+
+# Local note with the staging CMS login (never commit)
+/.staging-cms-admin.txt

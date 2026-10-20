@@ -1,7 +1,9 @@
-# api/ — Rails 8 backend
+# api/ — Rails 8 backend (legacy)
 
-JSON API + editorial admin + background jobs for Harnesslink. See the root
-`CLAUDE.md` and `../BUILD_V1.md` for the rules that govern this app.
+**Superseded by Strapi (`../cms/`, decided 20 Oct 2026).** The public site now
+reads articles, pages, ads and redirects from Strapi. This app is kept only
+because the directory still reads it; don't add features here. See
+`../docs/STRAPI.md`.
 
 ## Conventions
 

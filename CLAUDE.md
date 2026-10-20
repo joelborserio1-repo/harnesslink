@@ -14,12 +14,17 @@ Precedence when they conflict is defined in `docs/README.md`:
 
 ## Repo map
 
-- `api/`        Rails 8 API + editorial admin + jobs. Postgres 16.
-- `web/`        Next.js 15 public site (not scaffolded yet).
-- `migration/`  WordPress recon + (later) importer. Throwaway after cutover.
+- `cms/`        **Strapi 5 back end** (content, newsroom admin, ads, redirects). See `docs/STRAPI.md`.
+- `web/`        Next.js 16 public site; reads Strapi (`web/src/lib/api.ts`).
+- `api/`        Rails 8 — legacy. Only the directory still reads it; build nothing new here.
+- `migration/`  WordPress recon, exporter (`export_posts.php`), parity + crawl-diff harnesses.
 - `docs/`       Plans and reconciliation notes.
 
-Data flows one way: WordPress → migration → Rails → API → Next.js.
+Data flows one way: WordPress → `export_posts.php` → `cms/scripts/import-wordpress.js` → Strapi → Next.js.
+
+Decided 20 Oct 2026: use Strapi's built-in features wherever they exist
+(content types, Draft & Publish, admin roles, media library, cron); custom
+routes only for what Strapi lacks.
 
 ## Non-negotiable rules
 
@@ -29,14 +34,17 @@ Data flows one way: WordPress → migration → Rails → API → Next.js.
    touching routing/slugs needs a test.
 3. **SEO metadata is load-bearing.** Rank Math titles/descriptions/canonicals/OG
    + `NewsArticle` JSON-LD ship with every template.
-4. **Legacy article HTML is preserved verbatim** (`body_format: legacy_html`).
-   Do NOT convert 100k legacy articles to TipTap JSON.
+4. **Legacy article HTML is preserved verbatim** (`bodyFormat: legacy_html`).
+   Do NOT convert legacy articles to Strapi Blocks (or TipTap JSON).
 5. **No N+1 on 60k+ rows.** Use `includes`, add the index.
 6. **Migrations are additive, reversible, resumable.**
 7. **Propose before implementing** anything touching routing, slugs, metadata,
    or the importer. Ask before adding a dependency.
 
 ## Local dev (this environment)
+
+- Strapi: `cd cms && npm run develop` (Postgres db `harnesslink_cms`), site:
+  `cd web && STRAPI_URL=http://127.0.0.1:1337 npm run dev`.
 
 - Ruby via rbenv: `export PATH=/opt/rbenv/versions/3.3.6/bin:$PATH`
 - Postgres 16: `pg_ctlcluster 16 main start`. Dev role `harnesslink` / password

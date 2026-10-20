@@ -7,7 +7,12 @@ stack, the URL fixes and per-person staff logins (marked DONE below). Reference 
 
 ---
 
-## 1. Recommendation: stay on Rails, do not move to Strapi
+> **Superseded 20 Oct 2026:** the owner decided to rebuild the back end on
+> Strapi to reduce the risk of maintaining a fully custom system. See
+> `docs/STRAPI.md`. Section 1 is kept as the record of the trade-offs; the
+> plugin spec (§4) and live-site findings (§5) still apply.
+
+## 1. Recommendation (2 Oct 2026): stay on Rails, do not move to Strapi
 
 Strapi would replace the one part of this build that is generic (a content
 admin) and none of the parts that are specific to Harnesslink.

@@ -1,5 +1,13 @@
 # Deploying Harnesslink to staging
 
+> Since 20 Oct 2026 the back end is the Strapi CMS (`cms` service). Before the
+> first `up`, create `cms/.env` with its secrets (copy `cms/.env.example`; each
+> secret: `openssl rand -base64 32`), set `CMS_PUBLIC_URL` in `.env`, and on an
+> existing database volume run
+> `docker compose exec db createdb -U harnesslink harnesslink_cms`.
+> nginx must proxy `/cms/` to `127.0.0.1:1337/` (trailing slash strips the
+> prefix). The admin is then at `/cms/admin`. Loading content: `docs/STRAPI.md`.
+
 A one-command Docker Compose stack: **Postgres + Rails API + Next.js site**.
 This is staging — it serves 20 demo articles (real slugs/metadata, placeholder
 bodies) until the importer runs.
