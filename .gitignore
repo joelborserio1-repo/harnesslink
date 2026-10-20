@@ -10,3 +10,4 @@ harnesslink-directory.zip
 
 # Local note with the staging CMS login (never commit)
 /.staging-cms-admin.txt
+/STAGING-CMS-LOGIN.txt

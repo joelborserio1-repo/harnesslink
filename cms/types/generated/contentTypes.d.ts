@@ -562,7 +562,7 @@ export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
     scheduledFor: Schema.Attribute.DateTime;
     seo: Schema.Attribute.Component<'shared.seo', false>;
     slug: Schema.Attribute.UID<'title'> & Schema.Attribute.Required;
-    subtitle: Schema.Attribute.String;
+    subtitle: Schema.Attribute.Text;
     tags: Schema.Attribute.Relation<'manyToMany', 'api::tag.tag'>;
     title: Schema.Attribute.String & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;

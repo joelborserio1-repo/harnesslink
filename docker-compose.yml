@@ -63,12 +63,15 @@ services:
       context: ./cms
       args:
         PUBLIC_URL: ${CMS_PUBLIC_URL:-}
+        # Must match the sub-folder the admin is served under (staging: /cms/admin).
+        ADMIN_COOKIE_PATH: ${CMS_ADMIN_COOKIE_PATH:-/admin}
     restart: unless-stopped
     env_file: ./cms/.env
     environment:
       NODE_ENV: production
       PUBLIC_URL: ${CMS_PUBLIC_URL:-}
       IS_PROXIED: "true"
+      ADMIN_COOKIE_PATH: ${CMS_ADMIN_COOKIE_PATH:-/admin}
       DATABASE_CLIENT: postgres
       DATABASE_HOST: db
       DATABASE_PORT: "5432"

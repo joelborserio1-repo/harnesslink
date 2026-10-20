@@ -10,7 +10,8 @@ COPY . .
 # The admin panel is compiled for its public address (incl. any sub-folder,
 # e.g. https://staging.harnesslink.com/cms), so it is a build argument.
 ARG PUBLIC_URL=
-ENV PUBLIC_URL=$PUBLIC_URL NODE_ENV=production
+ARG ADMIN_COOKIE_PATH=/admin
+ENV PUBLIC_URL=$PUBLIC_URL ADMIN_COOKIE_PATH=$ADMIN_COOKIE_PATH NODE_ENV=production
 RUN npm run build && npm prune --omit=dev
 
 FROM node:22-slim AS run
