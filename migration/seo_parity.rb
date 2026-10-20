@@ -81,7 +81,11 @@ def fetch(url, limit = 6)
     loc = URI.join(url, loc).to_s unless loc.start_with?("http")
     fetch(loc, limit - 1)
   else
-    Fetched.new(status: res.code.to_i, final_url: url, body: res.body.to_s)
+    # Net::HTTP returns bytes; treat them as UTF-8 so titles with curly quotes
+    # or dashes can be compared and written to the report.
+    body = res.body.to_s.dup.force_encoding(Encoding::UTF_8)
+    body = body.scrub("?") unless body.valid_encoding?
+    Fetched.new(status: res.code.to_i, final_url: url, body: body)
   end
 rescue StandardError => e
   Fetched.new(status: 0, error: e.message)
