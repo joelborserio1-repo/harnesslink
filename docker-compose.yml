@@ -16,6 +16,7 @@ services:
       POSTGRES_DB: harnesslink_production
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U harnesslink -d harnesslink_production"]
       interval: 5s
@@ -54,16 +55,51 @@ services:
     # The entrypoint runs `db:prepare` (migrate + seed the 20 demo articles on
     # first boot); Thruster serves the API on port 80 inside the network.
 
+  # Strapi CMS — articles, writers, sections, pages, ads, redirects. Its
+  # admin panel is where the newsroom works. Secrets live in cms/.env (see
+  # cms/.env.example); database settings come from here.
+  cms:
+    build:
+      context: ./cms
+      args:
+        PUBLIC_URL: ${CMS_PUBLIC_URL:-}
+    restart: unless-stopped
+    env_file: ./cms/.env
+    environment:
+      NODE_ENV: production
+      PUBLIC_URL: ${CMS_PUBLIC_URL:-}
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: db
+      DATABASE_PORT: "5432"
+      DATABASE_NAME: harnesslink_cms
+      DATABASE_USERNAME: harnesslink
+      DATABASE_PASSWORD: ${DB_PASSWORD:-harnesslink}
+      STRAPI_TELEMETRY_DISABLED: "true"
+    volumes:
+      - cms_uploads:/app/public/uploads
+    ports:
+      # Local only: nginx proxies the public /cms/ path to it.
+      - "127.0.0.1:${CMS_PORT:-1337}:1337"
+    depends_on:
+      db:
+        condition: service_healthy
+
   web:
-    build: ./web
+    build:
+      context: ./web
+      args:
+        STRAPI_URL: http://cms:1337
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      API_BASE: http://api        # server-to-server, inside the compose network
+      API_BASE: http://api        # directory (Rails) until it moves to Strapi
+      STRAPI_URL: http://cms:1337 # server-to-server, inside the compose network
+      STRAPI_PUBLIC_URL: ${CMS_PUBLIC_URL:-} # where browsers load CMS media from
       # "true" on staging so search engines never index it. MUST be unset in production.
       NOINDEX: ${NOINDEX:-}
     depends_on:
       - api
+      - cms
     ports:
       - "${WEB_PORT:-8080}:3000"
 
@@ -84,3 +120,4 @@ services:
 
 volumes:
   pgdata:
+  cms_uploads:

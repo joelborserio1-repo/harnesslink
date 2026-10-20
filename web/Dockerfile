@@ -11,12 +11,12 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# The build needs no running API (data fetches fail soft), but it does need the
-# API's ADDRESS: next.config.ts rewrites (sitemaps, feed, /api/subscribe, ad
-# click + view tracking) are baked into the build. Default = the compose
-# service name; override with --build-arg API_BASE=… for other topologies.
-ARG API_BASE=http://api
-ENV API_BASE=$API_BASE
+# The build needs no running CMS (data fetches fail soft), but it does need
+# the CMS's ADDRESS: next.config.ts rewrites (ad click + impression, view
+# tracking, /api/subscribe) are baked into the build. Default = the compose
+# service name; override with --build-arg STRAPI_URL=… for other topologies.
+ARG STRAPI_URL=http://cms:1337
+ENV STRAPI_URL=$STRAPI_URL
 RUN npm run build
 
 FROM node:22-slim AS run

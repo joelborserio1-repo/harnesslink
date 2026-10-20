@@ -19,6 +19,10 @@
 
 $limit = (int) (getenv('EXPORT_LIMIT') !== false ? getenv('EXPORT_LIMIT') : 500);
 $types = getenv('EXPORT_TYPES') ? explode(',', getenv('EXPORT_TYPES')) : ['post'];
+// EXPORT_PAGE=N exports the Nth batch of EXPORT_LIMIT posts, oldest first, so
+// the full archive can be moved in chunks:
+//   EXPORT_LIMIT=5000 EXPORT_PAGE=1 wp eval-file … > posts-1.json   (then 2, 3, …)
+$page = (int) (getenv('EXPORT_PAGE') ?: 0);
 
 $editorial = ['Top 4', 'Blog', 'Articles', 'Podcast', 'Videos'];
 $meta_keys = [
@@ -35,8 +39,10 @@ $query = new WP_Query([
   'post_type'      => $types,
   'post_status'    => 'publish',
   'posts_per_page' => $limit > 0 ? $limit : -1,
-  'orderby'        => 'date',
-  'order'          => 'DESC',
+  'paged'          => max($page, 1),
+  'orderby'        => $page > 0 ? 'ID' : 'date',
+  'order'          => $page > 0 ? 'ASC' : 'DESC',
+  'ignore_sticky_posts' => true,
   'no_found_rows'  => true,
 ]);
 

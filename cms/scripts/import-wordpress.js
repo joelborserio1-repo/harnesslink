@@ -5,6 +5,7 @@
 //
 //   node scripts/import-wordpress.js ../tmp/export-1000.json
 //   node scripts/import-wordpress.js --pages ../tmp/export-pages.json [--only privacy-policy,terms-conditions]
+//   (several files at once: node scripts/import-wordpress.js posts-1.json posts-2.json …)
 //
 // - Idempotent: keyed on legacyWpId; re-running updates rather than duplicates.
 // - Resumable: an unchanged post (same WordPress modified time) is skipped.
@@ -26,19 +27,27 @@ const pagesMode = args.includes('--pages');
 const force = args.includes('--force');
 const onlyIdx = args.indexOf('--only');
 const only = onlyIdx >= 0 ? args[onlyIdx + 1].split(',') : null;
-const file = args.find((a, i) => !a.startsWith('--') && args[i - 1] !== '--only');
-if (!file) {
+const files = args.filter((a, i) => !a.startsWith('--') && args[i - 1] !== '--only');
+if (files.length === 0) {
   console.error('usage: node scripts/import-wordpress.js [--pages] [--force] [--only a,b] <export.json>');
   process.exit(1);
 }
 
 async function main() {
-  const records = JSON.parse(fs.readFileSync(path.resolve(file), 'utf8'));
-  const app = await createStrapi(await compileStrapi()).load();
+  // In a production image the app is already compiled (and TypeScript isn't
+  // installed); locally, compile first.
+  const appDir = process.cwd();
+  const distDir = path.join(appDir, 'dist');
+  const prebuilt = process.env.NODE_ENV === 'production' && fs.existsSync(path.join(distDir, 'src'));
+  const app = await createStrapi(prebuilt ? { appDir, distDir } : await compileStrapi()).load();
   app.log.level = 'warn';
   try {
-    if (pagesMode) await importPages(app, records);
-    else await importArticles(app, records);
+    for (const file of files) {
+      console.log(`[import] ${file}`);
+      const records = JSON.parse(fs.readFileSync(path.resolve(file), 'utf8'));
+      if (pagesMode) await importPages(app, records);
+      else await importArticles(app, records);
+    }
   } finally {
     await app.destroy();
   }
