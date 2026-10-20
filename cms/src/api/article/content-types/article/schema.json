@@ -22,7 +22,7 @@
       "required": true
     },
     "subtitle": {
-      "type": "string"
+      "type": "text"
     },
     "excerpt": {
       "type": "text"
