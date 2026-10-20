@@ -541,12 +541,30 @@ export type DirectoryListingFull = DirectoryListingSummary & {
   service_fee: string | null;
   progeny_note: string | null;
   progeny: DirectoryProgenyRow[];
+  tagline?: string | null;
+  short_summary?: string | null;
+  year_of_birth?: string | null;
+  colour?: string | null;
+  sex?: string | null;
+  career_earnings?: string | null;
+  hero_image?: string | null;
+  booking?: { url: string; label: string } | null;
+  pedigree?: Partial<Record<"sire" | "dam" | "ss" | "sd" | "ds" | "dd" | "sss" | "ssd" | "sds" | "sdd" | "dss" | "dsd" | "dds" | "ddd", string | null>> | null;
+  crosses_intro?: string | null;
+  crosses?: { title: string; description: string | null; examples: string | null }[];
+  gallery?: { media_type: "image" | "video"; url: string; caption: string | null; description: string | null }[];
+  related?: DirectoryListingSummary[];
   contact?: {
     phone?: string;
     email?: string;
     website?: string;
     stud_website?: string;
     address?: string;
+    au?: string;
+    nz?: string;
+    us?: string;
+    fr?: string;
+    other?: string;
   };
 };
 

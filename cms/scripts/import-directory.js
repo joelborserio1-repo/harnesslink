@@ -8,6 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const { createStrapi, compileStrapi } = require('@strapi/strapi');
+const { sanitize } = require('./wordpress-mapper');
 
 const UID = 'api::directory-listing.directory-listing';
 const blank = (v) => (v === undefined || v === null || String(v).trim() === '' ? null : String(v));
@@ -51,7 +52,8 @@ function mapListing(l) {
     yearOfBirth: blank(l.year_of_birth),
     colour: blank(l.colour),
     sex: blank(l.sex),
-    profileBio: blank(l.profile_bio),
+    // Written in the plugin's WordPress editor, so HTML — cleaned like story bodies.
+    profileBio: blank(l.profile_bio) ? sanitize(l.profile_bio) : null,
     raceRecord: blank(l.race_record),
     careerEarnings: blank(l.career_earnings),
     serviceFee: blank(l.service_fee),
