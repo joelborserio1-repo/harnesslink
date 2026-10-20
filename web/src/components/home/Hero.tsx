@@ -1,71 +1,84 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Thumb from "@/components/Thumb";
 import type { ArticleSummary } from "@/lib/api";
 import { formatCardDate } from "@/lib/format";
 
-// The lead-story stage. One story at a time over a full-bleed photograph; the
-// reader steps through the top stories with the numbered controls (no
-// auto-advance — a carousel that moves on its own costs INP and annoys).
+const ROTATE_MS = 7000;
+
+// The lead-story slider, as on the live site: a big photograph with the
+// section label (black box), the headline in large Playfair and a bar + date.
+// Advances every 7 seconds; pauses while the reader hovers or focuses it.
 export default function Hero({ slides }: { slides: ArticleSummary[] }) {
   const [i, setI] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const go = useCallback((d: number) => setI((p) => (p + d + slides.length) % slides.length), [slides.length]);
+
+  useEffect(() => {
+    if (paused || slides.length < 2) return;
+    const t = setTimeout(() => go(1), ROTATE_MS);
+    return () => clearTimeout(t);
+  }, [i, paused, go, slides.length]);
+
   if (slides.length === 0) return null;
   const a = slides[i];
-  const go = (d: number) => setI((prev) => (prev + d + slides.length) % slides.length);
 
   return (
-    <section className="relative min-h-[380px] overflow-hidden bg-navy-deep lg:min-h-0" aria-label="Top stories">
-      <div className="absolute inset-0">
-        <Thumb image={a.image} seed={a.id} alt={a.title} sizes="(max-width: 1024px) 100vw, 640px" eager />
+    <section
+      className="relative h-[380px] overflow-hidden bg-[#212121] sm:h-[440px]"
+      aria-label="Top stories"
+      aria-roledescription="carousel"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+    >
+      <div key={a.id} className="absolute inset-0 animate-[fade_600ms_ease]">
+        <Thumb image={a.image} seed={a.id} alt="" sizes="(max-width: 1024px) 100vw, 700px" eager />
       </div>
-      <div
-        className="absolute inset-0"
-        style={{ background: "linear-gradient(180deg, rgba(4,12,38,.10) 25%, rgba(4,12,38,.55) 60%, rgba(4,12,38,.93) 100%)" }}
-      />
+      <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.25) 55%, rgba(0,0,0,.05) 100%), linear-gradient(0deg, rgba(0,0,0,.45), rgba(0,0,0,0) 60%)" }} />
 
-      <div className="absolute inset-x-0 bottom-0 p-6 text-white sm:p-8">
+      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 px-6 text-white sm:px-[61px]">
         {a.category && (
-          <Link href={a.category.url} className="kicker border-l-2 border-amber pl-2 !text-white">
+          <Link href={a.category.url} className="font-ui inline-block bg-black px-2 py-1 text-[11px] font-medium uppercase leading-none tracking-wide text-white">
             {a.category.name}
           </Link>
         )}
-        <h2 className="font-headline mt-3 max-w-[22ch] break-words text-[28px] font-bold leading-[1.1] [text-wrap:balance] sm:text-[36px] lg:text-[27px] xl:text-[38px]">
+        <h2 className="font-headline mt-4 max-w-[17ch] text-[30px] font-bold leading-[1.1] tracking-[-0.04em] [text-wrap:balance] sm:text-[40px] sm:leading-[44px]">
           <Link href={a.url} className="hl-link">
             {a.title}
           </Link>
         </h2>
-        <div className="mt-4 flex items-end justify-between gap-4">
-          <p className="meta !text-white/75">
-            {a.author && <>By <b className="!text-white">{a.author.name}</b> · </>}
-            {a.published_at && <time dateTime={a.published_at}>{formatCardDate(a.published_at)}</time>}
-          </p>
-          {slides.length > 1 && (
-            <div className="flex shrink-0 items-center gap-3 text-white">
-              <span className="text-[12px] font-semibold tabular-nums tracking-[0.12em] text-white/75" aria-live="polite">
-                {String(i + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}
-              </span>
-              <span className="flex border border-white/40">
-                <button onClick={() => go(-1)} aria-label="Previous story" className="grid h-9 w-9 place-items-center hover:bg-white hover:text-navy">
-                  <Arrow dir="left" />
-                </button>
-                <button onClick={() => go(1)} aria-label="Next story" className="grid h-9 w-9 place-items-center border-l border-white/40 hover:bg-white hover:text-navy">
-                  <Arrow dir="right" />
-                </button>
-              </span>
-            </div>
-          )}
+        <div className="font-ui mt-6 flex items-center gap-[38px] text-[11px] uppercase">
+          <span className="h-[3px] w-[35px] bg-white" aria-hidden />
+          {a.published_at && <time dateTime={a.published_at}>{formatCardDate(a.published_at)}</time>}
         </div>
       </div>
-    </section>
-  );
-}
 
-function Arrow({ dir }: { dir: "left" | "right" }) {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
-      <path d={dir === "left" ? "M19 12H5m6-6l-6 6 6 6" : "M5 12h14m-6-6l6 6-6 6"} strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+      {slides.length > 1 && (
+        <>
+          <button onClick={() => go(-1)} aria-label="Previous story" className="absolute left-0 top-1/2 grid h-12 w-9 -translate-y-1/2 place-items-center bg-black/35 text-white hover:bg-black/60">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" aria-hidden><path d="M15 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </button>
+          <button onClick={() => go(1)} aria-label="Next story" className="absolute right-0 top-1/2 grid h-12 w-9 -translate-y-1/2 place-items-center bg-black/35 text-white hover:bg-black/60">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" aria-hidden><path d="M9 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </button>
+          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2" role="tablist" aria-label="Choose a story">
+            {slides.map((s, n) => (
+              <button
+                key={s.id}
+                role="tab"
+                aria-selected={n === i}
+                aria-label={`Story ${n + 1}: ${s.title}`}
+                onClick={() => setI(n)}
+                className={`h-[3px] w-7 ${n === i ? "bg-white" : "bg-white/40 hover:bg-white/70"}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </section>
   );
 }

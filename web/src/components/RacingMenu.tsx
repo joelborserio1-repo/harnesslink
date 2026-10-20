@@ -1,124 +1,65 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import Flag from "@/components/Flag";
 import { RACING } from "@/lib/racing";
+import { Chevron, MENU_ITEM, NAV_ITEM, useDropdown } from "@/components/NavDropdown";
 
-// The "Racing" mega-menu: hover to open, hover a country on the left to reveal
-// its Fields / Results & Replays links (which open the authority's site) on the
-// right. Also opens on click/focus for touch + keyboard.
+// "Racing" → International Race Calendar, then each country with a fly-out of
+// Fields / Results & Replays / its race calendar, as on the live site.
 export default function RacingMenu() {
-  const [open, setOpen] = useState(false);
-  const [active, setActive] = useState(0);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function onDocClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onDocClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDocClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  const country = RACING[active];
+  const { open, setOpen, ref } = useDropdown();
+  const [active, setActive] = useState<number | null>(null);
+  const close = () => {
+    setOpen(false);
+    setActive(null);
+  };
 
   return (
-    <div
-      ref={ref}
-      className="relative"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-    >
-      <button
-        type="button"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 whitespace-nowrap border-b-2 border-transparent py-2.5 text-[12px] sm:py-3 sm:text-[13px] font-semibold uppercase tracking-[0.12em] text-white/85 hover:border-amber hover:text-white"
-      >
-        Racing
-        <span aria-hidden className={`text-[10px] transition-transform ${open ? "rotate-180" : ""}`}>
-          ▾
-        </span>
+    <div ref={ref} className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={close}>
+      <button type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((v) => !v)} className={NAV_ITEM}>
+        Racing <Chevron className={`transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
-
       {open && (
-        <div
-          role="menu"
-          className="absolute left-0 top-full z-50 flex overflow-hidden border border-white/15 border-t-2 border-t-amber bg-navy-deep"
-        >
-          {/* Countries */}
-          <ul className="w-48 border-r border-white/10 py-1">
-            {RACING.map((c, i) => (
-              <li key={c.code}>
-                <button
-                  type="button"
-                  onMouseEnter={() => setActive(i)}
-                  onFocus={() => setActive(i)}
-                  aria-current={i === active ? "true" : undefined}
-                  className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-[15px] font-semibold ${
-                    i === active ? "bg-white/10 text-white" : "text-white/85 hover:bg-white/5 hover:text-white"
-                  }`}
-                >
-                  <span className="flex items-center gap-2.5">
-                    {c.name}
-                  </span>
-                  <span aria-hidden className="text-white/50">›</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-
-          {/* Fields / Results for the active country */}
-          <div className="w-56 py-2">
-            <p className="px-4 pb-1 text-[11px] font-bold uppercase tracking-wide text-white/45">
-              {country.name}
-            </p>
-            <a
-              href={country.fields}
-              target="_blank"
-              rel="noopener noreferrer"
-              role="menuitem"
-              className="block px-4 py-2.5 text-[15px] font-semibold text-white/90 hover:bg-white/10 hover:text-white"
-            >
-              Fields
-            </a>
-            <a
-              href={country.results}
-              target="_blank"
-              rel="noopener noreferrer"
-              role="menuitem"
-              className="block px-4 py-2.5 text-[15px] font-semibold text-white/90 hover:bg-white/10 hover:text-white"
-            >
-              Results &amp; Replays
-            </a>
-            {country.calendar && (
-              <Link
-                href={country.calendar}
-                role="menuitem"
-                onClick={() => setOpen(false)}
-                className="block px-4 py-2.5 text-[15px] font-semibold text-white/90 hover:bg-white/10 hover:text-white"
+        <div role="menu" className="absolute left-0 top-full z-50 min-w-[300px] bg-navy py-1 shadow-[0_12px_24px_rgba(0,0,0,0.25)]">
+          <Link href="/international-race-calendar/" role="menuitem" onClick={close} className={MENU_ITEM}>
+            International Race Calendar
+          </Link>
+          {RACING.map((c, i) => (
+            <div key={c.label} className="relative" onMouseEnter={() => setActive(i)} onMouseLeave={() => setActive(null)}>
+              <button
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={active === i}
+                onClick={() => setActive(active === i ? null : i)}
+                onFocus={() => setActive(i)}
+                className={`${MENU_ITEM} w-full`}
               >
-                {country.name} Race Calendar
-              </Link>
-            )}
-            <Link
-              href="/international-race-calendar/"
-              role="menuitem"
-              onClick={() => setOpen(false)}
-              className="mt-1 block border-t border-white/15 px-4 py-2.5 text-[13px] font-bold uppercase tracking-[0.1em] text-amber hover:bg-white/10"
-            >
-              International Race Calendar →
-            </Link>
-          </div>
+                <Flag code={c.flag} />
+                {c.label}
+                <Chevron dir="right" className="ml-1" />
+              </button>
+              {active === i && (
+                <div
+                  role="menu"
+                  className="z-50 bg-navy py-1 shadow-[0_12px_24px_rgba(0,0,0,0.25)] sm:absolute sm:left-full sm:top-0 sm:min-w-[300px]"
+                >
+                  <a href={c.fields} target="_blank" rel="noopener noreferrer" role="menuitem" className={MENU_ITEM}>
+                    Fields
+                  </a>
+                  <a href={c.results} target="_blank" rel="noopener noreferrer" role="menuitem" className={MENU_ITEM}>
+                    Results &amp; Replays
+                  </a>
+                  {c.calendar && (
+                    <Link href={c.calendar} role="menuitem" onClick={close} className={MENU_ITEM}>
+                      {c.name} Race Calendar
+                    </Link>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>

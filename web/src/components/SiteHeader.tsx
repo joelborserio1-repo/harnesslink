@@ -1,60 +1,80 @@
 import Link from "next/link";
 import NewsMenu from "@/components/NewsMenu";
 import RacingMenu from "@/components/RacingMenu";
-import SocialLinks from "@/components/SocialLinks";
+import { NAV_ITEM } from "@/components/NavDropdown";
+import { SOCIAL } from "@/lib/site";
 
-// Editorial top nav from the live site. TODO: make DB-driven (nav is data in v1).
-// "News" and "Racing" are special-cased below into dropdown/mega-menus.
+// The live site's header: navy masthead with the centred wordmark, round
+// social icons and a search line at the right, then the big uppercase menu.
 const NAV = [
   { label: "The Insider", href: "/the-insider/" },
   { label: "Contact Us", href: "/contact-us/" },
   { label: "Directory", href: "/directory/" },
-  { label: "Login", href: "/" },
+  { label: "Login", href: "/subscribe/" },
 ];
-
-const NAV_LINK =
-  "whitespace-nowrap border-b-2 border-transparent py-2.5 text-[12px] sm:py-3 sm:text-[13px] font-semibold uppercase tracking-[0.12em] text-white/85 hover:border-amber hover:text-white";
 
 export default function SiteHeader() {
   return (
     <header className="bg-navy">
-      {/* Masthead — the wordmark is centred, as on the live site. */}
-      <div className="wrap grid grid-cols-[1fr_auto_1fr] items-center py-5">
-        <p className="hidden text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55 md:block">
-          Standardbred news, worldwide
-        </p>
+      <div className="wrap relative flex items-center justify-center pb-1 pt-5 sm:min-h-[83px] sm:pt-3">
         <Link
           href="/"
           aria-label="Harnesslink — home"
-          className="col-start-2 font-headline text-[34px] font-bold leading-none tracking-[0.04em] text-white [font-variant-caps:small-caps] sm:text-[42px]"
+          className="font-headline text-[34px] font-semibold leading-none tracking-[1.1px] text-white [font-variant-caps:small-caps] sm:text-[48px]"
         >
           HarnessLink
         </Link>
-        <div className="col-start-3 flex items-center justify-end gap-4 text-white/75">
-          <SocialLinks className="hidden sm:flex" />
-          <Link href="/search/" aria-label="Search" className="hover:text-white sm:border-l sm:border-white/20 sm:pl-4">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-              <circle cx="11" cy="11" r="7" />
-              <path d="M21 21l-4.3-4.3" strokeLinecap="round" />
-            </svg>
-          </Link>
+
+        <div className="absolute right-4 top-3 hidden flex-col items-end gap-2 sm:right-[25px] md:flex">
+          <ul className="flex items-center gap-2.5">
+            {SOCIAL.map((s) => (
+              <li key={s.label}>
+                <a
+                  href={s.href}
+                  aria-label={s.label}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="grid h-7 w-7 place-items-center rounded-full bg-white text-navy hover:bg-white/85"
+                >
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden>
+                    <path d={s.path} />
+                  </svg>
+                </a>
+              </li>
+            ))}
+          </ul>
+          <form action="/search/" className="flex w-[150px] items-center border-b border-white/60">
+            <input
+              type="search"
+              name="q"
+              aria-label="Search Harnesslink"
+              className="font-ui w-full bg-transparent py-1 text-[13px] text-white placeholder:text-white/50 focus:outline-none"
+            />
+            <button aria-label="Search" className="text-white">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden>
+                <circle cx="11" cy="11" r="7" />
+                <path d="M21 21l-4.3-4.3" strokeLinecap="round" />
+              </svg>
+            </button>
+          </form>
         </div>
+        <Link href="/search/" aria-label="Search" className="absolute right-4 top-6 text-white md:hidden">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+            <circle cx="11" cy="11" r="7" />
+            <path d="M21 21l-4.3-4.3" strokeLinecap="round" />
+          </svg>
+        </Link>
       </div>
 
-      {/* Primary nav — centred under the wordmark, divided by a hairline. Wraps
-          on narrow screens (no overflow clipping, so the menus can escape). */}
-      <nav aria-label="Primary" className="border-t border-white/15">
-        <div className="wrap flex flex-wrap items-center justify-center gap-x-5 sm:gap-x-8">
-          <Link href="/" className={NAV_LINK}>
+      <nav aria-label="Primary">
+        <div className="wrap flex flex-wrap items-center justify-center">
+          <Link href="/" className={NAV_ITEM}>
             Home
           </Link>
-
-          {/* News → country dropdown, Racing → country/fields/results mega-menu */}
           <NewsMenu />
           <RacingMenu />
-
           {NAV.map((item) => (
-            <Link key={item.label} href={item.href} className={NAV_LINK}>
+            <Link key={item.label} href={item.href} className={NAV_ITEM}>
               {item.label}
             </Link>
           ))}

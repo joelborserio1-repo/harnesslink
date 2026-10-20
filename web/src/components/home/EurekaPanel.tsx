@@ -6,15 +6,15 @@ import { formatCardDate } from "@/lib/format";
 // the latest real Eureka stories rather than a static list of links.
 export default function EurekaPanel({ stories, href }: { stories: ArticleSummary[]; href: string }) {
   return (
-    <section className="sheet flex h-full flex-col border-t-[3px] border-t-navy p-6">
-      <p className="kicker kicker-gold">The Eureka</p>
-      <h2 className="font-headline mt-3 text-[26px] font-bold leading-[1.12] text-navy [text-wrap:balance]">
+    <section className="sheet relative flex h-full flex-col px-6 py-6 sm:pl-[49px] sm:pr-[29px] sm:py-7">
+      <p className="panel-label">The Eureka</p>
+      <h2 className="font-headline mt-3 text-[30px] font-semibold leading-[1.2] text-[#070400] [text-wrap:balance] sm:text-[34px]">
         Harness racing&apos;s richest race.
       </h2>
-      <p className="mt-2 text-[14px] leading-relaxed text-[#4a4e57]">
+      <p className="mt-2 text-[14px] leading-[1.5] text-[#5B6478]">
         Race week coverage, runners, market moves and more.
       </p>
-      <Link href={href} className="btn mt-4 self-start">
+      <Link href={href} className="btn mt-5 self-start bg-navy-deep normal-case tracking-normal text-[14px]">
         Explore The Eureka <span aria-hidden>→</span>
       </Link>
 

@@ -4,18 +4,21 @@
 // taxonomy, self-canonical) and that is what the navigation links to; the
 // matching /category/{slug}/ archive also exists and keeps working. Order here
 // is the display order.
+import type { FlagCode } from "@/components/Flag";
+
 export type Country = {
   code: string; // short label used in the compact nav (AUS, NZ, USA, CA, EUROPE)
   name: string; // full region name used in headings
   slug: string; // shared by /country/{slug}/ and /category/{slug}/
+  flag: FlagCode;
 };
 
 export const COUNTRIES: Country[] = [
-  { code: "AUS", name: "Australia", slug: "australia" },
-  { code: "NZ", name: "New Zealand", slug: "new-zealand" },
-  { code: "USA", name: "USA", slug: "usa" },
-  { code: "CA", name: "Canada", slug: "canada" },
-  { code: "EUROPE", name: "Europe", slug: "europe" },
+  { code: "AUS", name: "Australia", slug: "australia", flag: "au" },
+  { code: "NZ", name: "New Zealand", slug: "new-zealand", flag: "nz" },
+  { code: "USA", name: "USA", slug: "usa", flag: "us" },
+  { code: "CA", name: "Canada", slug: "canada", flag: "ca" },
+  { code: "Europe", name: "Europe", slug: "europe", flag: "eu" },
 ];
 
 // The footer's list on the live site also carries UK / IRE.
@@ -25,7 +28,7 @@ export const FOOTER_COUNTRIES: Country[] = [
   COUNTRIES[3],
   COUNTRIES[4],
   COUNTRIES[1],
-  { code: "UK/IRE", name: "UK / IRE", slug: "uk-ire" },
+  { code: "UK/IRE", name: "UK / IRE", slug: "uk-ire", flag: "gb" },
 ];
 
 export const COUNTRY_SLUGS = FOOTER_COUNTRIES.map((c) => c.slug);

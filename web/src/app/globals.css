@@ -7,8 +7,8 @@
    hairline rules, no drop shadows, no chips or pills around words. Section
    labels are plain small-cap text; structure comes from rules and type. */
 @theme {
-  --color-navy: #081F5B;       /* primary navy — masthead, nav, footer, headings */
-  --color-navy-deep: #06163f;  /* darker shade for bands / hovers */
+  --color-navy: #00205E;       /* the live site's navy — masthead, nav, footer, headings */
+  --color-navy-deep: #0E2455;  /* deeper navy — buttons, panel labels (live site) */
   --color-page: #F2F2F2;       /* page background behind the white sheets */
   --color-blue: #1a4bb5;       /* link / hover blue */
   --color-amber: #d9a53a;      /* gold — CTA on navy only */
@@ -19,6 +19,7 @@
   --color-line: #dcdde2;
   --color-mist: #f4f5f7;
   --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-ui: "Heebo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; /* nav, menus, slider meta (live site) */
   --font-sans: "Source Sans 3", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     Roboto, Arial, sans-serif;
 }
@@ -35,9 +36,13 @@ body {
 .wrap {
   margin-inline: auto;
   width: 100%;
-  max-width: 1240px;
-  padding-inline: 20px;
+  max-width: 1440px; /* the live site runs near full width with 25px margins */
+  padding-inline: 16px;
 }
+@media (min-width: 640px) {
+  .wrap { padding-inline: 25px; }
+}
+.font-ui { font-family: var(--font-ui); }
 
 /* White sheet. Flat: a hairline, never a drop-shadow, never a curved corner. `.card`
    is kept as an alias so older templates pick up the same surface. */
@@ -59,6 +64,16 @@ body {
   color: var(--color-navy);
 }
 .kicker-gold { color: var(--color-accent); }
+
+/* The live site's panel label: letter-spaced Source Sans, deep navy. */
+.panel-label {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--color-navy-deep);
+}
 
 /* Section heading sitting on a heavy navy rule. */
 .rule-head {
@@ -82,6 +97,7 @@ body {
 
 /* Buttons: square, solid, tracked caps. */
 .btn {
+  border-radius: 3px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -109,6 +125,8 @@ body {
 }
 .group:hover .hl-link,
 .hl-link:hover { background-size: 100% 1px; }
+
+@keyframes fade { from { opacity: 0.35; } to { opacity: 1; } }
 
 /* Rendered legacy article HTML — kept verbatim, styled for readability only. */
 .prose-article {

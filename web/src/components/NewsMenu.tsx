@@ -1,65 +1,24 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Flag from "@/components/Flag";
 import { COUNTRIES, countryHref } from "@/lib/countries";
+import { Chevron, MENU_ITEM, NAV_ITEM, useDropdown } from "@/components/NavDropdown";
 
-// The "News" nav item — a dropdown of the country sections. Click to toggle;
-// closes on outside click or Escape. Matches the navy primary-nav styling.
+// "News" → the country sections, each with its flag, as on the live site.
 export default function NewsMenu() {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function onDocClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onDocClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDocClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
+  const { open, setOpen, ref } = useDropdown();
   return (
-    <div
-      ref={ref}
-      className="relative"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-    >
-      <button
-        type="button"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 whitespace-nowrap border-b-2 border-transparent py-2.5 text-[12px] sm:py-3 sm:text-[13px] font-semibold uppercase tracking-[0.12em] text-white/85 hover:border-amber hover:text-white"
-      >
-        News
-        <span aria-hidden className={`text-[10px] transition-transform ${open ? "rotate-180" : ""}`}>
-          ▾
-        </span>
+    <div ref={ref} className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <button type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((v) => !v)} className={NAV_ITEM}>
+        News <Chevron className={`transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
-
       {open && (
-        <div
-          role="menu"
-          className="absolute left-0 top-full z-50 mt-0 w-52 overflow-hidden border border-line border-t-2 border-t-amber bg-white"
-        >
+        <div role="menu" className="absolute left-0 top-full z-50 min-w-[220px] bg-navy py-1 shadow-[0_12px_24px_rgba(0,0,0,0.25)]">
           {COUNTRIES.map((c) => (
-            <Link
-              key={c.slug}
-              href={countryHref(c.slug)}
-              role="menuitem"
-              onClick={() => setOpen(false)}
-              className="block px-4 py-2.5 text-sm font-semibold text-navy hover:bg-navy hover:text-white"
-            >
-              {c.name}
+            <Link key={c.slug} href={countryHref(c.slug)} role="menuitem" onClick={() => setOpen(false)} className={MENU_ITEM}>
+              <Flag code={c.flag} />
+              {c.code}
             </Link>
           ))}
         </div>

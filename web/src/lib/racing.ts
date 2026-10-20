@@ -1,60 +1,62 @@
-// The "Racing" mega-menu — each country links out to its official harness
-// authority's Fields and Results pages. AUS is confirmed (harness.org.au); the
-// others use each authority's site and should be confirmed / deep-linked.
+import type { FlagCode } from "@/components/Flag";
+
+// The "Racing" menu, as on the live site: each country links out to its
+// racing authority's Fields and Results & Replays, plus our own race
+// calendar where we publish one.
 export type RacingCountry = {
-  code: string;
-  name: string;
-  flag: string; // emoji flag
+  label: string; // as shown in the menu (AUS, NZ, USA…)
+  name: string; // full name, for calendar link text
+  flag: FlagCode;
   fields: string;
   results: string;
-  calendar?: string; // our own feature race calendar page, where we publish one
+  calendar?: string;
 };
 
 export const RACING: RacingCountry[] = [
   {
-    code: "AUS",
+    label: "AUS",
     name: "Australia",
-    flag: "🇦🇺",
+    flag: "au",
     fields: "https://www.harness.org.au/racing/fields",
     results: "https://www.harness.org.au/racing/results/?event=resultsIndex&search_type=daily",
     calendar: "/feature-race-calendar-au/",
   },
   {
-    code: "NZ",
+    label: "NZ",
     name: "New Zealand",
-    flag: "🇳🇿",
-    fields: "https://www.hrnz.co.nz/",
-    results: "https://www.hrnz.co.nz/",
+    flag: "nz",
+    fields: "https://infohorse.hrnz.co.nz/datahrs/fields/fields.htm",
+    results: "https://infohorse.hrnz.co.nz/datahrs/results/results.htm",
     calendar: "/feature-race-calendar-nz/",
   },
   {
-    code: "USA",
-    name: "USA",
-    flag: "🇺🇸",
-    fields: "https://www.ustrotting.com/",
-    results: "https://www.ustrotting.com/",
+    label: "USA",
+    name: "United States",
+    flag: "us",
+    fields: "https://racing.ustrotting.com/",
+    results: "https://racing.ustrotting.com/",
     calendar: "/united-states-race-calendar/",
   },
   {
-    code: "CA",
+    label: "CA",
     name: "Canada",
-    flag: "🇨🇦",
-    fields: "https://standardbredcanada.ca/",
-    results: "https://standardbredcanada.ca/",
+    flag: "ca",
+    fields: "https://standardbredcanada.ca/racing?active_tab=entries",
+    results: "https://standardbredcanada.ca/racing?active_tab=results",
     calendar: "/canada-race-calendar/",
   },
   {
-    code: "SWE",
+    label: "Sweden",
     name: "Sweden",
-    flag: "🇸🇪",
-    fields: "https://www.travsport.se/",
-    results: "https://www.travsport.se/",
+    flag: "se",
+    fields: "https://www.swedishhorseracing.com/races#/calendar",
+    results: "https://www.swedishhorseracing.com/races#/calendar",
   },
   {
-    code: "FRA",
+    label: "France",
     name: "France",
-    flag: "🇫🇷",
-    fields: "https://www.letrot.com/",
-    results: "https://www.letrot.com/",
+    flag: "fr",
+    fields: "https://www.letrot.com/courses/aujourd-hui",
+    results: "https://www.letrot.com/courses/hier",
   },
 ];
