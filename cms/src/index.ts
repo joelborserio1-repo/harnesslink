@@ -43,6 +43,29 @@ async function authorsCannotPublish(strapi: Core.Strapi) {
   });
 }
 
+// Indexes Strapi doesn't create on its own. With 64,000+ stories, lookups by
+// URL slug, WordPress id and publish date must never scan the table (the site
+// filters and sorts on them on every page; the importer looks up by id).
+const INDEXES: Array<[name: string, table: string, columns: string]> = [
+  ['hl_articles_slug', 'articles', 'slug'],
+  ['hl_articles_legacy_wp_id', 'articles', 'legacy_wp_id'],
+  ['hl_articles_publish_date', 'articles', 'publish_date DESC'],
+  ['hl_articles_published_at', 'articles', 'published_at'],
+  ['hl_redirects_from_path', 'redirects', 'from_path'],
+  ['hl_authors_slug', 'authors', 'slug'],
+  ['hl_categories_slug', 'categories', 'slug'],
+  ['hl_tags_slug', 'tags', 'slug'],
+  ['hl_directory_listings_legacy_id', 'directory_listings', 'legacy_id'],
+  ['hl_directory_listings_type', 'directory_listings', 'directory_type, is_featured'],
+];
+
+async function ensureIndexes(strapi: Core.Strapi) {
+  if (strapi.db.dialect.client !== 'postgres') return;
+  for (const [name, table, columns] of INDEXES) {
+    await strapi.db.connection.raw(`CREATE INDEX IF NOT EXISTS ${name} ON ${table} (${columns})`);
+  }
+}
+
 // Apply the newsroom editing layouts (src/admin-layouts.ts) once per version.
 async function applyEditorLayouts(strapi: Core.Strapi) {
   const store = strapi.store({ type: 'plugin', name: 'harnesslink' });
@@ -94,6 +117,7 @@ export default {
   register(/* { strapi }: { strapi: Core.Strapi } */) {},
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
+    await ensureIndexes(strapi);
     await grantPublicRead(strapi);
     await authorsCannotPublish(strapi);
     await applyEditorLayouts(strapi);
