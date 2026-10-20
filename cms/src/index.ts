@@ -1,5 +1,7 @@
 import type { Core } from '@strapi/strapi';
 import { LAYOUTS, LAYOUT_VERSION } from './admin-layouts';
+import { seedMenus } from './menus';
+import { applyPluginSettings } from './plugin-settings';
 
 // What the public website may read without a token (Users & Permissions
 // "Public" role). Ads, subscribers, redirects and the 404 log are only reached
@@ -13,18 +15,27 @@ const PUBLIC_READ = [
   'api::country.country',
 ];
 
+// Plugin endpoints the website calls: menus, and reader comments (read and
+// post; posts wait for an editor's approval before they show).
+const PUBLIC_PLUGIN_ACTIONS = [
+  'plugin::navigation.client.render',
+  'plugin::navigation.client.renderChild',
+  'plugin::comments.client.findAllFlat',
+  'plugin::comments.client.findAllInHierarchy',
+  'plugin::comments.client.post',
+  'plugin::comments.client.reportAbuse',
+];
+
 async function grantPublicRead(strapi: Core.Strapi) {
   const role = await strapi.db.query('plugin::users-permissions.role').findOne({ where: { type: 'public' } });
   if (!role) return;
-  for (const uid of PUBLIC_READ) {
-    for (const verb of ['find', 'findOne']) {
-      const action = `${uid}.${verb}`;
-      const exists = await strapi.db
-        .query('plugin::users-permissions.permission')
-        .findOne({ where: { action, role: role.id } });
-      if (!exists) {
-        await strapi.db.query('plugin::users-permissions.permission').create({ data: { action, role: role.id } });
-      }
+  const actions = [...PUBLIC_READ.flatMap((uid) => [`${uid}.find`, `${uid}.findOne`]), ...PUBLIC_PLUGIN_ACTIONS];
+  for (const action of actions) {
+    const exists = await strapi.db
+      .query('plugin::users-permissions.permission')
+      .findOne({ where: { action, role: role.id } });
+    if (!exists) {
+      await strapi.db.query('plugin::users-permissions.permission').create({ data: { action, role: role.id } });
     }
   }
 }
@@ -114,13 +125,38 @@ async function applyEditorLayouts(strapi: Core.Strapi) {
   strapi.log.info(`[harnesslink] editor layouts applied (${LAYOUT_VERSION})`);
 }
 
+// A story's date is `publishDate` (migrated stories keep their WordPress
+// date). One published for the first time from the admin — by hand or by
+// Publisher's schedule — gets the moment it went live; later edits keep it.
+const DATED = ['api::article.article'];
+
+function datePublishedStories(strapi: Core.Strapi) {
+  strapi.documents.use(async (ctx, next) => {
+    if (ctx.action === 'publish' && DATED.includes(ctx.uid)) {
+      const documentId = (ctx.params as { documentId?: string }).documentId;
+      if (documentId) {
+        const docs = strapi.documents(ctx.uid as 'api::article.article');
+        const draft = await docs.findOne({ documentId, status: 'draft', fields: ['publishDate'] });
+        if (draft && !draft.publishDate) {
+          await docs.update({ documentId, data: { publishDate: new Date().toISOString() } as never });
+        }
+      }
+    }
+    return next();
+  });
+}
+
 export default {
-  register(/* { strapi }: { strapi: Core.Strapi } */) {},
+  register({ strapi }: { strapi: Core.Strapi }) {
+    datePublishedStories(strapi);
+  },
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
     await ensureIndexes(strapi);
     await grantPublicRead(strapi);
     await authorsCannotPublish(strapi);
     await applyEditorLayouts(strapi);
+    await applyPluginSettings(strapi);
+    await seedMenus(strapi);
   },
 };

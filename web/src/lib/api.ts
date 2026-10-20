@@ -52,6 +52,8 @@ export type ArticleSeo = {
 };
 
 export type ArticleFull = ArticleSummary & {
+  document_id: string; // Strapi's id — comments are filed against it
+  embed_html: string | null; // video/social embed added in the editor (oEmbed)
   body_format: "legacy_html" | "tiptap_json";
   body_html: string | null;
   body_json: Record<string, unknown>;
@@ -179,7 +181,20 @@ type SArticle = {
   authors?: SAuthor[];
   tags?: SRef[];
   seo?: SSeo;
+  embed?: string | { oembed?: { html?: string } } | null;
 };
+
+// The oEmbed field stores the provider's response as JSON; its `html` is the
+// player (an iframe or the provider's blockquote + script).
+function embedHtml(v: SArticle["embed"]): string | null {
+  if (!v) return null;
+  try {
+    const data = typeof v === "string" ? JSON.parse(v) : v;
+    return data?.oembed?.html || null;
+  } catch {
+    return null;
+  }
+}
 
 const IMAGE_FIELDS = ["url", "width", "height", "alternativeText", "caption", "formats"];
 
@@ -305,6 +320,8 @@ export async function getArticle(slug: string): Promise<ArticleFull | null> {
 
   return {
     ...summary(a),
+    document_id: a.documentId,
+    embed_html: embedHtml(a.embed),
     body_format: a.bodyFormat === "blocks" ? "tiptap_json" : "legacy_html",
     body_html: bodyHtml,
     body_json: {},
@@ -372,13 +389,72 @@ export async function getCategory(slug: string) {
   return { category: { name: c.name, slug: c.slug, kind: c.kind, url: `/category/${c.slug}/` }, articles };
 }
 
+// Site search runs on Meilisearch (typo-tolerant, ranked, newest first among
+// equals). Without MEILI_HOST it falls back to a plain title/excerpt match in
+// Strapi. The key never reaches the browser: this runs on the server.
+const MEILI_HOST = (process.env.MEILI_HOST || "").replace(/\/$/, "");
+const MEILI_KEY = process.env.MEILI_SEARCH_KEY || process.env.MEILI_MASTER_KEY || "";
+
+type MeiliHit = {
+  id: number;
+  slug: string;
+  title: string;
+  subtitle: string;
+  excerpt: string;
+  authors: string[];
+  authorSlugs?: string[];
+  category: string;
+  categorySlug: string;
+  image: string;
+  publishDate: string | null;
+};
+
+function hitToSummary(h: MeiliHit): ArticleSummary {
+  const category = h.categorySlug ? { name: h.category, slug: h.categorySlug, url: `/category/${h.categorySlug}/` } : null;
+  const authorSlug = h.authorSlugs?.[0];
+  const author = h.authors?.[0] && authorSlug ? { name: h.authors[0], slug: authorSlug, url: `/writers/${authorSlug}/` } : null;
+  return {
+    id: h.id,
+    slug: h.slug,
+    url: `/${h.slug}/`,
+    title: h.title,
+    subtitle: h.subtitle || null,
+    excerpt: h.excerpt || null,
+    published_at: h.publishDate,
+    category,
+    categories: category ? [category] : [],
+    image: { src: h.image ? media(h.image) : "", srcset: "", sizes: "", width: null, height: null, alt: h.title },
+    author,
+  };
+}
+
 export async function searchArticles(q: string, page = 1) {
   if (!q || q.trim().length < 2) return { query: q, articles: [] as ArticleSummary[], total: 0, page };
   const term = q.trim();
+  const perPage = 20;
+
+  if (MEILI_HOST) {
+    try {
+      const res = await fetch(`${MEILI_HOST}/indexes/articles/search`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${MEILI_KEY}` },
+        body: JSON.stringify({ q: term, page, hitsPerPage: perPage }),
+        cache: "no-store",
+        signal: AbortSignal.timeout(3000),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { hits: MeiliHit[]; totalHits: number };
+        return { query: q, articles: data.hits.map(hitToSummary), total: data.totalHits, page };
+      }
+    } catch {
+      // fall through to the database search
+    }
+  }
+
   const { articles, total } = await articleList(
     { $or: [{ title: { $containsi: term } }, { excerpt: { $containsi: term } }] },
     page,
-    20
+    perPage
   );
   return { query: q, articles, total, page };
 }

@@ -1,12 +1,7 @@
 import Link from "next/link";
 import { FOOTER_COUNTRIES, countryHref } from "@/lib/countries";
 import SocialLinks from "@/components/SocialLinks";
-
-const QUICK_LINKS = [
-  { label: "Subscribe", href: "/subscribe/" },
-  { label: "Contact", href: "/contact-us/" },
-  { label: "Directory", href: "/directory/" },
-];
+import { getMenu } from "@/lib/menu";
 
 function LinkList({ items }: { items: { label: string; href: string }[] }) {
   return (
@@ -26,7 +21,11 @@ function ColumnHead({ children }: { children: React.ReactNode }) {
   return <h2 className="border-t border-white/25 pt-3 text-[11px] font-bold uppercase tracking-[0.16em] text-white">{children}</h2>;
 }
 
-export default function SiteFooter() {
+export default async function SiteFooter() {
+  // Quick links: Strapi → Navigation → "Footer menu".
+  const quickLinks = (await getMenu("footer-menu"))
+    .filter((i) => i.href)
+    .map((i) => ({ label: i.title, href: i.href as string }));
   const countries = [
     { label: "All", href: "/" },
     ...FOOTER_COUNTRIES.map((c) => ({ label: c.name, href: countryHref(c.slug) })),
@@ -48,7 +47,7 @@ export default function SiteFooter() {
 
         <div>
           <ColumnHead>Quick Links</ColumnHead>
-          <LinkList items={QUICK_LINKS} />
+          <LinkList items={quickLinks} />
         </div>
 
         <div>

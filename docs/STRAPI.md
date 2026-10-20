@@ -30,17 +30,32 @@ WordPress ──export_posts.php──▶ cms/scripts/import-wordpress.js ──
 - **Blocks editor** — new stories. Migrated stories keep their WordPress HTML in *Migrated story HTML* (`bodyFormat: legacy_html`) and are never converted.
 - **Media library** — lead photos and ad creatives for new content. Migrated photos stay on the WordPress uploads until media moves (BUILD_V1 Step 6).
 - **Users & Permissions (Public role)** — the site reads articles, writers, sections, tags, pages and the country nav without a token. Ads, subscribers, redirects and the 404 log are never listed publicly.
-- **Cron** — scheduled publishing: leave a story as a draft, fill *Schedule for*, and it publishes within a minute of that time.
+- **Cron** — still runs the older *Schedule for* field for any story that has it set; new scheduling uses Publisher (below).
+- **Document Service middleware** — a story published for the first time gets that moment as its *Publish date* (`src/index.ts`).
+
+## Marketplace plugins (config in `config/plugins.ts`)
+
+- **Navigation** (VirtusLab) — the header menu ("Main menu") and footer quick links ("Footer menu"). Items can be nested three deep (Racing → AUS → Fields) and carry a **Flag** (au, nz, us, ca, eu, gb, se, fr). Seeded once from `src/menus.ts`; after that the admin is the source. The site falls back to the same menus if Strapi is unreachable.
+- **Publisher** (PluginPal) — *Add a publish date* / *unpublish date* in the right-hand panel of a story or page.
+- **Comments** (VirtusLab) — reader comments under each story. Every comment waits for approval (*Comments → Discover*); readers' emails are never returned by the public API. Bad-word filter on.
+- **oEmbed** — the story's *Video or social embed* field: paste a YouTube/Vimeo/X/Instagram/Facebook link; the player shows under the story.
+- **Meilisearch** — site search. Indexes headline, standfirst, excerpt, byline, section and date (not story text); typo-tolerant, newest first among equals. Kept in sync as stories are published; rebuild with `node scripts/index-search.js`. Off when `MEILI_HOST` is unset (the site then falls back to a plain database search).
+
+The Navigation and Comments plugins read their settings from the database, not the config file, so `src/plugin-settings.ts` copies the file settings in at startup when the saved ones are missing (comment approval and hidden emails depend on this). Later changes on their Settings pages are kept.
+
+## Ads: placement, dates, countries
+
+*Start date* / *Finish date* bound when an ad runs. The **Show in …** ticks (Australia, New Zealand, USA, Canada, UK & Ireland, Europe, everywhere else) limit it to readers in those countries; none ticked = everywhere. The reader's country comes from Cloudflare's `CF-IPCountry` header, so the site must be proxied through Cloudflare (orange cloud) for targeting to work — without it every reader counts as "everywhere else". Add `?geo=NZ` to any page to preview what a reader in another country sees.
 
 ## Not used (paid in Strapi)
 
-Content History (revisions), Releases (Strapi's own scheduler), Review Workflows, Live Preview, SSO, Audit Logs. Scheduling is covered by the cron task above; the others are not available on Community.
+Content History (revisions), Releases (Strapi's own scheduler), Review Workflows, Live Preview, SSO, Audit Logs. Scheduling is covered by the Publisher plugin; the others are not available on Community.
 
 ## Custom routes (all public, all narrow)
 
 | Route | Purpose |
 |---|---|
-| `GET /api/ads/live` | One weighted pick per placement; rails return three different ads |
+| `GET /api/ads/live?country=AU` | One weighted pick per placement, only ads that run in that country; rails return three different ads |
 | `GET /api/ads/:documentId/click` | Count, then 302 to the advertiser |
 | `POST /api/ads/:documentId/impression` | Count a viewable impression |
 | `POST /api/articles/:slug/view` | View counter (browser beacon) |

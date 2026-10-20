@@ -42,6 +42,10 @@
     "bodyHtml": {
       "type": "text"
     },
+    "embed": {
+      "type": "customField",
+      "customField": "plugin::oembed.oembed"
+    },
     "featuredImage": {
       "type": "media",
       "multiple": false,

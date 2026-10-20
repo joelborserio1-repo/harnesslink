@@ -1,19 +1,15 @@
 import Link from "next/link";
-import NewsMenu from "@/components/NewsMenu";
-import RacingMenu from "@/components/RacingMenu";
+import MenuDropdown from "@/components/MenuDropdown";
+import MenuLink from "@/components/MenuLink";
 import { NAV_ITEM } from "@/components/NavDropdown";
+import { getMenu } from "@/lib/menu";
 import { SOCIAL } from "@/lib/site";
 
 // The live site's header: navy masthead with the centred wordmark, round
-// social icons and a search line at the right, then the big uppercase menu.
-const NAV = [
-  { label: "The Insider", href: "/the-insider/" },
-  { label: "Contact Us", href: "/contact-us/" },
-  { label: "Directory", href: "/directory/" },
-  { label: "Login", href: "/subscribe/" },
-];
-
-export default function SiteHeader() {
+// social icons and a search line at the right, then the big uppercase menu
+// (edited in Strapi under Navigation → "Main menu").
+export default async function SiteHeader() {
+  const menu = await getMenu("main-menu");
   return (
     <header className="bg-navy">
       <div className="wrap relative flex items-center justify-center pb-1 pt-5 sm:min-h-[83px] sm:pt-3">
@@ -68,16 +64,13 @@ export default function SiteHeader() {
 
       <nav aria-label="Primary">
         <div className="wrap flex flex-wrap items-center justify-center">
-          <Link href="/" className={NAV_ITEM}>
-            Home
-          </Link>
-          <NewsMenu />
-          <RacingMenu />
-          {NAV.map((item) => (
-            <Link key={item.label} href={item.href} className={NAV_ITEM}>
-              {item.label}
-            </Link>
-          ))}
+          {menu.map((item, i) =>
+            item.items.length ? (
+              <MenuDropdown key={`${item.title}-${i}`} item={item} />
+            ) : (
+              <MenuLink key={`${item.title}-${i}`} item={item} className={NAV_ITEM} />
+            )
+          )}
         </div>
       </nav>
     </header>

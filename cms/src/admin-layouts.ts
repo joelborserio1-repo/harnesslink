@@ -17,7 +17,7 @@ type Layout = {
   fields: Record<string, FieldMeta>;
 };
 
-export const LAYOUT_VERSION = '2026-10-21.1';
+export const LAYOUT_VERSION = '2026-10-21.3';
 
 const SEO_HELP = 'Search and social-media title/description. Leave blank to use the headline and standfirst.';
 
@@ -33,10 +33,11 @@ export const LAYOUTS: Layout[] = [
       [['subtitle', 12]],
       [['excerpt', 8], ['slug', 4]],
       [['body', 12]],
+      [['embed', 12]],
       [['featuredImage', 6], ['authors', 6]],
       [['primaryCategory', 6], ['categories', 6]],
       [['tags', 12]],
-      [['publishDate', 4], ['scheduledFor', 4], ['modifiedDate', 4]],
+      [['publishDate', 6], ['modifiedDate', 6]],
       [['seo', 12]],
       [['bodyFormat', 4], ['needsReview', 4], ['viewCount', 4]],
       [['bodyHtml', 12]],
@@ -56,7 +57,8 @@ export const LAYOUTS: Layout[] = [
       categories: { label: 'All sections', description: 'Every section the story should appear in, including Top 4.' },
       tags: { label: 'Tags', description: 'Horses, drivers, trainers, tracks and races mentioned.' },
       publishDate: { label: 'Publish date', description: 'Shown on the story. Filled in automatically when published.' },
-      scheduledFor: { label: 'Schedule for', description: 'Leave the story as a draft and set a time: it publishes itself within a minute of then.' },
+      scheduledFor: { label: 'Schedule for (old)', description: 'Use "Add a publish date" in the right-hand panel instead.' },
+      embed: { label: 'Video or social embed', description: 'Paste a YouTube, Vimeo, X, Instagram or Facebook link — the player shows under the story.' },
       modifiedDate: { label: 'Last updated' },
       seo: { label: 'Search & social', description: SEO_HELP },
       bodyFormat: { label: 'Body type', description: 'blocks = written in Strapi. legacy_html = migrated from WordPress (edit in the HTML box below).' },

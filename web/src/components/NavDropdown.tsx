@@ -3,10 +3,21 @@
 import { useEffect, useRef, useState } from "react";
 
 // Shared behaviour for the header dropdowns: opens on hover (desktop) and on
-// click/tap or keyboard; closes on outside click or Escape.
+// click/tap or keyboard; closes on outside click or Escape. A tap fires the
+// hover first, so a click straight after a hover-open keeps the menu open
+// instead of toggling it shut.
 export function useDropdown() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const hoveredAt = useRef(0);
+  const hoverOpen = () => {
+    if (!open) hoveredAt.current = Date.now();
+    setOpen(true);
+  };
+  const toggle = () => {
+    if (Date.now() - hoveredAt.current < 500) return setOpen(true);
+    setOpen((o) => !o);
+  };
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
@@ -20,7 +31,7 @@ export function useDropdown() {
       document.removeEventListener("keydown", onKey);
     };
   }, [open]);
-  return { open, setOpen, ref };
+  return { open, setOpen, hoverOpen, toggle, ref };
 }
 
 export function Chevron({ dir = "down", className = "" }: { dir?: "down" | "right"; className?: string }) {

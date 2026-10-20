@@ -79,6 +79,9 @@ services:
       DATABASE_USERNAME: harnesslink
       DATABASE_PASSWORD: ${DB_PASSWORD:-harnesslink}
       STRAPI_TELEMETRY_DISABLED: "true"
+      # Site search. Indexing switches off if MEILI_MASTER_KEY is unset.
+      MEILI_HOST: ${MEILI_MASTER_KEY:+http://search:7700}
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-}
     volumes:
       - cms_uploads:/app/public/uploads
     ports:
@@ -87,6 +90,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      search:
+        condition: service_started
 
   web:
     build:
@@ -101,11 +106,29 @@ services:
       STRAPI_PUBLIC_URL: ${CMS_PUBLIC_URL:-} # where browsers load CMS media from
       # "true" on staging so search engines never index it. MUST be unset in production.
       NOINDEX: ${NOINDEX:-}
+      # Site search (server-side only; the key never reaches browsers). Falls
+      # back to a plain database search when unset.
+      MEILI_HOST: ${MEILI_MASTER_KEY:+http://search:7700}
+      MEILI_SEARCH_KEY: ${MEILI_SEARCH_KEY:-}
     depends_on:
       - api
       - cms
     ports:
       - "${WEB_PORT:-8080}:3000"
+
+  # Meilisearch: the site-search index (headlines, standfirsts, bylines —
+  # not story text). Strapi's plugin keeps it in sync as stories are
+  # published; rebuild it with `node scripts/index-search.js` in the cms
+  # container. Internal only, no port published.
+  search:
+    image: getmeili/meilisearch:v1.55.0
+    restart: unless-stopped
+    environment:
+      MEILI_ENV: production
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-change-me-to-a-long-random-string}
+      MEILI_NO_ANALYTICS: "true"
+    volumes:
+      - meili_data:/meili_data
 
   # On-the-fly image resizing → WebP/AVIF. Point IMGPROXY_URL (above) at this
   # service's public address to activate it. It fetches the originals (the
@@ -125,3 +148,4 @@ services:
 volumes:
   pgdata:
   cms_uploads:
+  meili_data:

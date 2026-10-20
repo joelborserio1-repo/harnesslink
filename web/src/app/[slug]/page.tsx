@@ -9,6 +9,7 @@ import AuthorBox from "@/components/article/AuthorBox";
 import ArticleSidebar from "@/components/article/ArticleSidebar";
 import ViewBeacon from "@/components/article/ViewBeacon";
 import RegistrationWall from "@/components/article/RegistrationWall";
+import Comments from "@/components/article/Comments";
 import AdSlot from "@/components/AdSlot";
 import ArticleTile from "@/components/home/ArticleTile";
 import ShareLinks from "@/components/article/ShareLinks";
@@ -202,6 +203,10 @@ export default async function ArticlePage({ params }: Params) {
                 </div>
               )}
 
+              {article.embed_html && (
+                <div className="article-embed mt-7" dangerouslySetInnerHTML={{ __html: article.embed_html }} />
+              )}
+
               <AdSlot format="banner" zone="article-bottom" className="mt-8" />
 
               {/* Filed under — plain text links, as on the live site. */}
@@ -264,6 +269,8 @@ export default async function ArticlePage({ params }: Params) {
                   </div>
                 </nav>
               )}
+
+              <Comments documentId={article.document_id} />
             </div>
           </article>
 
