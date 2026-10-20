@@ -1,0 +1,180 @@
+{
+  "kind": "collectionType",
+  "collectionName": "directory_listings",
+  "info": {
+    "singularName": "directory-listing",
+    "pluralName": "directory-listings",
+    "displayName": "Directory listing",
+    "description": "A stallion, trainer, driver or service in the HarnessLink Directory. Contact details show publicly only when Paying is on."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "name",
+      "required": true
+    },
+    "directoryType": {
+      "type": "enumeration",
+      "enum": [
+        "stallion",
+        "trainer",
+        "driver",
+        "agistment",
+        "transport",
+        "vet",
+        "feed_supplements",
+        "bloodstock",
+        "syndicator",
+        "pre_training",
+        "industry_service"
+      ],
+      "default": "stallion",
+      "required": true
+    },
+    "legacyId": {
+      "type": "biginteger",
+      "unique": true
+    },
+    "isPaying": {
+      "type": "boolean",
+      "default": false
+    },
+    "isFeatured": {
+      "type": "boolean",
+      "default": false
+    },
+    "studName": {
+      "type": "string"
+    },
+    "studMaster": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
+    },
+    "suburb": {
+      "type": "string"
+    },
+    "industry": {
+      "type": "string"
+    },
+    "coverage": {
+      "type": "text"
+    },
+    "statusNote": {
+      "type": "string"
+    },
+    "tagline": {
+      "type": "string"
+    },
+    "shortSummary": {
+      "type": "text"
+    },
+    "gait": {
+      "type": "enumeration",
+      "enum": [
+        "Pacer",
+        "Trotter"
+      ],
+      "default": "Pacer"
+    },
+    "yearOfBirth": {
+      "type": "string"
+    },
+    "colour": {
+      "type": "string"
+    },
+    "sex": {
+      "type": "string"
+    },
+    "profileBio": {
+      "type": "text"
+    },
+    "raceRecord": {
+      "type": "string"
+    },
+    "careerEarnings": {
+      "type": "string"
+    },
+    "serviceFee": {
+      "type": "string"
+    },
+    "progenyNote": {
+      "type": "text"
+    },
+    "crossesIntro": {
+      "type": "text"
+    },
+    "bookingUrl": {
+      "type": "string"
+    },
+    "bookingLabel": {
+      "type": "string"
+    },
+    "profileImage": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "profileImageUrl": {
+      "type": "string"
+    },
+    "heroImageUrl": {
+      "type": "string"
+    },
+    "contact": {
+      "type": "component",
+      "repeatable": false,
+      "component": "directory.contact"
+    },
+    "pedigree": {
+      "type": "component",
+      "repeatable": false,
+      "component": "directory.pedigree"
+    },
+    "progeny": {
+      "type": "component",
+      "repeatable": true,
+      "component": "directory.progeny"
+    },
+    "gallery": {
+      "type": "component",
+      "repeatable": true,
+      "component": "directory.gallery-item"
+    },
+    "crosses": {
+      "type": "component",
+      "repeatable": true,
+      "component": "directory.cross"
+    },
+    "banner": {
+      "type": "component",
+      "repeatable": false,
+      "component": "directory.banner"
+    },
+    "related": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::directory-listing.directory-listing"
+    },
+    "enquiries": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::directory-enquiry.directory-enquiry",
+      "mappedBy": "listing"
+    }
+  }
+}

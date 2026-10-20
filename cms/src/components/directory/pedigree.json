@@ -1,0 +1,52 @@
+{
+  "collectionName": "components_directory_pedigree",
+  "info": {
+    "displayName": "Pedigree",
+    "description": "Sire/dam and up to 14 ancestors (s = sire, d = dam: ss = sire's sire \u2026)."
+  },
+  "options": {},
+  "attributes": {
+    "sire": {
+      "type": "string"
+    },
+    "dam": {
+      "type": "string"
+    },
+    "ss": {
+      "type": "string"
+    },
+    "sd": {
+      "type": "string"
+    },
+    "ds": {
+      "type": "string"
+    },
+    "dd": {
+      "type": "string"
+    },
+    "sss": {
+      "type": "string"
+    },
+    "ssd": {
+      "type": "string"
+    },
+    "sds": {
+      "type": "string"
+    },
+    "sdd": {
+      "type": "string"
+    },
+    "dss": {
+      "type": "string"
+    },
+    "dsd": {
+      "type": "string"
+    },
+    "dds": {
+      "type": "string"
+    },
+    "ddd": {
+      "type": "string"
+    }
+  }
+}

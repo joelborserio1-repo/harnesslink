@@ -1,0 +1,35 @@
+{
+  "collectionName": "components_directory_gallery_item",
+  "info": {
+    "displayName": "Gallery item",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "mediaType": {
+      "type": "enumeration",
+      "enum": [
+        "image",
+        "video"
+      ],
+      "default": "image"
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "url": {
+      "type": "string",
+      "description": "YouTube/Vimeo link, or an image hosted elsewhere"
+    },
+    "caption": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    }
+  }
+}

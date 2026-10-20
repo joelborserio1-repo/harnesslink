@@ -680,6 +680,143 @@ export interface ApiCountryCountry extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiDirectoryEnquiryDirectoryEnquiry
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'directory_enquiries';
+  info: {
+    description: 'Someone asking to be listed, or to upgrade a listing.';
+    displayName: 'Directory enquiry';
+    pluralName: 'directory-enquiries';
+    singularName: 'directory-enquiry';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    adminNotes: Schema.Attribute.Text;
+    contactEmail: Schema.Attribute.Email;
+    contactName: Schema.Attribute.String;
+    contactPhone: Schema.Attribute.String;
+    country: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    legacyId: Schema.Attribute.BigInteger & Schema.Attribute.Unique;
+    listing: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::directory-listing.directory-listing'
+    >;
+    listingType: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::directory-enquiry.directory-enquiry'
+    > &
+      Schema.Attribute.Private;
+    message: Schema.Attribute.Text;
+    publishedAt: Schema.Attribute.DateTime;
+    region: Schema.Attribute.String;
+    status: Schema.Attribute.Enumeration<['new', 'contacted', 'closed']> &
+      Schema.Attribute.DefaultTo<'new'>;
+    studName: Schema.Attribute.String;
+    submittedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiDirectoryListingDirectoryListing
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'directory_listings';
+  info: {
+    description: 'A stallion, trainer, driver or service in the HarnessLink Directory. Contact details show publicly only when Paying is on.';
+    displayName: 'Directory listing';
+    pluralName: 'directory-listings';
+    singularName: 'directory-listing';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    banner: Schema.Attribute.Component<'directory.banner', false>;
+    bookingLabel: Schema.Attribute.String;
+    bookingUrl: Schema.Attribute.String;
+    careerEarnings: Schema.Attribute.String;
+    colour: Schema.Attribute.String;
+    contact: Schema.Attribute.Component<'directory.contact', false>;
+    country: Schema.Attribute.String;
+    coverage: Schema.Attribute.Text;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    crosses: Schema.Attribute.Component<'directory.cross', true>;
+    crossesIntro: Schema.Attribute.Text;
+    directoryType: Schema.Attribute.Enumeration<
+      [
+        'stallion',
+        'trainer',
+        'driver',
+        'agistment',
+        'transport',
+        'vet',
+        'feed_supplements',
+        'bloodstock',
+        'syndicator',
+        'pre_training',
+        'industry_service',
+      ]
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'stallion'>;
+    enquiries: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::directory-enquiry.directory-enquiry'
+    >;
+    gait: Schema.Attribute.Enumeration<['Pacer', 'Trotter']> &
+      Schema.Attribute.DefaultTo<'Pacer'>;
+    gallery: Schema.Attribute.Component<'directory.gallery-item', true>;
+    heroImageUrl: Schema.Attribute.String;
+    industry: Schema.Attribute.String;
+    isFeatured: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    isPaying: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    legacyId: Schema.Attribute.BigInteger & Schema.Attribute.Unique;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::directory-listing.directory-listing'
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    pedigree: Schema.Attribute.Component<'directory.pedigree', false>;
+    profileBio: Schema.Attribute.Text;
+    profileImage: Schema.Attribute.Media<'images'>;
+    profileImageUrl: Schema.Attribute.String;
+    progeny: Schema.Attribute.Component<'directory.progeny', true>;
+    progenyNote: Schema.Attribute.Text;
+    publishedAt: Schema.Attribute.DateTime;
+    raceRecord: Schema.Attribute.String;
+    region: Schema.Attribute.String;
+    related: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::directory-listing.directory-listing'
+    >;
+    serviceFee: Schema.Attribute.String;
+    sex: Schema.Attribute.String;
+    shortSummary: Schema.Attribute.Text;
+    slug: Schema.Attribute.UID<'name'> & Schema.Attribute.Required;
+    statusNote: Schema.Attribute.String;
+    studMaster: Schema.Attribute.String;
+    studName: Schema.Attribute.String;
+    suburb: Schema.Attribute.String;
+    tagline: Schema.Attribute.String;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    yearOfBirth: Schema.Attribute.String;
+  };
+}
+
 export interface ApiMissedPathMissedPath extends Struct.CollectionTypeSchema {
   collectionName: 'missed_paths';
   info: {
@@ -1364,6 +1501,8 @@ declare module '@strapi/strapi' {
       'api::author.author': ApiAuthorAuthor;
       'api::category.category': ApiCategoryCategory;
       'api::country.country': ApiCountryCountry;
+      'api::directory-enquiry.directory-enquiry': ApiDirectoryEnquiryDirectoryEnquiry;
+      'api::directory-listing.directory-listing': ApiDirectoryListingDirectoryListing;
       'api::missed-path.missed-path': ApiMissedPathMissedPath;
       'api::page.page': ApiPagePage;
       'api::redirect.redirect': ApiRedirectRedirect;

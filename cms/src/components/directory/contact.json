@@ -1,0 +1,40 @@
+{
+  "collectionName": "components_directory_contact",
+  "info": {
+    "displayName": "Contact details",
+    "description": "Shown publicly only on paid listings."
+  },
+  "options": {},
+  "attributes": {
+    "phone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "website": {
+      "type": "string"
+    },
+    "studWebsite": {
+      "type": "string"
+    },
+    "address": {
+      "type": "text"
+    },
+    "contactAu": {
+      "type": "text"
+    },
+    "contactNz": {
+      "type": "text"
+    },
+    "contactUs": {
+      "type": "text"
+    },
+    "contactFr": {
+      "type": "text"
+    },
+    "contactOther": {
+      "type": "text"
+    }
+  }
+}

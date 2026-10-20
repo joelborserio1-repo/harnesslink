@@ -1,0 +1,65 @@
+{
+  "kind": "collectionType",
+  "collectionName": "directory_enquiries",
+  "info": {
+    "singularName": "directory-enquiry",
+    "pluralName": "directory-enquiries",
+    "displayName": "Directory enquiry",
+    "description": "Someone asking to be listed, or to upgrade a listing."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "listingType": {
+      "type": "string"
+    },
+    "contactName": {
+      "type": "string"
+    },
+    "contactEmail": {
+      "type": "email"
+    },
+    "contactPhone": {
+      "type": "string"
+    },
+    "studName": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
+    },
+    "message": {
+      "type": "text"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "new",
+        "contacted",
+        "closed"
+      ],
+      "default": "new"
+    },
+    "adminNotes": {
+      "type": "text"
+    },
+    "submittedAt": {
+      "type": "datetime"
+    },
+    "legacyId": {
+      "type": "biginteger",
+      "unique": true
+    },
+    "listing": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::directory-listing.directory-listing",
+      "inversedBy": "enquiries"
+    }
+  }
+}

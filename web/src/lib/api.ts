@@ -1,14 +1,12 @@
-// Server-side content client. Articles, writers, sections, tags, pages and ads
-// come from the Strapi CMS (STRAPI_URL); the directory still comes from the
-// Rails API (API_BASE) until it moves to Strapi. Fetches run in React Server
-// Components, so no browser CORS is involved.
+// Server-side content client: everything comes from the Strapi CMS
+// (STRAPI_URL). Fetches run in React Server Components, so no browser CORS is
+// involved.
 import { blocksToHtml } from "@/lib/blocks";
 
 const STRAPI_URL = (process.env.STRAPI_URL || "http://127.0.0.1:1337").replace(/\/$/, "");
 // Where browsers load Strapi-hosted media from (the CMS's public address).
 const MEDIA_BASE = (process.env.STRAPI_PUBLIC_URL || STRAPI_URL).replace(/\/$/, "");
 const STRAPI_TOKEN = process.env.STRAPI_TOKEN || "";
-const API_BASE = process.env.API_BASE || "http://127.0.0.1:3001";
 const REVALIDATE = 60; // pages regenerate at most once a minute
 const SITE = "https://harnesslink.com";
 
@@ -484,10 +482,11 @@ export async function getAds(): Promise<Record<string, AdCreative[]>> {
   return data?.ads ?? {};
 }
 
-// ---- Directory (still served by the Rails API) ----
+// ---- Directory (Strapi's public directory routes; contact details only on
+// paid listings) ----
 
 async function get<T>(path: string): Promise<T | null> {
-  return fetchJson<T>(`${API_BASE}${path}`);
+  return strapi<T>(path.replace(/^\/api\/v1/, ""));
 }
 
 

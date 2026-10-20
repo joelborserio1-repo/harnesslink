@@ -1,0 +1,35 @@
+{
+  "collectionName": "components_directory_banner",
+  "info": {
+    "displayName": "Listing banner",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "imageUrl": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    },
+    "target": {
+      "type": "string"
+    },
+    "alt": {
+      "type": "string"
+    },
+    "startsOn": {
+      "type": "date"
+    },
+    "endsOn": {
+      "type": "date"
+    }
+  }
+}

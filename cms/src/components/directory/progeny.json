@@ -1,0 +1,46 @@
+{
+  "collectionName": "components_directory_progeny",
+  "info": {
+    "displayName": "Progeny",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "foalingDate": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "sex": {
+      "type": "string"
+    },
+    "dam": {
+      "type": "string"
+    },
+    "broodmareSire": {
+      "type": "string"
+    },
+    "prizemoney": {
+      "type": "string"
+    },
+    "prizemoneyNum": {
+      "type": "biginteger"
+    },
+    "mileRate": {
+      "type": "string"
+    },
+    "starts": {
+      "type": "integer",
+      "default": 0
+    },
+    "wins": {
+      "type": "integer",
+      "default": 0
+    }
+  }
+}
