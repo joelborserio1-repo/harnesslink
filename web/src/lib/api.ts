@@ -1,8 +1,16 @@
-// Server-side API client for the Rails backend. Fetches run in React Server
-// Components (no browser CORS involved).
+// Server-side content client. Articles, writers, sections, tags, pages and ads
+// come from the Strapi CMS (STRAPI_URL); the directory still comes from the
+// Rails API (API_BASE) until it moves to Strapi. Fetches run in React Server
+// Components, so no browser CORS is involved.
+import { blocksToHtml } from "@/lib/blocks";
 
+const STRAPI_URL = (process.env.STRAPI_URL || "http://127.0.0.1:1337").replace(/\/$/, "");
+// Where browsers load Strapi-hosted media from (the CMS's public address).
+const MEDIA_BASE = (process.env.STRAPI_PUBLIC_URL || STRAPI_URL).replace(/\/$/, "");
+const STRAPI_TOKEN = process.env.STRAPI_TOKEN || "";
 const API_BASE = process.env.API_BASE || "http://127.0.0.1:3001";
-const REVALIDATE = 60; // ISR: articles regenerate at most once a minute
+const REVALIDATE = 60; // pages regenerate at most once a minute
+const SITE = "https://harnesslink.com";
 
 export type Ref = { name: string; slug: string; url: string };
 
@@ -62,67 +70,6 @@ export type ArticleFull = ArticleSummary & {
 
 export type Category = { name: string; slug: string; kind: string; url: string };
 
-async function get<T>(path: string): Promise<T | null> {
-  // Fail-soft: never throw. This lets `next build` succeed even when the API
-  // isn't running (e.g. building the Docker image), and keeps the site up if
-  // the API blips at runtime.
-  try {
-    const res = await fetch(`${API_BASE}${path}`, { next: { revalidate: REVALIDATE } });
-    if (res.status === 404) return null;
-    if (!res.ok) return null;
-    return (await res.json()) as T;
-  } catch {
-    return null;
-  }
-}
-
-export async function listArticles(page = 1, perPage = 12) {
-  const data = await get<{ articles: ArticleSummary[]; total: number; page: number }>(
-    `/api/v1/articles?page=${page}&per_page=${perPage}`
-  );
-  return data ?? { articles: [], total: 0, page };
-}
-
-export async function getArticle(slug: string) {
-  const data = await get<{ article: ArticleFull }>(`/api/v1/articles/${encodeURIComponent(slug)}`);
-  return data?.article ?? null;
-}
-
-export async function listCategories() {
-  const data = await get<{ categories: Category[] }>(`/api/v1/categories`);
-  return data?.categories ?? [];
-}
-
-export async function getCategory(slug: string) {
-  return get<{ category: Category; articles: ArticleSummary[] }>(
-    `/api/v1/categories/${encodeURIComponent(slug)}`
-  );
-}
-
-export async function searchArticles(q: string, page = 1) {
-  if (!q || q.trim().length < 2) return { query: q, articles: [] as ArticleSummary[], total: 0, page };
-  const data = await get<{ query: string; articles: ArticleSummary[]; total: number; page: number }>(
-    `/api/v1/search?q=${encodeURIComponent(q)}&page=${page}`
-  );
-  return data ?? { query: q, articles: [], total: 0, page };
-}
-
-export async function getAuthor(slug: string) {
-  return get<{
-    author?: { name: string; slug: string; bio: string | null; role_title: string | null; url: string };
-    articles?: ArticleSummary[];
-    redirect_to?: string;
-  }>(`/api/v1/authors/${encodeURIComponent(slug)}`);
-}
-
-export async function getTag(slug: string) {
-  return get<{ tag: { name: string; slug: string; url: string }; articles: ArticleSummary[] }>(
-    `/api/v1/tags/${encodeURIComponent(slug)}`
-  );
-}
-
-// ---- Static pages (migrated WordPress pages) ----
-
 export type StaticPage = {
   path: string;
   url: string;
@@ -132,13 +79,417 @@ export type StaticPage = {
   seo: { title: string; description: string | null; canonical_url: string; robots: string };
 };
 
-export async function getPage(path: string) {
-  const clean = path.split("/").filter(Boolean).map(encodeURIComponent).join("/");
-  const data = await get<{ page: StaticPage }>(`/api/v1/pages/${clean}`);
-  return data?.page ?? null;
+export type AdCreative = {
+  id: string; // the ad's Strapi documentId
+  zone: string;
+  size: string;
+  image_url: string | null;
+  width: number | null;
+  height: number | null;
+  html: string | null;
+  alt: string;
+  click_url: string;
+};
+
+
+// ---- Strapi plumbing ----
+
+type Scalar = string | number | boolean;
+type Query = { [key: string]: Query | Array<Query | Scalar> | Scalar | undefined };
+
+// Strapi's bracketed query syntax: { filters: { slug: { $eq: "x" } } } →
+// filters[slug][$eq]=x
+function encode(q: Query, prefix = ""): string[] {
+  const out: string[] = [];
+  for (const [k, v] of Object.entries(q)) {
+    if (v === undefined) continue;
+    const key = prefix ? `${prefix}[${k}]` : k;
+    if (Array.isArray(v)) {
+      v.forEach((item, i) =>
+        typeof item === "object" ? out.push(...encode(item, `${key}[${i}]`)) : out.push(`${key}[${i}]=${encodeURIComponent(String(item))}`)
+      );
+    } else if (typeof v === "object") {
+      out.push(...encode(v, key));
+    } else {
+      out.push(`${key}=${encodeURIComponent(String(v))}`);
+    }
+  }
+  return out;
 }
 
-// ---- Directory ----
+async function fetchJson<T>(url: string, init?: RequestInit): Promise<T | null> {
+  // Fail-soft: never throw. `next build` succeeds without a running CMS, and
+  // the site stays up (empty sections) if the CMS blips.
+  try {
+    const res = await fetch(url, { next: { revalidate: REVALIDATE }, ...init });
+    if (!res.ok) return null;
+    return (await res.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
+async function strapi<T>(path: string, query: Query = {}, init?: RequestInit): Promise<T | null> {
+  const qs = encode(query).join("&");
+  const headers: Record<string, string> = STRAPI_TOKEN ? { Authorization: `Bearer ${STRAPI_TOKEN}` } : {};
+  return fetchJson<T>(`${STRAPI_URL}/api${path}${qs ? `?${qs}` : ""}`, { headers, ...init });
+}
+
+type List<T> = { data: T[]; meta?: { pagination?: { total: number; page: number; pageSize: number } } };
+
+// Raw Strapi shapes (only the fields we read).
+type SMedia = {
+  url: string;
+  width?: number | null;
+  height?: number | null;
+  alternativeText?: string | null;
+  caption?: string | null;
+  formats?: Record<string, { url: string; width: number; height: number }> | null;
+} | null;
+type SLegacyImage = { url: string; width?: number | null; height?: number | null; alt?: string | null; caption?: string | null; credit?: string | null } | null;
+type SRef = { name: string; slug: string };
+type SAuthor = SRef & { bio?: string | null; roleTitle?: string | null };
+type SSeo = {
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  canonicalUrl?: string | null;
+  robots?: string | null;
+  ogTitle?: string | null;
+  ogDescription?: string | null;
+  twitterTitle?: string | null;
+  twitterDescription?: string | null;
+  schemaType?: string | null;
+} | null;
+type SArticle = {
+  id: number;
+  documentId: string;
+  title: string;
+  slug: string;
+  subtitle?: string | null;
+  excerpt?: string | null;
+  bodyFormat?: "blocks" | "legacy_html";
+  body?: unknown;
+  bodyHtml?: string | null;
+  publishDate?: string | null;
+  modifiedDate?: string | null;
+  publishedAt?: string | null;
+  updatedAt?: string | null;
+  featuredImage?: SMedia;
+  legacyImage?: SLegacyImage;
+  primaryCategory?: SRef | null;
+  categories?: SRef[];
+  authors?: SAuthor[];
+  tags?: SRef[];
+  seo?: SSeo;
+};
+
+const IMAGE_FIELDS = ["url", "width", "height", "alternativeText", "caption", "formats"];
+
+const SUMMARY_QUERY: Query = {
+  fields: ["title", "slug", "subtitle", "excerpt", "publishDate", "publishedAt"],
+  populate: {
+    featuredImage: { fields: IMAGE_FIELDS },
+    legacyImage: { fields: ["url", "width", "height", "alt"] },
+    primaryCategory: { fields: ["name", "slug"] },
+    categories: { fields: ["name", "slug"] },
+    authors: { fields: ["name", "slug"] },
+  },
+};
+
+const media = (url: string) => (url.startsWith("http") ? url : `${MEDIA_BASE}${url}`);
+
+function thumbFrom(a: { featuredImage?: SMedia; legacyImage?: SLegacyImage; title: string }): Thumb {
+  const m = a.featuredImage;
+  if (m?.url) {
+    const formats = Object.values(m.formats || {}).sort((x, y) => x.width - y.width);
+    return {
+      src: media(m.url),
+      srcset: [...formats.map((f) => `${media(f.url)} ${f.width}w`), ...(m.width ? [`${media(m.url)} ${m.width}w`] : [])].join(", "),
+      sizes: "(max-width: 768px) 100vw, 800px",
+      width: m.width ?? null,
+      height: m.height ?? null,
+      alt: m.alternativeText || a.title,
+      caption: m.caption ?? null,
+      credit: null,
+    };
+  }
+  const l = a.legacyImage;
+  if (l?.url) {
+    return {
+      src: l.url,
+      srcset: "",
+      sizes: "(max-width: 768px) 100vw, 800px",
+      width: l.width ?? null,
+      height: l.height ?? null,
+      alt: l.alt || "",
+      caption: l.caption ?? null,
+      credit: l.credit ?? null,
+    };
+  }
+  return null;
+}
+
+const catRef = (c?: SRef | null): Ref | null => (c ? { name: c.name, slug: c.slug, url: `/category/${c.slug}/` } : null);
+const authorRef = (a?: SRef | null): Ref | null => (a ? { name: a.name, slug: a.slug, url: `/writers/${a.slug}/` } : null);
+
+function summary(a: SArticle): ArticleSummary {
+  return {
+    id: a.id,
+    slug: a.slug,
+    url: `/${a.slug}/`,
+    title: a.title,
+    subtitle: a.subtitle ?? null,
+    excerpt: a.excerpt ?? null,
+    published_at: a.publishDate ?? a.publishedAt ?? null,
+    category: catRef(a.primaryCategory),
+    categories: (a.categories || []).map((c) => catRef(c)!),
+    image: thumbFrom(a),
+    author: authorRef((a.authors || [])[0]),
+  };
+}
+
+const NEWEST: Query = { sort: ["publishDate:desc", "publishedAt:desc"] };
+
+async function articleList(filters: Query | undefined, page: number, perPage: number) {
+  const data = await strapi<List<SArticle>>("/articles", {
+    ...SUMMARY_QUERY,
+    ...NEWEST,
+    ...(filters ? { filters } : {}),
+    pagination: { page, pageSize: perPage },
+  });
+  return {
+    articles: (data?.data || []).map(summary),
+    total: data?.meta?.pagination?.total ?? 0,
+  };
+}
+
+// ---- Articles ----
+
+export async function listArticles(page = 1, perPage = 12) {
+  const { articles, total } = await articleList(undefined, page, perPage);
+  return { articles, total, page };
+}
+
+export async function getArticle(slug: string): Promise<ArticleFull | null> {
+  const data = await strapi<List<SArticle>>("/articles", {
+    filters: { slug: { $eq: slug } },
+    populate: {
+      featuredImage: { fields: IMAGE_FIELDS },
+      legacyImage: "*",
+      primaryCategory: { fields: ["name", "slug"] },
+      categories: { fields: ["name", "slug"] },
+      authors: { fields: ["name", "slug", "bio", "roleTitle"] },
+      tags: { fields: ["name", "slug"] },
+      seo: "*",
+    },
+    pagination: { pageSize: 1 },
+  });
+  const a = data?.data?.[0];
+  if (!a) return null;
+
+  const published = a.publishDate ?? a.publishedAt ?? null;
+  const [related, previous, next] = await Promise.all([
+    articleList(
+      {
+        slug: { $ne: a.slug },
+        ...(a.primaryCategory ? { primaryCategory: { slug: { $eq: a.primaryCategory.slug } } } : {}),
+      },
+      1,
+      6
+    ),
+    published ? neighbour(a.slug, published, "older") : null,
+    published ? neighbour(a.slug, published, "newer") : null,
+  ]);
+
+  const seo = a.seo || {};
+  const canonical = seo.canonicalUrl || `${SITE}/${a.slug}/`;
+  const bodyHtml = a.bodyFormat === "blocks" ? blocksToHtml(a.body, MEDIA_BASE) : a.bodyHtml ?? null;
+
+  return {
+    ...summary(a),
+    body_format: a.bodyFormat === "blocks" ? "tiptap_json" : "legacy_html",
+    body_html: bodyHtml,
+    body_json: {},
+    modified_at: a.modifiedDate ?? a.updatedAt ?? published,
+    authors: (a.authors || []).map((x) => ({
+      name: x.name,
+      slug: x.slug,
+      url: `/writers/${x.slug}/`,
+      bio: x.bio ?? null,
+      role_title: x.roleTitle ?? null,
+    })),
+    tags: (a.tags || []).map((t) => ({ name: t.name, slug: t.slug, url: `/tag/${t.slug}/` })),
+    featured_image: thumbFrom(a),
+    seo: {
+      title: seo.metaTitle || `${a.title} - Harnesslink`,
+      description: seo.metaDescription ?? a.excerpt ?? null,
+      canonical_url: canonical,
+      robots: seo.robots || "index,follow",
+      og_title: seo.ogTitle || seo.metaTitle || a.title,
+      og_description: seo.ogDescription || seo.metaDescription || null,
+      twitter_title: seo.twitterTitle ?? null,
+      twitter_description: seo.twitterDescription ?? null,
+      schema_type: seo.schemaType || "NewsArticle",
+    },
+    related: related.articles,
+    previous,
+    next,
+  };
+}
+
+// The story published just before / after (the live site's Previous / Next).
+async function neighbour(slug: string, published: string, direction: "older" | "newer") {
+  const data = await strapi<List<SArticle>>("/articles", {
+    fields: ["title", "slug"],
+    filters: { slug: { $ne: slug }, publishDate: direction === "older" ? { $lt: published } : { $gt: published } },
+    sort: [direction === "older" ? "publishDate:desc" : "publishDate:asc"],
+    pagination: { pageSize: 1 },
+  });
+  const n = data?.data?.[0];
+  return n ? { title: n.title, url: `/${n.slug}/` } : null;
+}
+
+// ---- Sections, writers, tags ----
+
+type SCategory = { name: string; slug: string; kind: string };
+
+export async function listCategories(): Promise<Category[]> {
+  const data = await strapi<List<SCategory>>("/categories", {
+    fields: ["name", "slug", "kind"],
+    sort: ["position:asc", "name:asc"],
+    pagination: { pageSize: 100 },
+  });
+  return (data?.data || []).map((c) => ({ name: c.name, slug: c.slug, kind: c.kind, url: `/category/${c.slug}/` }));
+}
+
+export async function getCategory(slug: string) {
+  const data = await strapi<List<SCategory>>("/categories", {
+    fields: ["name", "slug", "kind"],
+    filters: { slug: { $eq: slug } },
+    pagination: { pageSize: 1 },
+  });
+  const c = data?.data?.[0];
+  if (!c) return null;
+  const { articles } = await articleList({ categories: { slug: { $eq: slug } } }, 1, 24);
+  return { category: { name: c.name, slug: c.slug, kind: c.kind, url: `/category/${c.slug}/` }, articles };
+}
+
+export async function searchArticles(q: string, page = 1) {
+  if (!q || q.trim().length < 2) return { query: q, articles: [] as ArticleSummary[], total: 0, page };
+  const term = q.trim();
+  const { articles, total } = await articleList(
+    { $or: [{ title: { $containsi: term } }, { excerpt: { $containsi: term } }] },
+    page,
+    20
+  );
+  return { query: q, articles, total, page };
+}
+
+export async function getAuthor(slug: string) {
+  const data = await strapi<List<SAuthor>>("/authors", {
+    fields: ["name", "slug", "bio", "roleTitle"],
+    filters: { slug: { $eq: slug } },
+    pagination: { pageSize: 1 },
+  });
+  const a = data?.data?.[0];
+  if (!a) return null;
+  const { articles } = await articleList({ authors: { slug: { $eq: slug } } }, 1, 24);
+  return {
+    author: { name: a.name, slug: a.slug, bio: a.bio ?? null, role_title: a.roleTitle ?? null, url: `/writers/${a.slug}/` },
+    articles,
+    redirect_to: undefined as string | undefined,
+  };
+}
+
+export async function getTag(slug: string) {
+  const data = await strapi<List<SRef>>("/tags", {
+    fields: ["name", "slug"],
+    filters: { slug: { $eq: slug } },
+    pagination: { pageSize: 1 },
+  });
+  const t = data?.data?.[0];
+  if (!t) return null;
+  const { articles } = await articleList({ tags: { slug: { $eq: slug } } }, 1, 24);
+  return { tag: { name: t.name, slug: t.slug, url: `/tag/${t.slug}/` }, articles };
+}
+
+// ---- Static pages ----
+
+type SPage = {
+  title: string;
+  path: string;
+  bodyFormat?: "blocks" | "legacy_html";
+  body?: unknown;
+  bodyHtml?: string | null;
+  modifiedDate?: string | null;
+  updatedAt?: string | null;
+  seo?: SSeo;
+};
+
+export async function getPage(path: string): Promise<StaticPage | null> {
+  const clean = path.split("/").filter(Boolean).join("/");
+  const data = await strapi<List<SPage>>("/pages", {
+    filters: { path: { $eq: clean } },
+    populate: { seo: "*" },
+    pagination: { pageSize: 1 },
+  });
+  const p = data?.data?.[0];
+  if (!p) return null;
+  const seo = p.seo || {};
+  return {
+    path: p.path,
+    url: `/${p.path}/`,
+    title: p.title,
+    body_html: p.bodyFormat === "blocks" ? blocksToHtml(p.body, MEDIA_BASE) : p.bodyHtml ?? null,
+    modified_at: p.modifiedDate ?? p.updatedAt ?? null,
+    seo: {
+      title: seo.metaTitle || `${p.title} - Harnesslink`,
+      description: seo.metaDescription ?? null,
+      canonical_url: seo.canonicalUrl || `${SITE}/${p.path}/`,
+      robots: seo.robots || "index,follow",
+    },
+  };
+}
+
+// ---- Sitemaps & feed (lean listings from the CMS) ----
+
+export type SitemapArticle = { slug: string; title: string; publishDate: string | null; lastmod: string | null };
+
+export async function sitemapArticles(page: number, perPage: number, since?: string) {
+  return (
+    (await strapi<{ total: number; articles: SitemapArticle[] }>(
+      "/sitemap/articles",
+      { page, perPage, ...(since ? { since } : {}) },
+      { next: { revalidate: 300 } }
+    )) ?? { total: 0, articles: [] }
+  );
+}
+
+export async function sitemapArchives() {
+  return (
+    (await strapi<{ categories: string[]; countries: string[]; pages: string[]; writers: string[]; tags: string[] }>(
+      "/sitemap/archives",
+      {},
+      { next: { revalidate: 300 } }
+    )) ?? { categories: [], countries: [], pages: [], writers: [], tags: [] }
+  );
+}
+
+// ---- Ads ----
+
+// Zone → creatives for every booked zone (rails carry up to three). Fetched
+// once per request (Next dedupes the fetch across all AdSlots on a page).
+export async function getAds(): Promise<Record<string, AdCreative[]>> {
+  const data = await strapi<{ ads: Record<string, AdCreative[]> }>("/ads/live", {}, { next: { revalidate: 60 } });
+  return data?.ads ?? {};
+}
+
+// ---- Directory (still served by the Rails API) ----
+
+async function get<T>(path: string): Promise<T | null> {
+  return fetchJson<T>(`${API_BASE}${path}`);
+}
+
 
 export type DirectoryType = {
   key: string;
@@ -221,23 +572,3 @@ export async function getDirectoryListing(typeUrl: string, id: string) {
   return data?.listing ?? null;
 }
 
-// ---- Ads ----
-
-export type AdCreative = {
-  id: number;
-  zone: string;
-  size: string;
-  image_url: string | null;
-  width: number | null;
-  height: number | null;
-  html: string | null;
-  alt: string;
-  click_url: string;
-};
-
-// Zone → creatives for every filled zone (rails carry up to three). Fetched
-// once per request (Next dedupes the fetch across all AdSlots on the page).
-export async function getAds(): Promise<Record<string, AdCreative[]>> {
-  const data = await get<{ ads: Record<string, AdCreative[]> }>(`/api/v1/ads`);
-  return data?.ads ?? {};
-}

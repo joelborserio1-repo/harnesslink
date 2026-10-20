@@ -1,0 +1,31 @@
+{
+  "kind": "collectionType",
+  "collectionName": "missed_paths",
+  "info": {
+    "singularName": "missed-path",
+    "pluralName": "missed-paths",
+    "displayName": "Missed path",
+    "description": "A URL a visitor requested that the site could not find \u2014 fix these with redirects."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "path": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "hits": {
+      "type": "integer",
+      "default": 1
+    },
+    "lastReferer": {
+      "type": "string"
+    },
+    "lastSeenAt": {
+      "type": "datetime"
+    }
+  }
+}

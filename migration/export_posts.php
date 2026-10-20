@@ -40,6 +40,30 @@ $query = new WP_Query([
   'no_found_rows'  => true,
 ]);
 
+// The body as WordPress core renders it on the live site: [embed]/auto-embeds,
+// blocks, typography, paragraphs (wpautop — most classic posts store none),
+// [caption]/[audio] and other shortcodes, then responsive image attributes.
+// Same order as core's the_content filters, but WITHOUT the plugins hooked
+// onto the_content (Leaky Paywall's sign-in teaser, Molongui's byline box).
+function hl_render_body($post) {
+  global $wp_embed;
+  $GLOBALS['post'] = $post;
+  setup_postdata($post);
+  $html = $post->post_content;
+  if ($wp_embed) {
+    $html = $wp_embed->run_shortcode($html);
+    $html = $wp_embed->autoembed($html);
+  }
+  $html = do_blocks($html);
+  $html = wptexturize($html);
+  $html = wpautop($html);
+  $html = shortcode_unautop($html);
+  $html = do_shortcode($html);
+  if (function_exists('wp_filter_content_tags')) $html = wp_filter_content_tags($html);
+  wp_reset_postdata();
+  return $html;
+}
+
 $out = [];
 foreach ($query->posts as $p) {
   $id = $p->ID;
@@ -126,8 +150,12 @@ foreach ($query->posts as $p) {
     'featured' => $featured,
     'post_name' => $p->post_name,
     'post_title' => $p->post_title,
-    'post_content' => $p->post_content,
+    'post_content' => $p->post_content,          // raw, as stored (audit trail)
+    'post_content_rendered' => hl_render_body($p), // what the importer uses
     'post_excerpt' => $p->post_excerpt,
+    // WordPress's own auto-summary (theme length and "more" text) for posts
+    // with no hand-written excerpt — what the live site shows on cards.
+    'post_excerpt_auto' => has_excerpt($p) ? '' : wp_strip_all_tags(html_entity_decode(wp_trim_excerpt('', $p), ENT_QUOTES)),
     'post_date' => $p->post_date_gmt ?: $p->post_date,
     'post_modified' => $p->post_modified_gmt ?: $p->post_modified,
     'post_status' => $p->post_status,

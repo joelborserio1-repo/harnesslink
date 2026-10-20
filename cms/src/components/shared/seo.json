@@ -1,0 +1,49 @@
+{
+  "collectionName": "components_shared_seos",
+  "info": {
+    "displayName": "SEO",
+    "icon": "search",
+    "description": "Search and social metadata (mirrors what Rank Math stored)"
+  },
+  "options": {},
+  "attributes": {
+    "metaTitle": {
+      "type": "string"
+    },
+    "metaDescription": {
+      "type": "text"
+    },
+    "focusKeyword": {
+      "type": "string"
+    },
+    "canonicalUrl": {
+      "type": "string"
+    },
+    "robots": {
+      "type": "string",
+      "default": "index,follow"
+    },
+    "ogTitle": {
+      "type": "string"
+    },
+    "ogDescription": {
+      "type": "text"
+    },
+    "twitterTitle": {
+      "type": "string"
+    },
+    "twitterDescription": {
+      "type": "text"
+    },
+    "schemaType": {
+      "type": "enumeration",
+      "enum": [
+        "NewsArticle",
+        "Article",
+        "BlogPosting",
+        "WebPage"
+      ],
+      "default": "NewsArticle"
+    }
+  }
+}

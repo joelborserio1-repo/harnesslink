@@ -1,0 +1,101 @@
+import type { Core } from '@strapi/strapi';
+import { LAYOUTS, LAYOUT_VERSION } from './admin-layouts';
+
+// What the public website may read without a token (Users & Permissions
+// "Public" role). Ads, subscribers, redirects and the 404 log are only reached
+// through their own narrow routes, never listed.
+const PUBLIC_READ = [
+  'api::article.article',
+  'api::author.author',
+  'api::category.category',
+  'api::tag.tag',
+  'api::page.page',
+  'api::country.country',
+];
+
+async function grantPublicRead(strapi: Core.Strapi) {
+  const role = await strapi.db.query('plugin::users-permissions.role').findOne({ where: { type: 'public' } });
+  if (!role) return;
+  for (const uid of PUBLIC_READ) {
+    for (const verb of ['find', 'findOne']) {
+      const action = `${uid}.${verb}`;
+      const exists = await strapi.db
+        .query('plugin::users-permissions.permission')
+        .findOne({ where: { action, role: role.id } });
+      if (!exists) {
+        await strapi.db.query('plugin::users-permissions.permission').create({ data: { action, role: role.id } });
+      }
+    }
+  }
+}
+
+// Journalists use Strapi's built-in "Author" role: they write and edit their
+// own stories but only editors (built-in "Editor" role) and admins publish.
+async function authorsCannotPublish(strapi: Core.Strapi) {
+  const author = await strapi.db.query('admin::role').findOne({ where: { code: 'strapi-author' } });
+  if (!author) return;
+  await strapi.db.query('admin::permission').deleteMany({
+    where: {
+      role: author.id,
+      action: 'plugin::content-manager.explorer.publish',
+      subject: { $in: ['api::article.article', 'api::page.page'] },
+    },
+  });
+}
+
+// Apply the newsroom editing layouts (src/admin-layouts.ts) once per version.
+async function applyEditorLayouts(strapi: Core.Strapi) {
+  const store = strapi.store({ type: 'plugin', name: 'harnesslink' });
+  if ((await store.get({ key: 'layout_version' })) === LAYOUT_VERSION) return;
+
+  const cm = strapi.store({ type: 'plugin', name: 'content_manager' });
+  for (const layout of LAYOUTS) {
+    const key = `configuration_content_types::${layout.uid}`;
+    const config = (await cm.get({ key })) as {
+      settings: Record<string, unknown>;
+      metadatas: Record<string, { edit: Record<string, unknown>; list: Record<string, unknown> }>;
+      layouts: { list: string[]; edit: Array<Array<{ name: string; size: number }>> };
+    } | null;
+    if (!config) continue; // Strapi writes defaults on first boot; we refine them next start
+
+    const known = new Set(Object.keys(config.metadatas));
+    const rows = layout.edit
+      .map((row) => row.filter(([name]) => known.has(name)).map(([name, size]) => ({ name, size })))
+      .filter((row) => row.length > 0);
+    // Anything not placed above keeps a slot at the end rather than vanishing.
+    const placed = new Set(rows.flat().map((f) => f.name));
+    const editable = new Set(config.layouts.edit.flat().map((f) => f.name));
+    for (const name of editable) if (!placed.has(name)) rows.push([{ name, size: 6 }]);
+
+    config.settings = {
+      ...config.settings,
+      defaultSortBy: layout.sortBy,
+      defaultSortOrder: layout.sortOrder,
+      ...(layout.pageSize ? { pageSize: layout.pageSize } : {}),
+    };
+    config.layouts = { ...config.layouts, list: layout.list.filter((f) => known.has(f) || f === 'id'), edit: rows };
+    for (const [name, meta] of Object.entries(layout.fields)) {
+      if (!config.metadatas[name]) continue;
+      config.metadatas[name].edit = {
+        ...config.metadatas[name].edit,
+        label: meta.label,
+        ...(meta.description !== undefined ? { description: meta.description } : {}),
+        ...(meta.editable === false ? { editable: false } : {}),
+      };
+      config.metadatas[name].list = { ...config.metadatas[name].list, label: meta.label };
+    }
+    await cm.set({ key, value: config });
+  }
+  await store.set({ key: 'layout_version', value: LAYOUT_VERSION });
+  strapi.log.info(`[harnesslink] editor layouts applied (${LAYOUT_VERSION})`);
+}
+
+export default {
+  register(/* { strapi }: { strapi: Core.Strapi } */) {},
+
+  async bootstrap({ strapi }: { strapi: Core.Strapi }) {
+    await grantPublicRead(strapi);
+    await authorsCannotPublish(strapi);
+    await applyEditorLayouts(strapi);
+  },
+};

@@ -1,0 +1,115 @@
+{
+  "kind": "collectionType",
+  "collectionName": "articles",
+  "info": {
+    "singularName": "article",
+    "pluralName": "articles",
+    "displayName": "Article",
+    "description": "A news story. Migrated stories keep their WordPress HTML verbatim; new ones use the Blocks editor."
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "title",
+      "required": true
+    },
+    "subtitle": {
+      "type": "string"
+    },
+    "excerpt": {
+      "type": "text"
+    },
+    "bodyFormat": {
+      "type": "enumeration",
+      "enum": [
+        "blocks",
+        "legacy_html"
+      ],
+      "default": "blocks",
+      "required": true
+    },
+    "body": {
+      "type": "blocks"
+    },
+    "bodyHtml": {
+      "type": "text"
+    },
+    "featuredImage": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "legacyImage": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.legacy-image"
+    },
+    "publishDate": {
+      "type": "datetime"
+    },
+    "modifiedDate": {
+      "type": "datetime"
+    },
+    "scheduledFor": {
+      "type": "datetime"
+    },
+    "authors": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::author.author",
+      "inversedBy": "articles"
+    },
+    "primaryCategory": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::category.category",
+      "inversedBy": "primaryArticles"
+    },
+    "categories": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::category.category",
+      "inversedBy": "articles"
+    },
+    "tags": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::tag.tag",
+      "inversedBy": "articles"
+    },
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.seo"
+    },
+    "viewCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "needsReview": {
+      "type": "boolean",
+      "default": false
+    },
+    "importFlags": {
+      "type": "json"
+    },
+    "legacyWpId": {
+      "type": "biginteger",
+      "unique": true
+    },
+    "legacyUrl": {
+      "type": "string",
+      "unique": true
+    }
+  }
+}

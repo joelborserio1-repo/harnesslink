@@ -189,8 +189,8 @@ export default async function ArticlePage({ params }: Params) {
                 </figure>
               )}
 
-              {/* Legacy WP HTML is preserved verbatim; TipTap articles store their
-                  rendered HTML in body_html at save time — both render the same way. */}
+              {/* Legacy WP HTML is preserved verbatim; stories written in Strapi's
+                  Blocks editor are rendered to HTML in lib/blocks.ts — both render the same way. */}
               {article.body_html ? (
                 <div
                   className="prose-article mt-7"

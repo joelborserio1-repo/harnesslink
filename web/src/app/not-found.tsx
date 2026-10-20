@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 
-const API_BASE = process.env.API_BASE || "http://127.0.0.1:3001";
+const STRAPI_URL = (process.env.STRAPI_URL || "http://127.0.0.1:1337").replace(/\/$/, "");
 
 // Log the genuine miss so real 404s can be fixed from real traffic (the path is
-// set on the request by middleware.ts). Fire-and-forget; never block the page.
+// set on the request by proxy.ts). Fire-and-forget; never block the page.
 async function logMiss() {
   try {
     const h = await headers();
     const path = h.get("x-invoked-path");
     if (!path) return;
-    await fetch(`${API_BASE}/api/v1/missed_paths`, {
+    await fetch(`${STRAPI_URL}/api/missed-paths/log`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ path, referer: h.get("referer") }),

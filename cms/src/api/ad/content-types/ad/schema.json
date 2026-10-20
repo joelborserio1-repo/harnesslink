@@ -1,0 +1,85 @@
+{
+  "kind": "collectionType",
+  "collectionName": "ads",
+  "info": {
+    "singularName": "ad",
+    "pluralName": "ads",
+    "displayName": "Ad",
+    "description": "An advertisement booked into a placement. Rails show three different ads from the same placement."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "zone": {
+      "type": "enumeration",
+      "required": true,
+      "enum": [
+        "home-billboard",
+        "home-mid",
+        "home-bottom",
+        "home-rail",
+        "article-top",
+        "article-bottom",
+        "article-rail",
+        "archive-rail"
+      ]
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "imageUrl": {
+      "type": "string"
+    },
+    "imageWidth": {
+      "type": "integer",
+      "min": 1
+    },
+    "imageHeight": {
+      "type": "integer",
+      "min": 1
+    },
+    "linkUrl": {
+      "type": "string",
+      "required": true
+    },
+    "alt": {
+      "type": "string"
+    },
+    "html": {
+      "type": "text"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "startsAt": {
+      "type": "datetime"
+    },
+    "endsAt": {
+      "type": "datetime"
+    },
+    "weight": {
+      "type": "integer",
+      "default": 1,
+      "min": 1
+    },
+    "impressions": {
+      "type": "biginteger",
+      "default": "0"
+    },
+    "clicks": {
+      "type": "biginteger",
+      "default": "0"
+    }
+  }
+}

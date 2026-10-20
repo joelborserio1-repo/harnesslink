@@ -1,0 +1,53 @@
+{
+  "kind": "collectionType",
+  "collectionName": "pages",
+  "info": {
+    "singularName": "page",
+    "pluralName": "pages",
+    "displayName": "Page",
+    "description": "A static page (privacy policy, terms\u2026). Migrated pages keep their WordPress HTML."
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "path": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "regex": "^[a-z0-9][a-z0-9_-]*(/[a-z0-9][a-z0-9_-]*)*$"
+    },
+    "bodyFormat": {
+      "type": "enumeration",
+      "enum": [
+        "blocks",
+        "legacy_html"
+      ],
+      "default": "blocks",
+      "required": true
+    },
+    "body": {
+      "type": "blocks"
+    },
+    "bodyHtml": {
+      "type": "text"
+    },
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.seo"
+    },
+    "modifiedDate": {
+      "type": "datetime"
+    },
+    "legacyWpId": {
+      "type": "biginteger",
+      "unique": true
+    }
+  }
+}

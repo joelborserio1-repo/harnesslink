@@ -1,0 +1,28 @@
+{
+  "kind": "collectionType",
+  "collectionName": "subscribers",
+  "info": {
+    "singularName": "subscriber",
+    "pluralName": "subscribers",
+    "displayName": "Subscriber",
+    "description": "A free newsletter / registration-wall signup."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "email": {
+      "type": "email",
+      "required": true,
+      "unique": true
+    },
+    "source": {
+      "type": "string"
+    },
+    "legacyWpUserId": {
+      "type": "biginteger",
+      "unique": true
+    }
+  }
+}

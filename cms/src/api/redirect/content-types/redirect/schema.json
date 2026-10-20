@@ -1,0 +1,36 @@
+{
+  "kind": "collectionType",
+  "collectionName": "redirects",
+  "info": {
+    "singularName": "redirect",
+    "pluralName": "redirects",
+    "displayName": "Redirect",
+    "description": "A 301 for a URL that cannot be served at its old path."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "fromPath": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "toPath": {
+      "type": "string",
+      "required": true
+    },
+    "statusCode": {
+      "type": "integer",
+      "default": 301
+    },
+    "reason": {
+      "type": "string"
+    },
+    "hits": {
+      "type": "integer",
+      "default": 0
+    }
+  }
+}

@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 // Fires one viewable-impression beacon when the ad scrolls at least halfway
 // into view (IntersectionObserver), so off-screen/prefetched ads aren't
 // counted. Renders a tiny anchor element only.
-export default function AdImpression({ id }: { id: number }) {
+export default function AdImpression({ id }: { id: string }) {
   const fired = useRef(false);
   const ref = useRef<HTMLSpanElement>(null);
 

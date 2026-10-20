@@ -1,0 +1,33 @@
+{
+  "collectionName": "components_shared_legacy_images",
+  "info": {
+    "displayName": "Legacy image",
+    "icon": "picture",
+    "description": "An image still served from the old WordPress uploads"
+  },
+  "options": {},
+  "attributes": {
+    "url": {
+      "type": "string",
+      "required": true
+    },
+    "width": {
+      "type": "integer"
+    },
+    "height": {
+      "type": "integer"
+    },
+    "alt": {
+      "type": "text"
+    },
+    "caption": {
+      "type": "text"
+    },
+    "credit": {
+      "type": "text"
+    },
+    "legacyWpId": {
+      "type": "biginteger"
+    }
+  }
+}
