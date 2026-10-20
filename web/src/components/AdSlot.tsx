@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { getAds, type AdCreative } from "@/lib/api";
 import AdImpression from "@/components/AdImpression";
 
@@ -60,7 +61,8 @@ export default async function AdSlot({
   format: AdFormat;
   className?: string;
 }) {
-  const entry = (await getAds())[zone];
+  const country = (await headers()).get("x-hl-country") || "";
+  const entry = (await getAds(country))[zone];
   const ads = Array.isArray(entry) ? entry : [];
   if (ads.length === 0) return null;
 

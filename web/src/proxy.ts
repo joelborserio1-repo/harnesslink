@@ -35,6 +35,10 @@ export async function proxy(req: NextRequest) {
 
   const headers = new Headers(req.headers);
   headers.set("x-invoked-path", pathname);
+  // Reader's country for ad targeting: Cloudflare's CF-IPCountry, or
+  // ?geo=NZ to preview what a reader in another country sees.
+  const geo = req.nextUrl.searchParams.get("geo") || req.headers.get("cf-ipcountry") || "";
+  headers.set("x-hl-country", /^[A-Za-z]{2}$/.test(geo) ? geo.toUpperCase() : "");
   return withRobots(NextResponse.next({ request: { headers } }));
 }
 

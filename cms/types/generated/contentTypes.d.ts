@@ -486,6 +486,14 @@ export interface ApiAdAd extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     name: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
+    showAustralia: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    showCanada: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    showElsewhere: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    showEurope: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    showNewZealand: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    showUKIreland: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    showUSA: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     startsAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &

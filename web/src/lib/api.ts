@@ -477,8 +477,14 @@ export async function sitemapArchives() {
 
 // Zone → creatives for every booked zone (rails carry up to three). Fetched
 // once per request (Next dedupes the fetch across all AdSlots on a page).
-export async function getAds(): Promise<Record<string, AdCreative[]>> {
-  const data = await strapi<{ ads: Record<string, AdCreative[]> }>("/ads/live", {}, { next: { revalidate: 60 } });
+// Ads booked for the reader's country (two-letter code; empty = unknown, which
+// only gets ads with no country ticked or "everywhere else").
+export async function getAds(country = ""): Promise<Record<string, AdCreative[]>> {
+  const data = await strapi<{ ads: Record<string, AdCreative[]> }>(
+    "/ads/live",
+    country ? { country } : {},
+    { next: { revalidate: 60 } }
+  );
   return data?.ads ?? {};
 }
 

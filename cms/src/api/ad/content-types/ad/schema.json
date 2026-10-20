@@ -80,6 +80,34 @@
     "clicks": {
       "type": "biginteger",
       "default": "0"
+    },
+    "showAustralia": {
+      "type": "boolean",
+      "default": false
+    },
+    "showNewZealand": {
+      "type": "boolean",
+      "default": false
+    },
+    "showUSA": {
+      "type": "boolean",
+      "default": false
+    },
+    "showCanada": {
+      "type": "boolean",
+      "default": false
+    },
+    "showUKIreland": {
+      "type": "boolean",
+      "default": false
+    },
+    "showEurope": {
+      "type": "boolean",
+      "default": false
+    },
+    "showElsewhere": {
+      "type": "boolean",
+      "default": false
     }
   }
 }

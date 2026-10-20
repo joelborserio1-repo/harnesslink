@@ -1,12 +1,14 @@
 import type { Core } from '@strapi/strapi';
 import type { Context } from 'koa';
-import { ZONES, weightedSample, type Zone } from '../zones';
+import { ZONES, marketOf, showsIn, weightedSample, type Zone } from '../zones';
 
 const UID = 'api::ad.ad';
 
 export default ({ strapi }: { strapi: Core.Strapi }) => ({
-  // GET /api/ads/live — { ads: { zone: [creative, …] } } for every booked zone.
+  // GET /api/ads/live?country=AU — { ads: { zone: [creative, …] } } for every
+  // booked zone, keeping only ads that run in the reader's country.
   async live(ctx: Context) {
+    const market = marketOf(String(ctx.query.country || ''));
     const now = new Date().toISOString();
     const ads = await strapi.documents(UID).findMany({
       filters: {
@@ -22,7 +24,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
 
     type AdDoc = (typeof ads)[number] & { weight?: number | null };
     const byZone: Record<string, AdDoc[]> = {};
-    for (const ad of ads as AdDoc[]) if (ad.zone) (byZone[ad.zone] ||= []).push(ad);
+    for (const ad of ads as AdDoc[]) if (ad.zone && showsIn(ad as never, market)) (byZone[ad.zone] ||= []).push(ad);
 
     const out: Record<string, unknown[]> = {};
     for (const [zone, list] of Object.entries(byZone)) {

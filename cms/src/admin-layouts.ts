@@ -17,7 +17,7 @@ type Layout = {
   fields: Record<string, FieldMeta>;
 };
 
-export const LAYOUT_VERSION = '2026-10-20.2';
+export const LAYOUT_VERSION = '2026-10-21.1';
 
 const SEO_HELP = 'Search and social-media title/description. Leave blank to use the headline and standfirst.';
 
@@ -71,15 +71,17 @@ export const LAYOUTS: Layout[] = [
   },
   {
     uid: 'api::ad.ad',
-    list: ['name', 'zone', 'active', 'endsAt', 'clicks'],
+    list: ['name', 'zone', 'active', 'startsAt', 'endsAt', 'clicks'],
     sortBy: 'zone',
     sortOrder: 'ASC',
     edit: [
       [['name', 6], ['zone', 6]],
       [['image', 6], ['linkUrl', 6]],
       [['imageWidth', 3], ['imageHeight', 3], ['alt', 6]],
-      [['imageUrl', 12]],
       [['active', 3], ['weight', 3], ['startsAt', 3], ['endsAt', 3]],
+      [['showAustralia', 3], ['showNewZealand', 3], ['showUSA', 3], ['showCanada', 3]],
+      [['showUKIreland', 3], ['showEurope', 3], ['showElsewhere', 3]],
+      [['imageUrl', 12]],
       [['html', 12]],
       [['impressions', 6], ['clicks', 6]],
     ],
@@ -91,11 +93,18 @@ export const LAYOUTS: Layout[] = [
       imageWidth: { label: 'Width (px)', description: 'Lets the page reserve space so nothing jumps while the ad loads.' },
       imageHeight: { label: 'Height (px)' },
       alt: { label: 'Alt text' },
-      imageUrl: { label: 'Creative URL (instead of uploading)', description: 'Only if the artwork is hosted elsewhere.' },
-      active: { label: 'Running' },
+      active: { label: 'Running', description: 'Switch off to pause the ad.' },
       weight: { label: 'Share', description: 'Relative share against other ads in the same placement (2 = twice as often as 1).' },
-      startsAt: { label: 'Starts' },
-      endsAt: { label: 'Ends' },
+      startsAt: { label: 'Start date', description: 'Shows from this date and time. Leave empty to start straight away.' },
+      endsAt: { label: 'Finish date', description: 'Stops showing after this. Leave empty to run until switched off.' },
+      showAustralia: { label: 'Show in Australia', description: 'Tick the countries this ad runs in. Tick none to run everywhere.' },
+      showNewZealand: { label: 'Show in New Zealand' },
+      showUSA: { label: 'Show in USA' },
+      showCanada: { label: 'Show in Canada' },
+      showUKIreland: { label: 'Show in UK & Ireland' },
+      showEurope: { label: 'Show in Europe', description: 'Continental Europe (France, Sweden, Italy, Germany…).' },
+      showElsewhere: { label: 'Show everywhere else', description: 'Readers outside the countries above.' },
+      imageUrl: { label: 'Creative URL (instead of uploading)', description: 'Only if the artwork is hosted elsewhere.' },
       html: { label: 'HTML creative (optional)', description: 'Third-party ad code. Replaces the image if filled in.' },
       impressions: { label: 'Impressions', editable: false },
       clicks: { label: 'Clicks', editable: false },

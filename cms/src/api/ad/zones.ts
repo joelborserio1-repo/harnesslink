@@ -36,3 +36,36 @@ export function weightedSample<T extends Weighted>(items: T[], count: number, ra
   }
   return picked;
 }
+
+// Country targeting. An ad with no market ticked shows everywhere; otherwise
+// only to readers in a ticked market. The reader's country comes from
+// Cloudflare (CF-IPCountry), passed through by the website.
+export const MARKETS = {
+  showAustralia: ['AU'],
+  showNewZealand: ['NZ'],
+  showUSA: ['US'],
+  showCanada: ['CA'],
+  showUKIreland: ['GB', 'IE', 'IM', 'JE', 'GG'],
+  showEurope: [
+    'AT', 'BE', 'BG', 'CH', 'CY', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GR', 'HR', 'HU', 'IS', 'IT', 'LI', 'LT',
+    'LU', 'LV', 'MC', 'MT', 'NL', 'NO', 'PL', 'PT', 'RO', 'SE', 'SI', 'SK', 'SM',
+  ],
+} as const;
+
+export type MarketField = keyof typeof MARKETS | 'showElsewhere';
+
+// Which market field a two-letter country code falls under.
+export function marketOf(country: string | null | undefined): MarketField {
+  const code = String(country || '').toUpperCase();
+  for (const [field, codes] of Object.entries(MARKETS)) {
+    if ((codes as readonly string[]).includes(code)) return field as MarketField;
+  }
+  return 'showElsewhere';
+}
+
+const ALL_MARKETS: MarketField[] = [...(Object.keys(MARKETS) as MarketField[]), 'showElsewhere'];
+
+export function showsIn(ad: Partial<Record<MarketField, boolean | null>>, market: MarketField): boolean {
+  const targeted = ALL_MARKETS.some((m) => ad[m]);
+  return !targeted || !!ad[market];
+}
