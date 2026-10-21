@@ -82,6 +82,15 @@ services:
       # Site search. Indexing switches off if MEILI_MASTER_KEY is unset.
       MEILI_HOST: ${MEILI_MASTER_KEY:+http://search:7700}
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-}
+      # Home-screen dashboard (src/dashboard.ts). Each widget shows "not connected" until its key is set.
+      MATOMO_URL: ${MATOMO_URL:-}
+      MATOMO_SITE_ID: ${MATOMO_SITE_ID:-1}
+      MATOMO_TOKEN: ${MATOMO_TOKEN:-}
+      POSTIZ_URL: ${POSTIZ_URL:-}
+      POSTIZ_API_KEY: ${POSTIZ_API_KEY:-}
+      HARNESSLINK_API_URL: ${HARNESSLINK_API_URL:-https://admin.harnesslink.com/api}
+      HARNESSLINK_API_KEY: ${HARNESSLINK_API_KEY:-}
+      SITE_URL: ${SITE_URL:-https://staging.harnesslink.com}
     volumes:
       - cms_uploads:/app/public/uploads
     ports:
