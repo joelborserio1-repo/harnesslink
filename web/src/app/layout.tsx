@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import { Suspense } from "react";
+import MatomoTracker from "@/components/MatomoTracker";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://harnesslink.com"),
@@ -30,6 +32,11 @@ export default function RootLayout({
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />
+        {process.env.MATOMO_URL && process.env.MATOMO_SITE_ID && (
+          <Suspense fallback={null}>
+            <MatomoTracker url={process.env.MATOMO_URL} siteId={process.env.MATOMO_SITE_ID} />
+          </Suspense>
+        )}
       </body>
     </html>
   );
