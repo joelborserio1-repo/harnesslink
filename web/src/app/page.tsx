@@ -27,12 +27,13 @@ export default async function HomePage() {
   return (
     <div className="wrap pb-6 pt-[25px]">
       {/* Row 1 — The Eureka · lead stories · The Insider, as on the live site. */}
-      {/* Live proportions at full width: 340 · lead story · 408, 15px gaps. */}
-      <div className="grid gap-[15px] lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)_minmax(0,408px)] lg:items-start">
+      {/* The two panels match: 408px each at full width (29.5% on smaller
+          screens), same height; the lead story takes the middle. */}
+      <div className="grid gap-[15px] lg:grid-cols-[minmax(0,min(408px,29.5%))_minmax(0,1fr)_minmax(0,min(408px,29.5%))]">
         <div className="order-2 lg:order-1">
           <EurekaPanel stories={(eureka?.articles ?? []).slice(0, 3)} href="/category/eureka/" />
         </div>
-        <div className="order-1 lg:order-2">
+        <div className="order-1 lg:order-2 lg:self-start">
           <Hero slides={heroSlides} />
         </div>
         <div className="order-3">
