@@ -193,3 +193,10 @@ body {
 /* Video / social embed added in the editor: players fill the column at 16:9. */
 .article-embed iframe { width: 100%; height: auto; aspect-ratio: 16 / 9; border: 0; }
 .article-embed blockquote { margin-inline: auto; }
+
+/* Racing data pages (fields, results, profiles): condensed display face for names and figures,
+   matching the HarnessLink admin. */
+.font-display {
+  font-family: "Barlow Condensed", "Arial Narrow", var(--font-sans);
+  letter-spacing: 0.01em;
+}

@@ -7,7 +7,7 @@ import { raceHref, raceTime } from "@/lib/racingLinks";
 export default function RaceGrid({ meetings, details, nextId }: { meetings: Meeting[]; details?: Map<number, RaceDetail>; nextId: number | null }) {
   const cols = Math.max(...meetings.map((m) => m.races.at(-1)?.race_number ?? 0), 1);
   return (
-    <div className="sheet overflow-x-auto">
+    <div className="overflow-x-auto rounded-md border border-line bg-white">
       <table className="w-full min-w-[640px] border-collapse text-[13px]">
         <thead>
           <tr className="border-b border-line text-left">
@@ -36,7 +36,7 @@ export default function RaceGrid({ meetings, details, nextId }: { meetings: Meet
                       <Link
                         href={raceHref(r.id)}
                         title={r.name ?? `Race ${r.race_number}`}
-                        className={`flex h-10 min-w-[58px] items-center justify-center px-1.5 text-[12.5px] font-bold tabular-nums transition ${
+                        className={`flex h-10 min-w-[58px] rounded-[4px] items-center justify-center px-1.5 text-[12.5px] font-bold tabular-nums transition ${
                           isNext
                             ? "bg-amber text-[#1d1500]"
                             : done

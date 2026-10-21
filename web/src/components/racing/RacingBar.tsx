@@ -30,19 +30,19 @@ export default function RacingBar({
       <div className="wrap flex flex-col gap-4 py-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="kicker text-amber!">Racing</p>
-          <h1 className="mt-1 font-headline text-3xl font-bold leading-none sm:text-4xl">
+          <h1 className="mt-1 font-display text-[40px] font-bold uppercase leading-none sm:text-[52px]">
             {view === "fields" ? "Fields" : "Results & Replays"}
           </h1>
         </div>
         <div className="flex flex-wrap gap-3">
-          <nav className="flex border border-white/25" aria-label="Country">
+          <nav className="flex overflow-hidden rounded-[4px] border border-white/25" aria-label="Country">
             {(Object.keys(COUNTRY) as RacingCountry[]).map((c) => (
               <Link key={c} href={dayHref(c, view)} className={tab(c === country)} aria-current={c === country ? "page" : undefined}>
                 {COUNTRY[c].label}
               </Link>
             ))}
           </nav>
-          <nav className="flex border border-white/25" aria-label="View">
+          <nav className="flex overflow-hidden rounded-[4px] border border-white/25" aria-label="View">
             <Link href={dayHref(country, "fields", date)} className={tab(view === "fields")} aria-current={view === "fields" ? "page" : undefined}>Fields</Link>
             <Link href={dayHref(country, "results", date)} className={tab(view === "results")} aria-current={view === "results" ? "page" : undefined}>Results</Link>
           </nav>

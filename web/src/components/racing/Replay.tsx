@@ -25,8 +25,8 @@ export default function Replay({ id, title }: { id: string; title: string }) {
             <svg viewBox="0 0 24 24" className="ml-1 h-7 w-7" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>
           </span>
           <span className="absolute bottom-0 left-0 p-4 text-white">
-            <span className="kicker block text-amber">Race replay</span>
-            <span className="mt-1 block font-headline text-lg font-bold leading-tight">{title}</span>
+            <span className="kicker block text-amber!">Race replay</span>
+            <span className="mt-1 block font-display text-[22px] font-bold uppercase leading-tight">{title}</span>
           </span>
         </button>
       )}

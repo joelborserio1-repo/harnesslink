@@ -46,7 +46,7 @@ export default async function RaceDayPage({ params, searchParams }: Props) {
       <RacingBar country={country} view={view} date={date} days={days.includes(date) ? days : [...days, date].sort()} today={today} />
       <div className="wrap py-7">
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="font-headline text-2xl font-bold text-navy">
+          <h2 className="font-display text-[26px] font-bold uppercase tracking-[0.03em] text-navy">
             {dayLabel(date, { weekday: "long", day: "numeric", month: "long" })}
           </h2>
           <p className="text-[13px] text-muted">
@@ -55,8 +55,8 @@ export default async function RaceDayPage({ params, searchParams }: Props) {
         </div>
 
         {meetings.length === 0 ? (
-          <div className="sheet px-6 py-14 text-center">
-            <p className="font-headline text-xl font-bold text-navy">No {c.name} harness meetings on this day</p>
+          <div className="rounded-md border border-line bg-white px-6 py-14 text-center">
+            <p className="font-display text-[22px] font-bold uppercase text-navy">No {c.name} harness meetings on this day</p>
             <p className="mt-2 text-sm text-muted">Use the dates above to move to the nearest racing day.</p>
           </div>
         ) : (
@@ -90,8 +90,8 @@ function firstToRun(meetings: Meeting[]) {
 function MeetingHead({ m, extra }: { m: Meeting; extra?: string }) {
   const done = m.races.filter((r) => r.status.startsWith("result")).length;
   return (
-    <div className="rule-head mb-3 flex flex-wrap items-baseline justify-between gap-2">
-      <h3 className="font-headline text-[22px] font-bold text-navy">{m.venue}</h3>
+    <div className="mb-3 border-b border-line pb-2 flex flex-wrap items-baseline justify-between gap-2">
+      <h3 className="font-display text-[24px] font-bold uppercase tracking-[0.03em] text-navy">{m.venue}</h3>
       <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-muted">
         {m.races.length} races{done ? ` · ${done} resulted` : ""}{extra ? ` · ${extra}` : ""}
       </p>
@@ -103,13 +103,13 @@ function MeetingFields({ m, nextId }: { m: Meeting; nextId: number | null }) {
   return (
     <section>
       <MeetingHead m={m} />
-      <ol className="sheet divide-y divide-line">
+      <ol className="rounded-md border border-line bg-white divide-y divide-line">
         {m.races.map((r) => {
           const done = r.status.startsWith("result");
           return (
             <li key={r.id}>
               <Link href={raceHref(r.id)} className="group grid grid-cols-[56px_1fr_auto] items-center gap-4 px-4 py-3 hover:bg-mist sm:grid-cols-[56px_84px_1fr_auto]">
-                <span className={`grid h-11 w-11 place-items-center text-[14px] font-extrabold ${r.id === nextId ? "bg-amber text-[#1d1500]" : done ? "bg-mist text-navy" : "bg-navy text-white"}`}>
+                <span className={`grid h-11 w-11 place-items-center rounded-[4px] text-[14px] font-extrabold ${r.id === nextId ? "bg-amber text-[#1d1500]" : done ? "bg-mist text-navy" : "bg-navy text-white"}`}>
                   R{r.race_number}
                 </span>
                 <span className="hidden text-[15px] font-bold tabular-nums text-ink sm:block">{raceTime(r.start_time, m.timezone)}</span>
@@ -140,16 +140,16 @@ function MeetingResults({ m, details, country }: { m: Meeting; details: Map<numb
     <section>
       <MeetingHead m={m} extra={pending ? `${pending} still to run or awaiting results` : undefined} />
       {races.length === 0 ? (
-        <p className="sheet px-4 py-6 text-sm text-muted">No results yet.</p>
+        <p className="rounded-md border border-line bg-white px-4 py-6 text-sm text-muted">No results yet.</p>
       ) : (
-        <ol className="sheet divide-y divide-line">
+        <ol className="rounded-md border border-line bg-white divide-y divide-line">
           {races.map((r) => {
             const d = details.get(r.id);
             const top = (d?.entries ?? []).filter((e) => e.position && e.position <= 3).sort((a, b) => a.position! - b.position!);
             const video = youtubeId(d?.video_url);
             return (
               <li key={r.id} className="grid gap-3 px-4 py-4 sm:grid-cols-[56px_1fr_auto] sm:items-center">
-                <Link href={raceHref(r.id)} className="grid h-11 w-11 place-items-center bg-navy text-[14px] font-extrabold text-white">R{r.race_number}</Link>
+                <Link href={raceHref(r.id)} className="grid h-11 w-11 place-items-center rounded-[4px] bg-navy text-[14px] font-extrabold text-white">R{r.race_number}</Link>
                 <div className="min-w-0">
                   <Link href={raceHref(r.id)} className="block truncate text-[15px] font-bold text-ink hover:text-blue">{r.name ?? `Race ${r.race_number}`}</Link>
                   <ol className="mt-2 grid gap-1.5 sm:grid-cols-3 sm:gap-4">
