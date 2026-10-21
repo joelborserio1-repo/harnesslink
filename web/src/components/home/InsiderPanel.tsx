@@ -5,28 +5,28 @@ import SubscribeForm from "@/components/SubscribeForm";
 // top row (content distributes top→bottom).
 export default function InsiderPanel() {
   return (
-    <section className="sheet relative flex h-full flex-col px-6 py-6 sm:pl-[49px] sm:pr-[29px] sm:py-7">
+    <section className="sheet relative flex h-full flex-col overflow-hidden px-6 py-6 sm:pl-[49px] sm:pr-[29px] sm:py-7 xl:h-[440px] xl:py-6 xl:pl-9">
       {/* The live site's round "Subscribe free" badge. */}
       <span aria-hidden className="absolute right-5 top-4 grid h-[52px] w-[52px] place-items-center rounded-full border-2 border-white bg-navy-deep text-center text-white shadow-[0_0_0_2px_var(--color-navy-deep)]">
         <span className="font-ui text-[6px] font-bold uppercase leading-none tracking-wider">Subscribe<br /><span className="text-[11px]">Free</span></span>
       </span>
       <p className="panel-label">The Insider</p>
-      <h2 className="font-headline mt-3 text-[30px] font-semibold leading-[1.2] text-[#070400] [text-wrap:balance] sm:text-[34px]">
+      <h2 className="font-headline mt-3 text-[30px] font-semibold leading-[1.15] text-[#070400] [text-wrap:balance] sm:text-[34px] xl:mt-2 xl:text-[28px]">
         Exclusive insights. Every Thursday.
       </h2>
-      <p className="mt-2 text-[14px] leading-[1.5] text-[#5B6478]">
+      <p className="mt-2 text-[14px] leading-[1.45] text-[#5B6478] xl:hidden 2xl:block">
         In-depth stories, industry whispers and international coverage you won&apos;t find anywhere
         else.
       </p>
 
-      <div className="mt-5">
+      <div className="mt-5 xl:mt-4">
         <SubscribeForm cta="Subscribe" />
       </div>
 
-      <ul className="mt-5 border-t border-line text-[14px] text-[#33363d]">
-        <li className="border-b border-line py-2.5">Form and features before the meeting</li>
-        <li className="border-b border-line py-2.5">Trainer and driver insight from the stables</li>
-        <li className="border-b border-line py-2.5">Racing from both hemispheres in one read</li>
+      <ul className="mt-5 border-t border-line text-[14px] text-[#33363d] xl:mt-4">
+        <li className="border-b border-line py-2.5 xl:py-2">Form and features before the meeting</li>
+        <li className="border-b border-line py-2.5 xl:py-2">Trainer and driver insight from the stables</li>
+        <li className="border-b border-line py-2.5 xl:py-2">Racing from both hemispheres in one read</li>
       </ul>
 
       <div className="mt-auto flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 pt-4">
