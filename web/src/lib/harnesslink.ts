@@ -37,6 +37,9 @@ export type RaceBoard = { next: BoardRace[]; results: BoardRace[]; generatedAt: 
 
 export const configured = () => Boolean(KEY);
 
+// "Addington Raceway" -> "Addington": the rail is 300px wide.
+const shortVenue = (v: string) => v.replace(/\s+(Raceway|Racecourse|Paceway|Harness Racing Club|Trotting Club|Park Raceway)$/i, "").trim();
+
 async function get<T>(path: string): Promise<T | null> {
   if (!KEY) return null;
   try {
@@ -77,7 +80,7 @@ export async function getRaceBoard(): Promise<RaceBoard | null> {
   );
 
   const now = Date.now();
-  const all = cards.flatMap((m) => m.races.map((r) => ({ ...r, venue: m.venue, country: m.country })));
+  const all = cards.flatMap((m) => m.races.map((r) => ({ ...r, venue: shortVenue(m.venue), country: m.country })));
   const resulted = (s: string) => s.startsWith("result");
   const time = (r: { start_time: string | null }) => (r.start_time ? Date.parse(r.start_time) : 0);
 
