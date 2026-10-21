@@ -1,37 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import type { BoardRace, RaceBoard } from "@/lib/harnesslink";
 
-type Race = {
-  no: string;
-  col: "navy" | "red" | "amber";
-  sec: number;
-  track: string;
-  st: string;
-  dist: string;
-  num: number;
-  odds: string;
-  star?: boolean;
-};
+// Live AU and NZ harness races from the HarnessLink API (TAB + HRNZ), loaded
+// server-side in lib/harnesslink.ts; this component only counts down and switches tabs.
 
-// Sample data until a live racing feed (HRA / HRNZ / USTA or a provider) is wired.
-const RACES: Race[] = [
-  { no: "R1", col: "navy", sec: 42, track: "Menangle", st: "NSW", dist: "1609m", num: 4, odds: "$3.40" },
-  { no: "R4", col: "amber", sec: 135, track: "Albion Park", st: "QLD", dist: "2138m", num: 7, odds: "$5.50", star: true },
-  { no: "R2", col: "red", sec: 288, track: "Addington", st: "NZ", dist: "1980m", num: 1, odds: "$2.10" },
-  { no: "R6", col: "navy", sec: 392, track: "Gloucester Park", st: "WA", dist: "2130m", num: 9, odds: "$8.00" },
-  { no: "R3", col: "amber", sec: 552, track: "The Meadowlands", st: "USA", dist: "1609m", num: 3, odds: "$4.20", star: true },
-  { no: "R5", col: "red", sec: 765, track: "Menangle", st: "NSW", dist: "2300m", num: 6, odds: "$15.0" },
-];
-
-const RESULTS = [
-  { no: "R7", col: "navy", track: "Bathurst", st: "NSW", dist: "1730m", placing: "1st", odds: "$2.60" },
-  { no: "R6", col: "amber", track: "Melton", st: "VIC", dist: "1720m", placing: "1st", odds: "$1.90" },
-  { no: "R8", col: "red", track: "Cambridge", st: "NZ", dist: "2200m", placing: "1st", odds: "$3.10" },
-  { no: "R5", col: "navy", track: "Northfield", st: "USA", dist: "1609m", placing: "1st", odds: "$4.40" },
-  { no: "R4", col: "amber", track: "Menangle", st: "NSW", dist: "1609m", placing: "1st", odds: "$1.40" },
-  { no: "R3", col: "red", track: "Addington", st: "NZ", dist: "1980m", placing: "1st", odds: "$2.20" },
-] as const;
+const COLS = ["navy", "amber", "red"] as const;
 
 const BADGE: Record<string, string> = {
   navy: "bg-navy text-white",
@@ -39,11 +14,15 @@ const BADGE: Record<string, string> = {
   amber: "bg-amber text-[#241a00]",
 };
 
-function fmt(s: number) {
+function countdown(s: number) {
+  if (s <= 0) return "Closed";
+  if (s >= 3600) return `${Math.floor(s / 3600)}h ${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}m`;
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-function Silk({ seed }: { seed: number }) {
+const country = (c: string) => (c === "AU" ? "AUS" : c);
+
+function FallbackSilk({ seed }: { seed: number }) {
   const cols = ["#1f5bd0", "#0a2a6b", "#12857f", "#c2620a", "#6a3fae", "#1f9d5e"];
   const a = cols[seed % cols.length];
   const b = cols[(seed + 2) % cols.length];
@@ -56,20 +35,53 @@ function Silk({ seed }: { seed: number }) {
   );
 }
 
-export default function NextToGo() {
-  const [tab, setTab] = useState<"ntg" | "res">("ntg");
-  const [secs, setSecs] = useState(RACES.map((r) => r.sec));
+function Silk({ path, seed }: { path: string | null; seed: number }) {
+  if (!path) return <FallbackSilk seed={seed} />;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={`/api/silk/?p=${encodeURIComponent(path)}`} alt="" width={22} height={26} className="h-[26px] w-[22px] object-contain" />;
+}
+
+function Row({ r, i, side, children }: { r: BoardRace; i: number; side: ReactNode; children: ReactNode }) {
+  return (
+    <div className="grid grid-cols-[52px_1fr_auto_auto] items-center gap-3 border-b border-line px-3.5 py-3 last:border-0">
+      <div className="flex flex-col items-center gap-1">
+        <span className={`grid h-[34px] w-[34px] place-items-center text-[13px] font-extrabold ${BADGE[COLS[i % COLS.length]]}`}>R{r.number}</span>
+        {side}
+      </div>
+      <div className="min-w-0">
+        <b className="block truncate text-sm leading-tight text-ink">{r.venue}</b>
+        {children}
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-extrabold tabular-nums text-navy">{r.runner?.number ?? ""}</span>
+        <Silk path={r.runner?.silk ?? null} seed={i} />
+      </div>
+      <span className="min-w-[52px] bg-[#eef0f4] px-2.5 py-1 text-center text-[13px] font-bold tabular-nums text-[#2b303a]">
+        {r.runner?.price ?? "–"}
+      </span>
+    </div>
+  );
+}
+
+export default function NextToGo({ board }: { board: RaceBoard }) {
+  const [tab, setTab] = useState<"ntg" | "res">(board.next.length ? "ntg" : "res");
+  // Start from the server's clock so the first render matches, then tick each second.
+  const [now, setNow] = useState(() => Date.parse(board.generatedAt));
 
   useEffect(() => {
-    const id = setInterval(() => setSecs((prev) => prev.map((s) => (s > 0 ? s - 1 : 0))), 1000);
+    const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
+
+  const secs = (r: BoardRace) => (r.startTime ? Math.round((Date.parse(r.startTime) - now) / 1000) : 0);
+  const rows = tab === "ntg" ? board.next : board.results;
 
   return (
     <div className="card overflow-hidden">
       <div className="flex items-stretch border-b border-line" role="tablist">
         <button
           role="tab"
+          aria-selected={tab === "ntg"}
           onClick={() => setTab("ntg")}
           className={`flex-1 py-3.5 text-xs font-bold uppercase tracking-[0.12em] ${tab === "ntg" ? "text-blue" : "text-neutral-400"}`}
         >
@@ -78,6 +90,7 @@ export default function NextToGo() {
         <span className="w-px bg-line" />
         <button
           role="tab"
+          aria-selected={tab === "res"}
           onClick={() => setTab("res")}
           className={`flex-1 py-3.5 text-xs font-bold uppercase tracking-[0.12em] ${tab === "res" ? "text-blue" : "text-neutral-400"}`}
         >
@@ -86,52 +99,34 @@ export default function NextToGo() {
       </div>
 
       <div className="flex flex-col">
+        {rows.length === 0 && (
+          <p className="px-3.5 py-6 text-center text-sm text-muted">
+            {tab === "ntg" ? "No more harness races today." : "No results yet today."}
+          </p>
+        )}
         {tab === "ntg"
-          ? RACES.map((r, i) => (
-              <a key={i} href="/" className="grid grid-cols-[52px_1fr_auto_auto] items-center gap-3 border-b border-line px-3.5 py-3 last:border-0 hover:bg-[#f7f9fd]">
-                <div className="flex flex-col items-center gap-1">
-                  <span className={`grid h-[34px] w-[34px] place-items-center text-[13px] font-extrabold ${BADGE[r.col]}`}>{r.no}</span>
-                  <span className={`text-[11px] font-bold tabular-nums ${secs[i] < 300 ? "text-red" : "text-neutral-400"}`}>{fmt(secs[i])}</span>
-                </div>
-                <div>
-                  <b className="block text-sm leading-tight text-ink">{r.track}</b>
-                  <span className="text-[11.5px] text-muted">{r.st} · {r.dist}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-extrabold tabular-nums text-navy">{r.num}</span>
-                  <Silk seed={i} />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="bg-[#eef0f4] px-2.5 py-1 text-[13px] font-bold tabular-nums text-[#2b303a]">{r.odds}{r.star ? " *" : ""}</span>
-                  <span className="text-lg text-neutral-300">›</span>
-                </div>
-              </a>
+          ? rows.map((r, i) => (
+              <Row
+                key={r.id}
+                r={r}
+                i={i}
+                side={<span className={`text-[11px] font-bold tabular-nums ${secs(r) < 300 ? "text-red" : "text-neutral-400"}`}>{countdown(secs(r))}</span>}
+              >
+                <span className="text-[11.5px] text-muted">{country(r.country)}{r.distance ? ` · ${r.distance}` : ""}</span>
+              </Row>
             ))
-          : RESULTS.map((r, i) => (
-              <a key={i} href="/" className="grid grid-cols-[52px_1fr_auto_auto] items-center gap-3 border-b border-line px-3.5 py-3 last:border-0 hover:bg-[#f7f9fd]">
-                <div className="flex flex-col items-center gap-1">
-                  <span className={`grid h-[34px] w-[34px] place-items-center text-[13px] font-extrabold ${BADGE[r.col]}`}>{r.no}</span>
-                  <span className="text-[10px] font-bold text-neutral-400">FINAL</span>
-                </div>
-                <div>
-                  <b className="block text-sm leading-tight text-ink">{r.track}</b>
-                  <span className="text-[11.5px] text-muted">{r.st} · {r.dist}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-extrabold text-navy">{r.placing}</span>
-                  <Silk seed={i} />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="bg-[#eef0f4] px-2.5 py-1 text-[13px] font-bold tabular-nums text-[#2b303a]">{r.odds}</span>
-                  <span className="text-lg text-neutral-300">›</span>
-                </div>
-              </a>
+          : rows.map((r, i) => (
+              <Row key={r.id} r={r} i={i} side={<span className="text-[10px] font-bold text-neutral-400">FINAL</span>}>
+                <span className="block truncate text-[11.5px] text-muted">
+                  {r.runner ? `Winner: ${r.runner.horse}` : `${country(r.country)}${r.distance ? ` · ${r.distance}` : ""}`}
+                </span>
+              </Row>
             ))}
       </div>
 
-      <div className="py-3 text-center">
-        <a href="/" className="text-xs font-bold uppercase tracking-wider text-blue">View all races →</a>
-      </div>
+      <p className="border-t border-line py-2.5 text-center text-[11px] text-muted">
+        {tab === "ntg" ? "Favourite's fixed odds" : "Winner's final fixed odds"} · TAB and HRNZ data · Gamble responsibly
+      </p>
     </div>
   );
 }

@@ -110,6 +110,9 @@ services:
       # back to a plain database search when unset.
       MEILI_HOST: ${MEILI_MASTER_KEY:+http://search:7700}
       MEILI_SEARCH_KEY: ${MEILI_SEARCH_KEY:-}
+      # Next To Go / Results widget (server-side only). Widget is hidden when the key is unset.
+      HARNESSLINK_API_URL: ${HARNESSLINK_API_URL:-https://admin.harnesslink.com/api}
+      HARNESSLINK_API_KEY: ${HARNESSLINK_API_KEY:-}
     depends_on:
       - api
       - cms

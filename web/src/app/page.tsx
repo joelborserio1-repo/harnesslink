@@ -6,14 +6,17 @@ import InsiderPanel from "@/components/home/InsiderPanel";
 import TrendingTile from "@/components/home/TrendingTile";
 import InternationalGrid from "@/components/home/InternationalGrid";
 import WireList from "@/components/home/WireList";
+import NextToGo from "@/components/home/NextToGo";
+import { getRaceBoard } from "@/lib/harnesslink";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [{ articles }, top4, eureka] = await Promise.all([
+  const [{ articles }, top4, eureka, raceBoard] = await Promise.all([
     listArticles(1, 40),
     getCategory("top4"), // the editors' "Top 4" picks drive the lead stage, as on the live site
     getCategory("eureka"),
+    getRaceBoard(), // null when HARNESSLINK_API_KEY is unset or the API is down: the widget is left out
   ]);
 
   const heroSlides: ArticleSummary[] = (top4?.articles.length ? top4.articles : articles).slice(0, 4);
@@ -95,6 +98,7 @@ export default async function HomePage() {
             the main column, so the boxes sit just above the footer. */}
         <aside className="flex flex-col gap-7">
           <AdSlot format="mpu" zone="home-rail" />
+          {raceBoard && <NextToGo board={raceBoard} />}
           <WireList articles={wire} />
         </aside>
       </div>
