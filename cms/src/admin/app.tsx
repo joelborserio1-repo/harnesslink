@@ -1,5 +1,7 @@
 import type { StrapiApp } from '@strapi/strapi/admin';
 import { ChartPie, Discuss, Feather, Monitor, PresentationChart, Calendar } from '@strapi/icons';
+import { lightTheme } from '@strapi/design-system';
+import mark from './extensions/hl-mark.svg';
 
 // HarnessLink newsroom dashboard on the CMS home screen (widgets in ./widgets, data from
 // src/dashboard.ts). Traffic, social, advertising and site checks are for admins and editors;
@@ -7,9 +9,38 @@ import { ChartPie, Discuss, Feather, Monitor, PresentationChart, Calendar } from
 const EDITORS = ['strapi-super-admin', 'strapi-editor'];
 const widgets = () => import('./widgets');
 
+// HarnessLink look: light for everyone (the dark slot gets the same light theme, so a computer in
+// dark mode still sees light), with the site's navy as the primary colour.
+const harnesslink = {
+  ...lightTheme,
+  colors: {
+    ...lightTheme.colors,
+    primary100: '#EEF2FA',
+    primary200: '#C9D4EC',
+    primary500: '#3D5A9E',
+    primary600: '#00205E',
+    primary700: '#001645',
+    buttonPrimary500: '#1A3A7A',
+    buttonPrimary600: '#00205E',
+  },
+};
+
 export default {
   config: {
     locales: [],
+    theme: { light: harnesslink, dark: harnesslink },
+    auth: { logo: mark },
+    menu: { logo: mark },
+    tutorials: false,
+    notifications: { releases: false },
+    translations: {
+      en: {
+        'app.components.LeftMenu.navbrand.title': 'HarnessLink',
+        'app.components.LeftMenu.navbrand.workplace': 'Newsroom',
+        'Auth.form.welcome.title': 'HarnessLink newsroom',
+        'Auth.form.welcome.subtitle': 'Sign in to your account',
+      },
+    },
   },
   register(app: StrapiApp) {
     app.widgets.register([
