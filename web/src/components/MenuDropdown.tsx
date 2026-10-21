@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import MenuLink, { MenuFlag } from "@/components/MenuLink";
+import MenuLink from "@/components/MenuLink";
 import type { MenuItem } from "@/lib/menu";
 import { Chevron, MENU_ITEM, NAV_ITEM, useDropdown } from "@/components/NavDropdown";
 
@@ -21,7 +21,6 @@ export default function MenuDropdown({ item }: { item: MenuItem }) {
   return (
     <div ref={ref} className="relative" onMouseEnter={hoverOpen} onMouseLeave={close}>
       <button type="button" aria-haspopup="menu" aria-expanded={open} onClick={toggle} className={NAV_ITEM}>
-        <MenuFlag code={item.flag} />
         {item.title} <Chevron className={`transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
@@ -39,7 +38,6 @@ export default function MenuDropdown({ item }: { item: MenuItem }) {
                   onFocus={() => setActive(i)}
                   className={`${MENU_ITEM} w-full`}
                 >
-                  <MenuFlag code={child.flag} />
                   {child.title}
                   <Chevron dir="right" className="ml-1" />
                 </button>

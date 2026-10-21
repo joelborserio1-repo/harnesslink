@@ -1,12 +1,6 @@
 import Link from "next/link";
-import Flag, { type FlagCode } from "@/components/Flag";
 import type { MenuItem } from "@/lib/menu";
 
-const FLAGS = new Set(["au", "nz", "us", "ca", "eu", "se", "fr", "gb"]);
-
-export function MenuFlag({ code }: { code: string | null }) {
-  return code && FLAGS.has(code) ? <Flag code={code as FlagCode} /> : null;
-}
 
 // One menu link: our own pages through Next's Link, other sites in a new tab.
 export default function MenuLink({
@@ -20,12 +14,8 @@ export default function MenuLink({
   onClick?: () => void;
   role?: string;
 }) {
-  const body = (
-    <>
-      <MenuFlag code={item.flag} />
-      {item.title}
-    </>
-  );
+  // No flags in menus, even where a Strapi menu item still has one set (brand decision, 21 Oct 2026).
+  const body = item.title;
   if (!item.href) return <span className={className}>{body}</span>;
   if (item.external)
     return (

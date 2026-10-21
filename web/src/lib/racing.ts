@@ -1,8 +1,7 @@
 import type { FlagCode } from "@/components/Flag";
 
-// The "Racing" menu, as on the live site: each country links out to its
-// racing authority's Fields and Results & Replays, plus our own race
-// calendar where we publish one.
+// The "Racing" menu: AUS and NZ Fields and Results & Replays are our own pages
+// (HarnessLink racing data); other countries link out to their racing authority.
 export type RacingCountry = {
   label: string; // as shown in the menu (AUS, NZ, USA…)
   name: string; // full name, for calendar link text
@@ -17,16 +16,16 @@ export const RACING: RacingCountry[] = [
     label: "AUS",
     name: "Australia",
     flag: "au",
-    fields: "https://www.harness.org.au/racing/fields",
-    results: "https://www.harness.org.au/racing/results/?event=resultsIndex&search_type=daily",
+    fields: "/racing/au/fields/",
+    results: "/racing/au/results/",
     calendar: "/feature-race-calendar-au/",
   },
   {
     label: "NZ",
     name: "New Zealand",
     flag: "nz",
-    fields: "https://infohorse.hrnz.co.nz/datahrs/fields/fields.htm",
-    results: "https://infohorse.hrnz.co.nz/datahrs/results/results.htm",
+    fields: "/racing/nz/fields/",
+    results: "/racing/nz/results/",
     calendar: "/feature-race-calendar-nz/",
   },
   {

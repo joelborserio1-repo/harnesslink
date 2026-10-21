@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
+import { raceHref } from "@/lib/racingLinks";
 import type { BoardRace, RaceBoard } from "@/lib/harnesslink";
 
 // Live AU and NZ harness races from the HarnessLink API (TAB + HRNZ), loaded
@@ -43,7 +45,7 @@ function Silk({ path, seed }: { path: string | null; seed: number }) {
 
 function Row({ r, i, side, children }: { r: BoardRace; i: number; side: ReactNode; children: ReactNode }) {
   return (
-    <div className="grid grid-cols-[52px_1fr_auto_auto] items-center gap-3 border-b border-line px-3.5 py-3 last:border-0">
+    <Link href={raceHref(r.id)} className="grid grid-cols-[52px_1fr_auto_auto] items-center gap-3 border-b border-line px-3.5 py-3 last:border-0 hover:bg-[#f7f9fd]">
       <div className="flex flex-col items-center gap-1">
         <span className={`grid h-[34px] w-[34px] place-items-center text-[13px] font-extrabold ${BADGE[COLS[i % COLS.length]]}`}>R{r.number}</span>
         {side}
@@ -59,7 +61,7 @@ function Row({ r, i, side, children }: { r: BoardRace; i: number; side: ReactNod
       <span className="min-w-[52px] bg-[#eef0f4] px-2.5 py-1 text-center text-[13px] font-bold tabular-nums text-[#2b303a]">
         {r.runner?.price ?? "–"}
       </span>
-    </div>
+    </Link>
   );
 }
 
@@ -124,6 +126,9 @@ export default function NextToGo({ board }: { board: RaceBoard }) {
             ))}
       </div>
 
+      <Link href={tab === "ntg" ? "/racing/" : "/racing/nz/results/"} className="block border-t border-line py-3 text-center text-xs font-bold uppercase tracking-wider text-blue hover:bg-[#f7f9fd]">
+        {tab === "ntg" ? "All fields" : "All results & replays"} →
+      </Link>
       <p className="border-t border-line py-2.5 text-center text-[11px] text-muted">
         {tab === "ntg" ? "Favourite's fixed odds" : "Winner's final fixed odds"} · TAB and HRNZ data · Gamble responsibly
       </p>
