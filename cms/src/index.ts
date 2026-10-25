@@ -2,6 +2,7 @@ import type { Core } from '@strapi/strapi';
 import { LAYOUTS, LAYOUT_VERSION } from './admin-layouts';
 import { seedMenus } from './menus';
 import { applyPluginSettings } from './plugin-settings';
+import { registerDashboardRoutes } from './dashboard';
 
 // What the public website may read without a token (Users & Permissions
 // "Public" role). Ads, subscribers, redirects and the 404 log are only reached
@@ -192,6 +193,7 @@ function newsroomDefaults(strapi: Core.Strapi) {
 export default {
   register({ strapi }: { strapi: Core.Strapi }) {
     newsroomDefaults(strapi);
+    registerDashboardRoutes(strapi);
   },
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {

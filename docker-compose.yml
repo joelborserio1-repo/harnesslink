@@ -82,9 +82,17 @@ services:
       # Site search. Indexing switches off if MEILI_MASTER_KEY is unset.
       MEILI_HOST: ${MEILI_MASTER_KEY:+http://search:7700}
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-}
-      # Preview button: the public site address and a secret shared with web.
-      SITE_URL: ${SITE_URL:-}
+      # Preview button: secret shared with web (SITE_URL below is the site address).
       PREVIEW_SECRET: ${PREVIEW_SECRET:-}
+      # Home-screen dashboard (src/dashboard.ts). Each widget shows "not connected" until its key is set.
+      MATOMO_URL: ${MATOMO_URL:-}
+      MATOMO_SITE_ID: ${MATOMO_SITE_ID:-1}
+      MATOMO_TOKEN: ${MATOMO_TOKEN:-}
+      POSTIZ_URL: ${POSTIZ_URL:-}
+      POSTIZ_API_KEY: ${POSTIZ_API_KEY:-}
+      HARNESSLINK_API_URL: ${HARNESSLINK_API_URL:-https://admin.harnesslink.com/api}
+      HARNESSLINK_API_KEY: ${HARNESSLINK_API_KEY:-}
+      SITE_URL: ${SITE_URL:-https://staging.harnesslink.com}
     volumes:
       - cms_uploads:/app/public/uploads
     ports:
@@ -114,6 +122,12 @@ services:
       MEILI_HOST: ${MEILI_MASTER_KEY:+http://search:7700}
       MEILI_SEARCH_KEY: ${MEILI_SEARCH_KEY:-}
       PREVIEW_SECRET: ${PREVIEW_SECRET:-}
+      # Next To Go / Results widget (server-side only). Widget is hidden when the key is unset.
+      HARNESSLINK_API_URL: ${HARNESSLINK_API_URL:-https://admin.harnesslink.com/api}
+      HARNESSLINK_API_KEY: ${HARNESSLINK_API_KEY:-}
+      # Cookieless Matomo page views; off unless both are set.
+      MATOMO_URL: ${MATOMO_URL:-}
+      MATOMO_SITE_ID: ${MATOMO_SITE_ID:-}
     depends_on:
       - api
       - cms

@@ -37,11 +37,22 @@ function relatedHref(r: NonNullable<NavItem["related"]>): string | null {
   return null;
 }
 
+// Menu items saved in Strapi before our own racing pages existed still point at
+// HRA / HRNZ. Send those to our pages instead.
+const OWN_RACING: [RegExp, string][] = [
+  [/^https?:\/\/(www\.)?harness\.org\.au\/racing\/fields/i, "/racing/au/fields/"],
+  [/^https?:\/\/(www\.)?harness\.org\.au\/racing\/results/i, "/racing/au/results/"],
+  [/^https?:\/\/infohorse\.hrnz\.co\.nz\/datahrs\/fields/i, "/racing/nz/fields/"],
+  [/^https?:\/\/infohorse\.hrnz\.co\.nz\/datahrs\/results/i, "/racing/nz/results/"],
+];
+
 function toItem(n: NavItem): MenuItem {
   let href: string | null = null;
   if (n.type === "EXTERNAL") href = n.externalPath || n.path || null;
   else if (n.type === "INTERNAL") href = n.related ? relatedHref(n.related) : null;
   if (href && OWN_HOSTS.test(href)) href = href.replace(OWN_HOSTS, "") || "/";
+  const own = href ? OWN_RACING.find(([re]) => re.test(href!)) : undefined;
+  if (own) href = own[1];
   return {
     title: n.title,
     href,

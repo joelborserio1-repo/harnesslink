@@ -219,3 +219,10 @@ body {
   .prose-article .image-style-align-right,
   .prose-article .image-style-side { float: none; max-width: 100%; margin: 1.5rem 0; }
 }
+
+/* Racing data pages (fields, results, profiles): condensed display face for names and figures,
+   matching the HarnessLink admin. */
+.font-display {
+  font-family: "Barlow Condensed", "Arial Narrow", var(--font-sans);
+  letter-spacing: 0.01em;
+}

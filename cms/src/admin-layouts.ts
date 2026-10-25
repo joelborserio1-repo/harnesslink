@@ -17,7 +17,7 @@ type Layout = {
   fields: Record<string, FieldMeta>;
 };
 
-export const LAYOUT_VERSION = '2026-10-26.2';
+export const LAYOUT_VERSION = '2026-10-26.3';
 
 const SEO_HELP = 'Search and social-media title/description. Leave blank to use the headline and standfirst.';
 
