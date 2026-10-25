@@ -525,8 +525,8 @@ export interface ApiAdAd extends Struct.CollectionTypeSchema {
 export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
   collectionName: 'articles';
   info: {
-    description: 'A news story. Migrated stories keep their WordPress HTML verbatim; new ones use the Blocks editor.';
-    displayName: 'Article';
+    description: 'A news story. Written in the Story editor (CKEditor, HTML); migrated stories keep their WordPress HTML.';
+    displayName: 'Story';
     pluralName: 'articles';
     singularName: 'article';
   };
@@ -538,8 +538,14 @@ export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
     body: Schema.Attribute.Blocks;
     bodyFormat: Schema.Attribute.Enumeration<['blocks', 'legacy_html']> &
       Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<'blocks'>;
-    bodyHtml: Schema.Attribute.Text;
+      Schema.Attribute.DefaultTo<'legacy_html'>;
+    bodyHtml: Schema.Attribute.RichText &
+      Schema.Attribute.CustomField<
+        'plugin::ckeditor5.CKEditor',
+        {
+          preset: 'defaultHtml';
+        }
+      >;
     categories: Schema.Attribute.Relation<
       'manyToMany',
       'api::category.category'
@@ -838,6 +844,14 @@ export interface ApiMissedPathMissedPath extends Struct.CollectionTypeSchema {
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+    'content-type-builder': {
+      visible: true;
+    };
+  };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -876,8 +890,14 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
     body: Schema.Attribute.Blocks;
     bodyFormat: Schema.Attribute.Enumeration<['blocks', 'legacy_html']> &
       Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<'blocks'>;
-    bodyHtml: Schema.Attribute.Text;
+      Schema.Attribute.DefaultTo<'legacy_html'>;
+    bodyHtml: Schema.Attribute.RichText &
+      Schema.Attribute.CustomField<
+        'plugin::ckeditor5.CKEditor',
+        {
+          preset: 'defaultHtml';
+        }
+      >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

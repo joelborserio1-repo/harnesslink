@@ -2,6 +2,7 @@
 // (STRAPI_URL). Fetches run in React Server Components, so no browser CORS is
 // involved.
 import { blocksToHtml } from "@/lib/blocks";
+import { previewHeaders } from "@/lib/preview";
 
 const STRAPI_URL = (process.env.STRAPI_URL || "http://127.0.0.1:1337").replace(/\/$/, "");
 // Where browsers load Strapi-hosted media from (the CMS's public address).
@@ -283,8 +284,34 @@ export async function listArticles(page = 1, perPage = 12) {
   return { articles, total, page };
 }
 
-export async function getArticle(slug: string): Promise<ArticleFull | null> {
-  const data = await strapi<List<SArticle>>("/articles", {
+// The Story editor saves pasted videos as <oembed url="…">, which browsers
+// ignore: YouTube and Vimeo become players, anything else a plain link.
+function videoPlayer(url: string): string {
+  const yt = url.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/);
+  if (yt) return `<iframe src="https://www.youtube-nocookie.com/embed/${yt[1]}" title="Video" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe>`;
+  const vimeo = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if (vimeo) return `<iframe src="https://player.vimeo.com/video/${vimeo[1]}" title="Video" allow="fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+  return `<a href="${url}">${url}</a>`;
+}
+
+// Story HTML from the Story editor: photos point at the CMS's own /uploads/
+// (the page needs the CMS's public address in front), videos need players.
+function withMediaBase(html: string | null): string | null {
+  if (!html) return html;
+  return html
+    .replace(/((?:src|href|srcset)=["']|,\s*)\/uploads\//g, `$1${MEDIA_BASE}/uploads/`)
+    .replace(/<oembed url="([^"]+)"><\/oembed>/g, (_, url: string) =>
+      /^https?:\/\//.test(url) ? `<div class="article-embed">${videoPlayer(url.replace(/&amp;/g, "&"))}</div>` : ""
+    );
+}
+
+// Draft (preview) reads go to the CMS's preview route with the shared secret
+// and are never cached.
+const draftInit = (draft: boolean): RequestInit | undefined =>
+  draft ? { headers: previewHeaders(), cache: "no-store", next: undefined } : undefined;
+
+export async function getArticle(slug: string, { draft = false } = {}): Promise<ArticleFull | null> {
+  const data = await strapi<List<SArticle>>(draft ? "/preview/articles" : "/articles", {
     filters: { slug: { $eq: slug } },
     populate: {
       featuredImage: { fields: IMAGE_FIELDS },
@@ -296,7 +323,7 @@ export async function getArticle(slug: string): Promise<ArticleFull | null> {
       seo: "*",
     },
     pagination: { pageSize: 1 },
-  });
+  }, draftInit(draft));
   const a = data?.data?.[0];
   if (!a) return null;
 
@@ -316,7 +343,7 @@ export async function getArticle(slug: string): Promise<ArticleFull | null> {
 
   const seo = a.seo || {};
   const canonical = seo.canonicalUrl || `${SITE}/${a.slug}/`;
-  const bodyHtml = a.bodyFormat === "blocks" ? blocksToHtml(a.body, MEDIA_BASE) : a.bodyHtml ?? null;
+  const bodyHtml = a.bodyFormat === "blocks" ? blocksToHtml(a.body, MEDIA_BASE) : withMediaBase(a.bodyHtml ?? null);
 
   return {
     ...summary(a),
@@ -500,13 +527,13 @@ type SPage = {
   seo?: SSeo;
 };
 
-export async function getPage(path: string): Promise<StaticPage | null> {
+export async function getPage(path: string, { draft = false } = {}): Promise<StaticPage | null> {
   const clean = path.split("/").filter(Boolean).join("/");
-  const data = await strapi<List<SPage>>("/pages", {
+  const data = await strapi<List<SPage>>(draft ? "/preview/pages" : "/pages", {
     filters: { path: { $eq: clean } },
     populate: { seo: "*" },
     pagination: { pageSize: 1 },
-  });
+  }, draftInit(draft));
   const p = data?.data?.[0];
   if (!p) return null;
   const seo = p.seo || {};
@@ -514,7 +541,7 @@ export async function getPage(path: string): Promise<StaticPage | null> {
     path: p.path,
     url: `/${p.path}/`,
     title: p.title,
-    body_html: p.bodyFormat === "blocks" ? blocksToHtml(p.body, MEDIA_BASE) : p.bodyHtml ?? null,
+    body_html: p.bodyFormat === "blocks" ? blocksToHtml(p.body, MEDIA_BASE) : withMediaBase(p.bodyHtml ?? null),
     modified_at: p.modifiedDate ?? p.updatedAt ?? null,
     seo: {
       title: seo.metaTitle || `${p.title} - Harnesslink`,

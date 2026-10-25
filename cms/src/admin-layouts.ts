@@ -17,7 +17,7 @@ type Layout = {
   fields: Record<string, FieldMeta>;
 };
 
-export const LAYOUT_VERSION = '2026-10-21.3';
+export const LAYOUT_VERSION = '2026-10-26.2';
 
 const SEO_HELP = 'Search and social-media title/description. Leave blank to use the headline and standfirst.';
 
@@ -31,16 +31,17 @@ export const LAYOUTS: Layout[] = [
     edit: [
       [['title', 12]],
       [['subtitle', 12]],
-      [['excerpt', 8], ['slug', 4]],
-      [['body', 12]],
+      [['slug', 12]],
+      [['bodyHtml', 12]],
       [['embed', 12]],
+      [['excerpt', 12]],
       [['featuredImage', 6], ['authors', 6]],
       [['primaryCategory', 6], ['categories', 6]],
       [['tags', 12]],
       [['publishDate', 6], ['modifiedDate', 6]],
       [['seo', 12]],
       [['bodyFormat', 4], ['needsReview', 4], ['viewCount', 4]],
-      [['bodyHtml', 12]],
+      [['body', 12]],
       [['legacyImage', 12]],
       [['legacyWpId', 4], ['legacyUrl', 8]],
       [['importFlags', 12]],
@@ -48,11 +49,11 @@ export const LAYOUTS: Layout[] = [
     fields: {
       title: { label: 'Headline' },
       subtitle: { label: 'Subheading', description: 'Optional line under the headline.' },
-      excerpt: { label: 'Standfirst / summary', description: 'One or two sentences. Used on story cards, in search results and social shares.' },
+      excerpt: { label: 'Standfirst / summary', description: 'One or two sentences for story cards, search and social shares. Leave empty to use the start of the story.' },
       slug: { label: 'URL', description: 'The story lives at harnesslink.com/<this>/. Never change it after publishing.' },
-      body: { label: 'Story', description: 'Write the story here.' },
+      body: { label: 'Story (block editor — older test stories only)', description: 'Not used for new stories. Write in Story above.' },
       featuredImage: { label: 'Lead photo', description: 'Shown on story cards and at the top of the story. Fill in the alt text in the media library.' },
-      authors: { label: 'Byline', description: 'First writer listed is the main byline.' },
+      authors: { label: 'Byline', description: 'Filled in with you when you start a story (if your writer profile has your login email). First writer listed is the main byline.' },
       primaryCategory: { label: 'Main section', description: 'The country/section shown above the headline (e.g. Australia).' },
       categories: { label: 'All sections', description: 'Every section the story should appear in, including Top 4.' },
       tags: { label: 'Tags', description: 'Horses, drivers, trainers, tracks and races mentioned.' },
@@ -61,10 +62,10 @@ export const LAYOUTS: Layout[] = [
       embed: { label: 'Video or social embed', description: 'Paste a YouTube, Vimeo, X, Instagram or Facebook link — the player shows under the story.' },
       modifiedDate: { label: 'Last updated' },
       seo: { label: 'Search & social', description: SEO_HELP },
-      bodyFormat: { label: 'Body type', description: 'blocks = written in Strapi. legacy_html = migrated from WordPress (edit in the HTML box below).' },
+      bodyFormat: { label: 'Body type', description: 'legacy_html = the Story editor (all new and migrated stories). blocks = the old block editor below.' },
       needsReview: { label: 'Needs a check', description: 'Set by the migration when something in the old story may not display correctly.' },
       viewCount: { label: 'Views', editable: false },
-      bodyHtml: { label: 'Migrated story HTML', description: 'Only for stories brought over from WordPress. Edit with care — this is the exact HTML the page shows.' },
+      bodyHtml: { label: 'Story', description: 'Write and format the story here, as in WordPress. Paste from Word or Google Docs keeps formatting; use the image button to add photos from the media library.' },
       legacyImage: { label: 'Migrated lead photo', description: 'Photo still served from the old WordPress uploads. Replace it by adding a Lead photo above.' },
       legacyWpId: { label: 'WordPress ID', editable: false },
       legacyUrl: { label: 'Original URL', editable: false },
@@ -134,14 +135,14 @@ export const LAYOUTS: Layout[] = [
     list: ['title', 'path', 'updatedAt'],
     sortBy: 'path',
     sortOrder: 'ASC',
-    edit: [[['title', 8], ['path', 4]], [['body', 12]], [['seo', 12]], [['bodyFormat', 4], ['modifiedDate', 4], ['legacyWpId', 4]], [['bodyHtml', 12]]],
+    edit: [[['title', 8], ['path', 4]], [['bodyHtml', 12]], [['seo', 12]], [['bodyFormat', 4], ['modifiedDate', 4], ['legacyWpId', 4]], [['body', 12]]],
     fields: {
       title: { label: 'Title' },
       path: { label: 'URL path', description: 'e.g. privacy-policy → harnesslink.com/privacy-policy/' },
-      body: { label: 'Page content' },
+      body: { label: 'Page content (block editor — older pages only)' },
       seo: { label: 'Search & social', description: SEO_HELP },
       bodyFormat: { label: 'Body type' },
-      bodyHtml: { label: 'Migrated page HTML' },
+      bodyHtml: { label: 'Page content', description: 'Write and format the page here.' },
       modifiedDate: { label: 'Last updated' },
       legacyWpId: { label: 'WordPress ID', editable: false },
     },

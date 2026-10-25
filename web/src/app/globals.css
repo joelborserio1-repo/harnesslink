@@ -193,3 +193,29 @@ body {
 /* Video / social embed added in the editor: players fill the column at 16:9. */
 .article-embed iframe { width: 100%; height: auto; aspect-ratio: 16 / 9; border: 0; }
 .article-embed blockquote { margin-inline: auto; }
+
+/* Stories written in the Story editor (CKEditor): image alignment, resized
+   images, captions and tables, so the page matches what the writer saw. */
+.prose-article figure.image { display: table; margin: 1.75rem auto; }
+.prose-article figure.image img { display: block; margin: 0 auto; }
+.prose-article figure.image > figcaption { display: table-caption; caption-side: bottom; }
+.prose-article .image_resized { max-width: 100%; }
+.prose-article .image_resized img { width: 100%; }
+.prose-article .image-style-align-left,
+.prose-article .image-style-block-align-left { float: left; margin: 0.4rem 1.5rem 1rem 0; max-width: 50%; }
+.prose-article .image-style-align-right,
+.prose-article .image-style-block-align-right,
+.prose-article .image-style-side { float: right; margin: 0.4rem 0 1rem 1.5rem; max-width: 50%; }
+.prose-article .image-style-align-center { margin-inline: auto; }
+.prose-article figure.table { margin: 1.5rem 0; overflow-x: auto; }
+.prose-article figure.media { margin: 1.75rem 0; }
+.prose-article .text-tiny { font-size: 0.7em; }
+.prose-article .text-small { font-size: 0.85em; }
+.prose-article .text-big { font-size: 1.4em; }
+.prose-article .text-huge { font-size: 1.8em; }
+.prose-article::after { content: ""; display: table; clear: both; }
+@media (max-width: 639px) {
+  .prose-article .image-style-align-left,
+  .prose-article .image-style-align-right,
+  .prose-article .image-style-side { float: none; max-width: 100%; margin: 1.5rem 0; }
+}

@@ -4,8 +4,8 @@
   "info": {
     "singularName": "article",
     "pluralName": "articles",
-    "displayName": "Article",
-    "description": "A news story. Migrated stories keep their WordPress HTML verbatim; new ones use the Blocks editor."
+    "displayName": "Story",
+    "description": "A news story. Written in the Story editor (CKEditor, HTML); migrated stories keep their WordPress HTML."
   },
   "options": {
     "draftAndPublish": true
@@ -33,14 +33,18 @@
         "blocks",
         "legacy_html"
       ],
-      "default": "blocks",
+      "default": "legacy_html",
       "required": true
     },
     "body": {
       "type": "blocks"
     },
     "bodyHtml": {
-      "type": "text"
+      "type": "customField",
+      "customField": "plugin::ckeditor5.CKEditor",
+      "options": {
+        "preset": "defaultHtml"
+      }
     },
     "embed": {
       "type": "customField",

@@ -27,7 +27,10 @@ WordPress ──export_posts.php──▶ cms/scripts/import-wordpress.js ──
 - **Content-type builder / content manager** — every type is defined as code, so changes are reviewed in git. The newsroom layout (labels, help text, field order, newest-first lists) is applied from `src/admin-layouts.ts`; bump `LAYOUT_VERSION` to re-apply after changing it.
 - **Draft & Publish** — articles and pages.
 - **Admin roles** — journalists get the built-in **Author** role (create and edit their own stories; publishing is removed for Author at startup), editors get **Editor**, the desk lead **Super Admin**. Invite people under *Settings → Administration panel → Users*.
-- **Blocks editor** — new stories. Migrated stories keep their WordPress HTML in *Migrated story HTML* (`bodyFormat: legacy_html`) and are never converted.
+- **Story editor** — CKEditor 5 (community plugin `@_sh/strapi-plugin-ckeditor`, bundled, no licence key) on the *Story* field (`bodyHtml`, `bodyFormat: legacy_html`). New and migrated stories use the same editor; migrated HTML is untouched unless someone edits and saves the story (scripts are stripped on save). The old Blocks field stays for the one test story that used it. Pasted YouTube/Vimeo links are saved as `<oembed>` and turned into players by the site.
+- **Preview** — the Preview button opens the saved draft on the website (Next draft mode), with Draft/Published tabs and a mobile view. Needs `SITE_URL` and `PREVIEW_SECRET` in both cms and web. Drafts come from `GET /api/preview/:collection` (secret header only).
+- **Home screen** — Strapi's *Last edited* / *Last published* plus our *Stories waiting to be published* (`src/admin/StoriesWaitingWidget.tsx`).
+- **WordPress habits** (`src/index.ts`) — a new story gets the writer whose profile email matches the signed-in admin as its byline; an empty standfirst is filled from the first paragraph.
 - **Media library** — lead photos and ad creatives for new content. Migrated photos stay on the WordPress uploads until media moves (BUILD_V1 Step 6).
 - **Users & Permissions (Public role)** — the site reads articles, writers, sections, tags, pages and the country nav without a token. Ads, subscribers, redirects and the 404 log are never listed publicly.
 - **Cron** — still runs the older *Schedule for* field for any story that has it set; new scheduling uses Publisher (below).
@@ -63,6 +66,11 @@ Content History (revisions), Releases (Strapi's own scheduler), Review Workflows
 | `POST /api/missed-paths/log` | The site's 404 page reports misses here |
 | `POST /api/subscribers/signup` | Newsletter / registration-wall signup |
 | `GET /api/sitemap/articles`, `/api/sitemap/archives` | Lean slug + date listings for the sitemaps |
+| `GET /api/preview/target`, `/api/preview/:collection` | Drafts for the Preview button (needs the `x-preview-secret` header) |
+
+**Drafts are never public.** Strapi would otherwise return drafts to anyone adding `?status=draft`; `src/middlewares/published-only.ts` refuses that unless the request carries an API token.
+
+The 404 log (*Missed path*) is hidden from the admin menu so it doesn't flood the home screen; read it with SQL or re-enable it in its schema.
 
 The site reaches these through its own paths (`/ad/:id/click/`, `/track/view/:slug/`, `/api/subscribe/`), rewritten in `web/next.config.ts`.
 

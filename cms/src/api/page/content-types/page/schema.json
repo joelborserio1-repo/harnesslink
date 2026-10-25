@@ -28,14 +28,18 @@
         "blocks",
         "legacy_html"
       ],
-      "default": "blocks",
+      "default": "legacy_html",
       "required": true
     },
     "body": {
       "type": "blocks"
     },
     "bodyHtml": {
-      "type": "text"
+      "type": "customField",
+      "customField": "plugin::ckeditor5.CKEditor",
+      "options": {
+        "preset": "defaultHtml"
+      }
     },
     "seo": {
       "type": "component",

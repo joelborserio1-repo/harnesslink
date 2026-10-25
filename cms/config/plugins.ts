@@ -129,6 +129,8 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
       },
     },
   },
+  // Strapi Cloud's "Deploy now" panel — we host our own.
+  'strapi-cloud': { enabled: false },
   upload: {
     config: {
       security: {

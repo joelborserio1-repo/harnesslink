@@ -82,6 +82,9 @@ services:
       # Site search. Indexing switches off if MEILI_MASTER_KEY is unset.
       MEILI_HOST: ${MEILI_MASTER_KEY:+http://search:7700}
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-}
+      # Preview button: the public site address and a secret shared with web.
+      SITE_URL: ${SITE_URL:-}
+      PREVIEW_SECRET: ${PREVIEW_SECRET:-}
     volumes:
       - cms_uploads:/app/public/uploads
     ports:
@@ -110,6 +113,7 @@ services:
       # back to a plain database search when unset.
       MEILI_HOST: ${MEILI_MASTER_KEY:+http://search:7700}
       MEILI_SEARCH_KEY: ${MEILI_SEARCH_KEY:-}
+      PREVIEW_SECRET: ${PREVIEW_SECRET:-}
     depends_on:
       - api
       - cms

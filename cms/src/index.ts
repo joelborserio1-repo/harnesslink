@@ -63,6 +63,7 @@ const INDEXES: Array<[name: string, table: string, columns: string]> = [
   ['hl_articles_legacy_url', 'articles', 'legacy_url'], // checked for uniqueness on every publish
   ['hl_articles_publish_date', 'articles', 'publish_date DESC'],
   ['hl_articles_published_at', 'articles', 'published_at'],
+  ['hl_articles_updated_at', 'articles', 'updated_at DESC'], // the dashboard's "waiting" and "last edited" lists
   ['hl_redirects_from_path', 'redirects', 'from_path'],
   ['hl_authors_slug', 'authors', 'slug'],
   ['hl_categories_slug', 'categories', 'slug'],
@@ -125,21 +126,63 @@ async function applyEditorLayouts(strapi: Core.Strapi) {
   strapi.log.info(`[harnesslink] editor layouts applied (${LAYOUT_VERSION})`);
 }
 
-// A story's date is `publishDate` (migrated stories keep their WordPress
-// date). One published for the first time from the admin — by hand or by
-// Publisher's schedule — gets the moment it went live; later edits keep it.
-const DATED = ['api::article.article'];
+// WordPress habits, applied whenever a story is saved through Strapi:
+// - first publish stamps `publishDate` (migrated stories keep their
+//   WordPress date; later edits keep it);
+// - a new story with no byline gets the writer whose profile email matches
+//   the signed-in admin;
+// - an empty standfirst is filled from the opening of the story.
+const ARTICLE = 'api::article.article';
+const EXCERPT_LENGTH = 200;
 
-function datePublishedStories(strapi: Core.Strapi) {
+function excerptFrom(html: string): string {
+  const firstPara = html.match(/<p[^>]*>([\s\S]*?)<\/p>/i)?.[1] ?? html;
+  const text = firstPara
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;|&rsquo;/g, '\u2019')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (text.length <= EXCERPT_LENGTH) return text;
+  return `${text.slice(0, text.lastIndexOf(' ', EXCERPT_LENGTH)).replace(/[,;:.\s]+$/, '')}\u2026`;
+}
+
+function relationEmpty(rel: unknown): boolean {
+  if (rel == null) return true;
+  if (Array.isArray(rel)) return rel.length === 0;
+  const r = rel as { connect?: unknown[]; set?: unknown[] };
+  return !r.connect?.length && !r.set?.length;
+}
+
+function newsroomDefaults(strapi: Core.Strapi) {
   strapi.documents.use(async (ctx, next) => {
-    if (ctx.action === 'publish' && DATED.includes(ctx.uid)) {
-      const documentId = (ctx.params as { documentId?: string }).documentId;
-      if (documentId) {
-        const docs = strapi.documents(ctx.uid as 'api::article.article');
-        const draft = await docs.findOne({ documentId, status: 'draft', fields: ['publishDate'] });
-        if (draft && !draft.publishDate) {
-          await docs.update({ documentId, data: { publishDate: new Date().toISOString() } as never });
+    if (ctx.uid !== ARTICLE) return next();
+    const docs = strapi.documents(ARTICLE);
+    const params = ctx.params as { documentId?: string; data?: Record<string, any> };
+
+    if ((ctx.action === 'create' || ctx.action === 'update') && params.data) {
+      const data = params.data;
+      if (!data.excerpt && typeof data.bodyHtml === 'string' && data.bodyHtml.trim()) {
+        data.excerpt = excerptFrom(data.bodyHtml);
+      }
+      if (ctx.action === 'create' && relationEmpty(data.authors)) {
+        const email = strapi.requestContext.get()?.state?.user?.email;
+        if (email) {
+          const author = await strapi.documents('api::author.author').findFirst({
+            filters: { email: { $eqi: email } },
+            fields: ['documentId'],
+          });
+          if (author) data.authors = { connect: [{ documentId: author.documentId }] };
         }
+      }
+    }
+
+    if (ctx.action === 'publish' && params.documentId) {
+      const draft = await docs.findOne({ documentId: params.documentId, status: 'draft', fields: ['publishDate'] });
+      if (draft && !draft.publishDate) {
+        await docs.update({ documentId: params.documentId, data: { publishDate: new Date().toISOString() } as never });
       }
     }
     return next();
@@ -148,7 +191,7 @@ function datePublishedStories(strapi: Core.Strapi) {
 
 export default {
   register({ strapi }: { strapi: Core.Strapi }) {
-    datePublishedStories(strapi);
+    newsroomDefaults(strapi);
   },
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { draftMode } from "next/headers";
 import { getArticle, getPage, listArticles, type ArticleFull } from "@/lib/api";
 import StaticPageView from "@/components/StaticPageView";
 import { formatDate, formatTime } from "@/lib/format";
@@ -13,6 +14,7 @@ import Comments from "@/components/article/Comments";
 import AdSlot from "@/components/AdSlot";
 import ArticleTile from "@/components/home/ArticleTile";
 import ShareLinks from "@/components/article/ShareLinks";
+import PreviewBanner from "@/components/PreviewBanner";
 
 // SSR per request on staging (no build-time API dependency). For production,
 // switch to ISR: `export const revalidate = 60` + a generateStaticParams that
@@ -28,17 +30,18 @@ function robotsFrom(value: string) {
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const article = await getArticle(slug);
+  const { isEnabled: draft } = await draftMode();
+  const article = await getArticle(slug, { draft });
   if (!article) {
     // Articles and pages share the root namespace on WordPress; a slug that is
     // not an article may be a migrated static page.
-    const page = await getPage(slug);
+    const page = await getPage(slug, { draft });
     if (!page) return {};
     return {
       title: { absolute: page.seo.title },
       description: page.seo.description ?? undefined,
       alternates: { canonical: page.seo.canonical_url },
-      robots: robotsFrom(page.seo.robots),
+      robots: draft ? { index: false, follow: false } : robotsFrom(page.seo.robots),
     };
   }
 
@@ -47,7 +50,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     title: article.title, // the layout template appends "| Harnesslink"
     description: seo.description ?? undefined,
     alternates: { canonical: seo.canonical_url },
-    robots: robotsFrom(seo.robots),
+    robots: draft ? { index: false, follow: false } : robotsFrom(seo.robots),
     openGraph: {
       type: "article",
       title: seo.og_title ?? article.title,
@@ -96,11 +99,18 @@ function newsArticleJsonLd(article: ArticleFull) {
 
 export default async function ArticlePage({ params }: Params) {
   const { slug } = await params;
-  const article = await getArticle(slug);
+  // Draft mode is switched on by the CMS's Preview button (/api/preview/).
+  const { isEnabled: draft } = await draftMode();
+  const article = await getArticle(slug, { draft });
   if (!article) {
-    const page = await getPage(slug);
+    const page = await getPage(slug, { draft });
     if (!page) notFound();
-    return <StaticPageView page={page} />;
+    return (
+      <>
+        {draft && <PreviewBanner path={`/${slug}/`} />}
+        <StaticPageView page={page} />
+      </>
+    );
   }
 
   // "Most Read" widget — recent stories, excluding this one.
@@ -120,8 +130,10 @@ export default async function ArticlePage({ params }: Params) {
   const lead = !bodyHasImage ? article.featured_image : null;
 
   return (
-    <div className="wrap my-7">
-      <ViewBeacon slug={article.slug} />
+    <>
+      {draft && <PreviewBanner path={article.url} />}
+      <div className="wrap my-7">
+      {!draft && <ViewBeacon slug={article.slug} />}
       <RegistrationWall slug={article.slug} />
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
         <div className="min-w-0">
@@ -291,6 +303,7 @@ export default async function ArticlePage({ params }: Params) {
 
         <ArticleSidebar mostRead={mostRead} />
       </div>
-    </div>
+      </div>
+    </>
   );
 }
