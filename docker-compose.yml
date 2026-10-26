@@ -84,6 +84,15 @@ services:
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-}
       # Preview button: secret shared with web (SITE_URL below is the site address).
       PREVIEW_SECRET: ${PREVIEW_SECRET:-}
+      # Reader sign-in emails (Brevo SMTP). Unset = emails are logged, not sent.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      EMAIL_FROM: ${EMAIL_FROM:-Harnesslink <no-reply@harnesslink.com>}
+      # New readers who tick The Insider join this Mailchimp audience.
+      MAILCHIMP_API_KEY: ${MAILCHIMP_API_KEY:-}
+      MAILCHIMP_AUDIENCE_ID: ${MAILCHIMP_AUDIENCE_ID:-}
       # Home-screen dashboard (src/dashboard.ts). Each widget shows "not connected" until its key is set.
       MATOMO_URL: ${MATOMO_URL:-}
       MATOMO_SITE_ID: ${MATOMO_SITE_ID:-1}

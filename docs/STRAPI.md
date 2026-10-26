@@ -46,6 +46,16 @@ WordPress ──export_posts.php──▶ cms/scripts/import-wordpress.js ──
 
 The Navigation and Comments plugins read their settings from the database, not the config file, so `src/plugin-settings.ts` copies the file settings in at startup when the saved ones are missing (comment approval and hidden emails depend on this). Later changes on their Settings pages are kept.
 
+## Readers (sign-in, the registration wall, The Insider)
+
+- **Accounts** are Strapi's built-in Users & Permissions users, shown in the admin as **Reader** (*Content Manager → Reader*). Extra fields (`src/extensions/users-permissions/strapi-server.ts`): name, *Gets The Insider*, *Signed up from*, sign-up / last-visit dates, WordPress id. Close an account with *Account closed* rather than deleting it.
+- **Sign-in** goes through our own routes (`src/api/reader/`): `POST /api/readers/register | login | refresh | forgot-password | reset-password`, `GET/PUT /api/readers/me`. Strapi's raw `/api/auth/local/register` is switched off at startup (`src/readers-setup.ts`). Failed sign-ins pause after 8 tries per email in 15 minutes.
+- **Sessions**: 30-day tokens (`jwtManagement: legacy-support`), kept by the website in an httpOnly cookie and swapped for a fresh one once a day while the reader keeps visiting (`web/src/proxy.ts`). Only the first name is readable by page scripts (`hl_reader`), for the header and the wall.
+- **Website**: `/login/`, `/register/`, `/password-reset/` (`?code=` to set a new one), `/my-account/` (name, The Insider, sign out). Leaky Paywall's `/login-2/`, `/register-2/`, `/account/`, `/account-2/`, `/password-reset-2/` redirect to them. The wall (`RegistrationWall.tsx`) allows 3 stories per 30 days, then asks readers to sign in (or create a free account).
+- **WordPress readers** keep their passwords: `migration/export_readers.php` (read-only) exports subscribers with their WordPress password hash; `node scripts/import-readers.js readers.json` imports them. On first sign-in the WordPress hash (`$wp$2y$…`, WordPress 6.8+) is checked, replaced with Strapi's own and forgotten. The export file holds hashes: root-only, deleted after import.
+- **Email** (password reset) goes through Brevo's SMTP relay when `SMTP_HOST`/`SMTP_USERNAME`/`SMTP_PASSWORD` are set; otherwise it is only logged. The wording is under *Settings → Users & Permissions → Email templates → Reset password*. Links expire after 2 hours and work once.
+- **The Insider**: readers who tick it (on sign-up, The Insider forms or My Account) are added to / removed from the Mailchimp audience (`MAILCHIMP_API_KEY`, `MAILCHIMP_AUDIENCE_ID`), tagged with where they signed up. Imported WordPress readers are not pushed to Mailchimp; their Insider status stays in Mailchimp. The old *Subscriber* list is folded into Readers at startup and hidden.
+
 ## Ads: placement, dates, countries
 
 *Start date* / *Finish date* bound when an ad runs. The **Show in …** ticks (Australia, New Zealand, USA, Canada, UK & Ireland, Europe, everywhere else) limit it to readers in those countries; none ticked = everywhere. The reader's country comes from Cloudflare's `CF-IPCountry` header, so the site must be proxied through Cloudflare (orange cloud) for targeting to work — without it every reader counts as "everywhere else". Add `?geo=NZ` to any page to preview what a reader in another country sees.

@@ -22,6 +22,12 @@ const nextConfig: NextConfig = {
       moved("/subscribe-2", "/subscribe/"), // live does the same
       moved("/privacy-policy-2", "/privacy-policy/"), // live does the same
       moved("/directory-2", "/directory/"), // duplicate hub page on live
+      // Leaky Paywall's account pages on live → the new sign-in pages.
+      moved("/login-2", "/login/"),
+      moved("/register-2", "/register/"),
+      moved("/account", "/my-account/"),
+      moved("/account-2", "/my-account/"),
+      moved("/password-reset-2", "/password-reset/"),
     ];
   },
 

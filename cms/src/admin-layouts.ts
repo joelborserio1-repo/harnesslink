@@ -17,7 +17,7 @@ type Layout = {
   fields: Record<string, FieldMeta>;
 };
 
-export const LAYOUT_VERSION = '2026-10-26.3';
+export const LAYOUT_VERSION = '2026-10-27.1';
 
 const SEO_HELP = 'Search and social-media title/description. Leave blank to use the headline and standfirst.';
 
@@ -111,6 +111,37 @@ export const LAYOUTS: Layout[] = [
       html: { label: 'HTML creative (optional)', description: 'Third-party ad code. Replaces the image if filled in.' },
       impressions: { label: 'Impressions', editable: false },
       clicks: { label: 'Clicks', editable: false },
+    },
+  },
+  {
+    uid: 'plugin::users-permissions.user',
+    list: ['email', 'firstName', 'lastName', 'insider', 'source', 'createdAt'],
+    sortBy: 'createdAt',
+    sortOrder: 'DESC',
+    pageSize: 50,
+    edit: [
+      [['firstName', 6], ['lastName', 6]],
+      [['email', 6], ['insider', 6]],
+      [['source', 4], ['signedUpAt', 4], ['lastSignInAt', 4]],
+      [['blocked', 6], ['legacyWpUserId', 6]],
+      [['password', 6], ['username', 6]],
+      [['confirmed', 4], ['provider', 4], ['role', 4]],
+    ],
+    fields: {
+      email: { label: 'Email', description: 'They sign in with this.' },
+      firstName: { label: 'First name' },
+      lastName: { label: 'Last name' },
+      insider: { label: 'Gets The Insider', description: 'Changes here don’t reach Mailchimp — readers change it on their My Account page, or edit them in Mailchimp.' },
+      source: { label: 'Signed up from', description: 'wall, register, insider-form, wordpress…', editable: false },
+      signedUpAt: { label: 'Signed up', editable: false },
+      lastSignInAt: { label: 'Last visit', editable: false },
+      blocked: { label: 'Account closed', description: 'Stops them signing in. Prefer this to deleting.' },
+      legacyWpUserId: { label: 'WordPress user id', editable: false },
+      password: { label: 'Password', description: 'Leave empty — readers set their own with “Forgot password?”.' },
+      username: { label: 'Username', description: 'Same as the email.' },
+      confirmed: { label: 'Confirmed' },
+      provider: { label: 'Sign-in method' },
+      role: { label: 'Role', description: 'Always “Authenticated” for readers.' },
     },
   },
   {

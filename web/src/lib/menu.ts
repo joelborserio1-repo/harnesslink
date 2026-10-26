@@ -113,7 +113,7 @@ const DEFAULT_MAIN: MenuItem[] = [
   link("The Insider", "/the-insider/"),
   link("Contact Us", "/contact-us/"),
   link("Directory", "/directory/"),
-  link("Login", "/subscribe/"),
+  link("Login", "/login/"),
 ];
 
 const DEFAULT_FOOTER: MenuItem[] = [

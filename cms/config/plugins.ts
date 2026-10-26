@@ -24,11 +24,29 @@ const deniedTypes = [
 ];
 
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin => ({
+  // Reader accounts. Plain 30-day tokens: the website keeps one in a secure
+  // cookie and swaps it for a fresh one each day the reader visits.
   'users-permissions': {
     config: {
-      jwtManagement: 'refresh',
-      sessions: {
-        httpOnly: true,
+      jwtManagement: 'legacy-support',
+      jwt: { expiresIn: '30d' },
+    },
+  },
+  // Sign-in emails (password reset) through Brevo's SMTP relay. Without
+  // SMTP_HOST, emails are only logged — nothing is sent.
+  email: {
+    config: {
+      provider: 'nodemailer',
+      providerOptions: env('SMTP_HOST', '')
+        ? {
+            host: env('SMTP_HOST'),
+            port: env.int('SMTP_PORT', 587),
+            auth: { user: env('SMTP_USERNAME'), pass: env('SMTP_PASSWORD') },
+          }
+        : { jsonTransport: true },
+      settings: {
+        defaultFrom: env('EMAIL_FROM', 'Harnesslink <no-reply@harnesslink.com>'),
+        defaultReplyTo: env('EMAIL_REPLY_TO', 'office@harnesslink.com'),
       },
     },
   },

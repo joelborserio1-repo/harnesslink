@@ -956,13 +956,21 @@ export interface ApiRedirectRedirect extends Struct.CollectionTypeSchema {
 export interface ApiSubscriberSubscriber extends Struct.CollectionTypeSchema {
   collectionName: 'subscribers';
   info: {
-    description: 'A free newsletter / registration-wall signup.';
+    description: 'Old Insider sign-up list \u2014 now folded into Readers (Users & Permissions users) at startup. Kept for history.';
     displayName: 'Subscriber';
     pluralName: 'subscribers';
     singularName: 'subscriber';
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+    'content-type-builder': {
+      visible: true;
+    };
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -1763,8 +1771,8 @@ export interface PluginUsersPermissionsUser
   extends Struct.CollectionTypeSchema {
   collectionName: 'up_users';
   info: {
-    description: '';
-    displayName: 'User';
+    description: 'A reader account (sign-in, The Insider). Staff log in separately.';
+    displayName: 'Reader';
     name: 'user';
     pluralName: 'users';
     singularName: 'user';
@@ -1785,6 +1793,18 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.SetMinMaxLength<{
         minLength: 6;
       }>;
+    firstName: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 80;
+      }>;
+    insider: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    lastName: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 80;
+      }>;
+    lastSignInAt: Schema.Attribute.DateTime;
+    legacyPasswordHash: Schema.Attribute.String & Schema.Attribute.Private;
+    legacyWpUserId: Schema.Attribute.BigInteger & Schema.Attribute.Unique;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -1799,10 +1819,16 @@ export interface PluginUsersPermissionsUser
     provider: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     resetPasswordToken: Schema.Attribute.String & Schema.Attribute.Private;
+    resetRequestedAt: Schema.Attribute.DateTime & Schema.Attribute.Private;
     role: Schema.Attribute.Relation<
       'manyToOne',
       'plugin::users-permissions.role'
     >;
+    signedUpAt: Schema.Attribute.DateTime;
+    source: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 60;
+      }>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

@@ -2,14 +2,22 @@ import Link from "next/link";
 import MenuDropdown from "@/components/MenuDropdown";
 import MenuLink from "@/components/MenuLink";
 import { NAV_ITEM } from "@/components/NavDropdown";
-import { getMenu } from "@/lib/menu";
+import { cookies } from "next/headers";
+import { getMenu, type MenuItem } from "@/lib/menu";
+import { READER } from "@/lib/reader";
 import { SOCIAL } from "@/lib/site";
 
 // The live site's header: navy masthead with the centred wordmark, round
 // social icons and a search line at the right, then the big uppercase menu
 // (edited in Strapi under Navigation → "Main menu").
 export default async function SiteHeader() {
-  const menu = await getMenu("main-menu");
+  // Signed-in readers see their name where "Login" is, linking to their account.
+  const reader = (await cookies()).get(READER)?.value;
+  const name = reader ? decodeURIComponent(reader).slice(0, 20) : "";
+  const isLogin = (i: MenuItem) => i.href === "/login/" || i.title.toLowerCase() === "login";
+  const menu = (await getMenu("main-menu")).map((i) =>
+    name && isLogin(i) ? { ...i, title: name, href: "/my-account/", external: false } : i
+  );
   return (
     <header className="bg-navy">
       <div className="wrap relative flex items-center justify-center pb-1 pt-5 sm:min-h-[83px] sm:pt-3">

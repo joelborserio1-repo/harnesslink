@@ -8,10 +8,12 @@ import { useState } from "react";
 export default function SubscribeForm({
   dark = false,
   cta = "Subscribe free",
+  source = "insider-form",
   onDone,
 }: {
   dark?: boolean;
   cta?: string;
+  source?: string;
   onDone?: () => void;
 }) {
   const [email, setEmail] = useState("");
@@ -24,7 +26,7 @@ export default function SubscribeForm({
       const res = await fetch("/api/subscribe/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, source }),
       });
       if (!res.ok) throw new Error();
       setState("done");

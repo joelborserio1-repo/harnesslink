@@ -5,12 +5,19 @@
     "singularName": "subscriber",
     "pluralName": "subscribers",
     "displayName": "Subscriber",
-    "description": "A free newsletter / registration-wall signup."
+    "description": "Old Insider sign-up list \u2014 now folded into Readers (Users & Permissions users) at startup. Kept for history."
   },
   "options": {
     "draftAndPublish": false
   },
-  "pluginOptions": {},
+  "pluginOptions": {
+    "content-manager": {
+      "visible": false
+    },
+    "content-type-builder": {
+      "visible": true
+    }
+  },
   "attributes": {
     "email": {
       "type": "email",

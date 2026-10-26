@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { RENEW_AFTER_MS, SESSION, SESSION_AT, clearSession, readerApi, setSession } from "@/lib/reader";
 
 const STRAPI_URL = (process.env.STRAPI_URL || "http://127.0.0.1:1337").replace(/\/$/, "");
 
@@ -35,11 +36,32 @@ export async function proxy(req: NextRequest) {
 
   const headers = new Headers(req.headers);
   headers.set("x-invoked-path", pathname);
+  const renewal = await renewSession(req);
   // Reader's country for ad targeting: Cloudflare's CF-IPCountry, or
   // ?geo=NZ to preview what a reader in another country sees.
   const geo = req.nextUrl.searchParams.get("geo") || req.headers.get("cf-ipcountry") || "";
   headers.set("x-hl-country", /^[A-Za-z]{2}$/.test(geo) ? geo.toUpperCase() : "");
-  return withRobots(NextResponse.next({ request: { headers } }));
+  const res = withRobots(NextResponse.next({ request: { headers } }));
+  renewal?.(res);
+  return res;
+}
+
+// Signed-in readers get a fresh 30-day session once a day while they keep
+// visiting, so regular readers are never signed out. Returns a function that
+// writes the new cookies onto the response (or clears a dead session).
+async function renewSession(req: NextRequest): Promise<((res: NextResponse) => void) | null> {
+  const token = req.cookies.get(SESSION)?.value;
+  if (!token) return null;
+  const at = Number(req.cookies.get(SESSION_AT)?.value || 0);
+  if (Date.now() - at < RENEW_AFTER_MS) return null;
+  try {
+    const { status, ok, data } = await readerApi("refresh", { method: "POST", token });
+    if (ok) return (res) => setSession(res, data.token, data.reader);
+    if (status === 401) return (res) => clearSession(res);
+  } catch {
+    // CMS unreachable: keep the current session and try again next visit
+  }
+  return null;
 }
 
 // Skip Next internals, the API, and anything with a file extension (assets).
