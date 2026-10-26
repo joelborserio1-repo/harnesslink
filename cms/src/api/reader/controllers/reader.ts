@@ -161,7 +161,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => {
         : null;
       const fresh = reader?.resetRequestedAt && Date.now() - new Date(reader.resetRequestedAt).getTime() < RESET_LINK_MS;
       if (!reader || reader.blocked || !fresh) return fail(ctx, 400, 'expired', 'That link has expired — ask for a new one.');
-      await strapi.plugin('users-permissions').service('user').edit(reader.id, { password, legacyPasswordHash: null });
+      await accounts().setPassword(reader.id, password);
       await strapi.db.query(USER).update({ where: { id: reader.id }, data: { resetPasswordToken: null, resetRequestedAt: null, lastSignInAt: new Date() } });
       failures.delete(reader.email);
       await session(ctx, reader);

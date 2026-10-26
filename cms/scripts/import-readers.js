@@ -45,23 +45,31 @@ async function main() {
           } else counts.skipped++;
           continue;
         }
-        await app.documents(USER).create({
-          data: {
-            username: email,
-            email,
-            provider: 'local',
-            confirmed: true,
-            blocked: false,
-            role: role.id,
-            firstName: r.first_name || null,
-            lastName: r.last_name || null,
-            insider: false,
-            source: 'wordpress',
-            signedUpAt: r.registered ? new Date(r.registered) : null,
-            legacyWpUserId: r.id,
-            legacyPasswordHash: typeof r.pass === 'string' && r.pass.startsWith('$wp$2') ? r.pass : null,
-          },
-        });
+        const data = {
+          username: email,
+          email,
+          provider: 'local',
+          confirmed: true,
+          blocked: false,
+          role: role.id,
+          firstName: r.first_name || null,
+          lastName: r.last_name || null,
+          insider: false,
+          source: 'wordpress',
+          signedUpAt: r.registered ? new Date(r.registered) : null,
+          legacyWpUserId: r.id,
+          legacyPasswordHash: typeof r.pass === 'string' && r.pass.startsWith('$wp$2') ? r.pass : null,
+        };
+        try {
+          await app.documents(USER).create({ data });
+        } catch (err) {
+          // A handful of WordPress addresses fail Strapi's stricter email check
+          // ("a..b@gmail.com" — Gmail delivers them). Keep them exactly as
+          // they are so those readers can still sign in.
+          if (!/email must be a valid email/.test(err.message)) throw err;
+          const now = new Date();
+          await app.db.query(USER).create({ data: { ...data, createdAt: now, updatedAt: now, publishedAt: now } });
+        }
         counts.created++;
       } catch (err) {
         counts.failed++;

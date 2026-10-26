@@ -1,4 +1,5 @@
 import { createHmac, randomBytes } from 'node:crypto';
+import bcrypt from 'bcryptjs';
 import _ from 'lodash';
 import type { Core } from '@strapi/strapi';
 
@@ -44,12 +45,23 @@ export default ({ strapi }: { strapi: Core.Strapi }) => {
       return up().service('user').validatePassword(prehash, bcryptHash);
     },
 
+    // Sets a reader's password (Strapi's bcrypt format) and drops any
+    // WordPress hash. Written straight to the table: a few migrated readers
+    // have addresses Strapi's stricter email check refuses (e.g. "a..b@"),
+    // and saving through the document service would fail for them.
+    async setPassword(readerId: number, password: string) {
+      await strapi.db.query(USER).update({
+        where: { id: readerId },
+        data: { password: await bcrypt.hash(password, 10), legacyPasswordHash: null },
+      });
+    },
+
     async checkPassword(reader: ReaderRow, password: string): Promise<'ok' | 'wrong' | 'no-password'> {
       if (reader.password) return (await up().service('user').validatePassword(password, reader.password)) ? 'ok' : 'wrong';
       if (reader.legacyPasswordHash) {
         if (!(await this.checkWordPressPassword(password, reader.legacyPasswordHash))) return 'wrong';
         // First sign-in since WordPress: keep their password, in Strapi's format.
-        await up().service('user').edit(reader.id, { password, legacyPasswordHash: null });
+        await this.setPassword(reader.id, password);
         return 'ok';
       }
       return 'no-password';
