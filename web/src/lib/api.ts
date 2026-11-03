@@ -210,7 +210,13 @@ const SUMMARY_QUERY: Query = {
   },
 };
 
-const media = (url: string) => (url.startsWith("http") ? url : `${MEDIA_BASE}${url}`);
+// WordPress-era photos, once copied to R2 (same paths), load from MEDIA_URL
+// instead of harnesslink.com. Unset: they stay where they are.
+const MEDIA_URL = (process.env.MEDIA_URL || "").replace(/\/$/, "");
+const WP_UPLOADS = /https?:\/\/(?:www\.)?harnesslink\.com\/wp-content\/uploads\//g;
+const legacyMedia = (s: string) => (MEDIA_URL ? s.replace(WP_UPLOADS, `${MEDIA_URL}/wp-content/uploads/`) : s);
+
+const media = (url: string) => legacyMedia(url.startsWith("http") ? url : `${MEDIA_BASE}${url}`);
 
 function thumbFrom(a: { featuredImage?: SMedia; legacyImage?: SLegacyImage; title: string }): Thumb {
   const m = a.featuredImage;
@@ -230,7 +236,7 @@ function thumbFrom(a: { featuredImage?: SMedia; legacyImage?: SLegacyImage; titl
   const l = a.legacyImage;
   if (l?.url) {
     return {
-      src: l.url,
+      src: legacyMedia(l.url),
       srcset: "",
       sizes: "(max-width: 768px) 100vw, 800px",
       width: l.width ?? null,
@@ -298,7 +304,7 @@ function videoPlayer(url: string): string {
 // (the page needs the CMS's public address in front), videos need players.
 function withMediaBase(html: string | null): string | null {
   if (!html) return html;
-  return html
+  return legacyMedia(html)
     .replace(/((?:src|href|srcset)=["']|,\s*)\/uploads\//g, `$1${MEDIA_BASE}/uploads/`)
     .replace(/<oembed url="([^"]+)"><\/oembed>/g, (_, url: string) =>
       /^https?:\/\//.test(url) ? `<div class="article-embed">${videoPlayer(url.replace(/&amp;/g, "&"))}</div>` : ""

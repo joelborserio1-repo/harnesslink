@@ -56,6 +56,16 @@ The Navigation and Comments plugins read their settings from the database, not t
 - **Email** (password reset) goes through Brevo's SMTP relay when `SMTP_HOST`/`SMTP_USERNAME`/`SMTP_PASSWORD` are set; otherwise it is only logged. The wording is under *Settings → Users & Permissions → Email templates → Reset password*. Links expire after 2 hours and work once.
 - **The Insider**: readers who tick it (on sign-up, The Insider forms or My Account) are added to / removed from the Mailchimp audience (`MAILCHIMP_API_KEY`, `MAILCHIMP_AUDIENCE_ID`), tagged with where they signed up. Imported WordPress readers are not pushed to Mailchimp; their Insider status stays in Mailchimp. The old *Subscriber* list is folded into Readers at startup and hidden.
 
+## Revisions (our Content History)
+
+Strapi's Content History is a paid plan feature, so `src/revisions.ts` keeps our own: every save, publish and restore of a story by staff stores the headline, subheading, standfirst, URL and story (unchanged saves skipped) with who and when, in `story_revisions` (hidden from the menu). The last 50 per story are kept. The **Revisions** panel in the story editor (`src/admin/RevisionsPanel.tsx`) lists them; *View* shows a version and *Restore this version* puts it back into the draft (publishing stays a separate step). Rights follow the story's: Authors only see and restore their own. Imports and scripts don't create revisions.
+
+## Media on Cloudflare R2
+
+- **New uploads** go to R2 when `R2_BUCKET` (+ `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_PUBLIC_URL`) are set (official `@strapi/provider-upload-aws-s3`, under `strapi/`). Unset: server disk.
+- **WordPress photos** are copied with the same paths by `migration/sync_media_to_r2.sh` (rclone in a container, read-only on WordPress, rerunnable — run once, then again at cutover). Only the dated folders are copied (~113 GB); `wpallimport/` and plugin folders are skipped.
+- **The site** rewrites `harnesslink.com/wp-content/uploads/…` to `R2_PUBLIC_URL/wp-content/uploads/…` (env `MEDIA_URL` in web) in story HTML, lead photos and search results — no database rewrite, so it's reversible by unsetting the variable.
+
 ## Ads: placement, dates, countries
 
 *Start date* / *Finish date* bound when an ad runs. The **Show in …** ticks (Australia, New Zealand, USA, Canada, UK & Ireland, Europe, everywhere else) limit it to readers in those countries; none ticked = everywhere. The reader's country comes from Cloudflare's `CF-IPCountry` header, so the site must be proxied through Cloudflare (orange cloud) for targeting to work — without it every reader counts as "everywhere else". Add `?geo=NZ` to any page to preview what a reader in another country sees.

@@ -93,6 +93,12 @@ services:
       # New readers who tick The Insider join this Mailchimp audience.
       MAILCHIMP_API_KEY: ${MAILCHIMP_API_KEY:-}
       MAILCHIMP_AUDIENCE_ID: ${MAILCHIMP_AUDIENCE_ID:-}
+      # Media on Cloudflare R2 (new uploads). Unset = server disk.
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-}
+      R2_BUCKET: ${R2_BUCKET:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      R2_PUBLIC_URL: ${R2_PUBLIC_URL:-}
       # Home-screen dashboard (src/dashboard.ts). Each widget shows "not connected" until its key is set.
       MATOMO_URL: ${MATOMO_URL:-}
       MATOMO_SITE_ID: ${MATOMO_SITE_ID:-1}

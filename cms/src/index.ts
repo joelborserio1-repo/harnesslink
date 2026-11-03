@@ -3,6 +3,7 @@ import { LAYOUTS, LAYOUT_VERSION } from './admin-layouts';
 import { seedMenus } from './menus';
 import { applyPluginSettings } from './plugin-settings';
 import { setupReaders } from './readers-setup';
+import { registerRevisionCapture, registerRevisionRoutes } from './revisions';
 import { registerDashboardRoutes } from './dashboard';
 
 // What the public website may read without a token (Users & Permissions
@@ -65,6 +66,7 @@ const INDEXES: Array<[name: string, table: string, columns: string]> = [
   ['hl_articles_legacy_url', 'articles', 'legacy_url'], // checked for uniqueness on every publish
   ['hl_articles_publish_date', 'articles', 'publish_date DESC'],
   ['hl_articles_published_at', 'articles', 'published_at'],
+  ['hl_story_revisions_doc', 'story_revisions', 'article_document_id, created_at DESC'], // a story's revisions, newest first
   ['hl_up_users_email', 'up_users', 'email'], // reader sign-in looks up by email
   ['hl_up_users_reset_token', 'up_users', 'reset_password_token'],
   ['hl_articles_updated_at', 'articles', 'updated_at DESC'], // the dashboard's "waiting" and "last edited" lists
@@ -196,7 +198,9 @@ function newsroomDefaults(strapi: Core.Strapi) {
 export default {
   register({ strapi }: { strapi: Core.Strapi }) {
     newsroomDefaults(strapi);
+    registerRevisionCapture(strapi);
     registerDashboardRoutes(strapi);
+    registerRevisionRoutes(strapi);
   },
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {

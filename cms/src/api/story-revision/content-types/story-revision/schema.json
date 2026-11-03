@@ -1,0 +1,29 @@
+{
+  "kind": "collectionType",
+  "collectionName": "story_revisions",
+  "info": {
+    "singularName": "story-revision",
+    "pluralName": "story-revisions",
+    "displayName": "Story revision",
+    "description": "A saved version of a story (headline, standfirst, body), kept so editors can see what changed and restore it. Written by src/revisions.ts; read through the Revisions panel in the story editor."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {
+    "content-manager": { "visible": false },
+    "content-type-builder": { "visible": true }
+  },
+  "attributes": {
+    "articleDocumentId": { "type": "string", "required": true },
+    "kind": { "type": "enumeration", "enum": ["saved", "published", "restored"], "default": "saved" },
+    "title": { "type": "text" },
+    "subtitle": { "type": "text" },
+    "excerpt": { "type": "text" },
+    "slug": { "type": "string" },
+    "bodyHtml": { "type": "text" },
+    "editorName": { "type": "string" },
+    "editorEmail": { "type": "string" },
+    "contentHash": { "type": "string" }
+  }
+}

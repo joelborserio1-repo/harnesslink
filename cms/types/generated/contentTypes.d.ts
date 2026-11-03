@@ -953,6 +953,54 @@ export interface ApiRedirectRedirect extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiStoryRevisionStoryRevision
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'story_revisions';
+  info: {
+    description: 'A saved version of a story (headline, standfirst, body), kept so editors can see what changed and restore it. Written by src/revisions.ts; read through the Revisions panel in the story editor.';
+    displayName: 'Story revision';
+    pluralName: 'story-revisions';
+    singularName: 'story-revision';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+    'content-type-builder': {
+      visible: true;
+    };
+  };
+  attributes: {
+    articleDocumentId: Schema.Attribute.String & Schema.Attribute.Required;
+    bodyHtml: Schema.Attribute.Text;
+    contentHash: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    editorEmail: Schema.Attribute.String;
+    editorName: Schema.Attribute.String;
+    excerpt: Schema.Attribute.Text;
+    kind: Schema.Attribute.Enumeration<['saved', 'published', 'restored']> &
+      Schema.Attribute.DefaultTo<'saved'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::story-revision.story-revision'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    slug: Schema.Attribute.String;
+    subtitle: Schema.Attribute.Text;
+    title: Schema.Attribute.Text;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiSubscriberSubscriber extends Struct.CollectionTypeSchema {
   collectionName: 'subscribers';
   info: {
@@ -1862,6 +1910,7 @@ declare module '@strapi/strapi' {
       'api::missed-path.missed-path': ApiMissedPathMissedPath;
       'api::page.page': ApiPagePage;
       'api::redirect.redirect': ApiRedirectRedirect;
+      'api::story-revision.story-revision': ApiStoryRevisionStoryRevision;
       'api::subscriber.subscriber': ApiSubscriberSubscriber;
       'api::tag.tag': ApiTagTag;
       'plugin::comments.comment': PluginCommentsComment;

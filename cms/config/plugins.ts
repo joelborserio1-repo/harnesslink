@@ -149,8 +149,29 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
   },
   // Strapi Cloud's "Deploy now" panel — we host our own.
   'strapi-cloud': { enabled: false },
+  // Media: Cloudflare R2 (S3-compatible, free downloads) once R2_BUCKET is
+  // set; until then uploads stay on the server's disk (public/uploads).
   upload: {
     config: {
+      ...(env('R2_BUCKET', '')
+        ? {
+            provider: 'aws-s3',
+            providerOptions: {
+              baseUrl: env('R2_PUBLIC_URL'), // e.g. https://media.harnesslink.com
+              rootPath: 'strapi',
+              s3Options: {
+                region: 'auto',
+                endpoint: `https://${env('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com`,
+                credentials: {
+                  accessKeyId: env('R2_ACCESS_KEY_ID'),
+                  secretAccessKey: env('R2_SECRET_ACCESS_KEY'),
+                },
+                params: { Bucket: env('R2_BUCKET') },
+              },
+            },
+            actionOptions: { upload: {}, uploadStream: {}, delete: {} },
+          }
+        : {}),
       security: {
         allowedTypes: allowedMediaTypes,
         deniedTypes,
