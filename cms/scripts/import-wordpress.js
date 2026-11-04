@@ -6,10 +6,14 @@
 //   node scripts/import-wordpress.js ../tmp/export-1000.json
 //   node scripts/import-wordpress.js --pages ../tmp/export-pages.json [--only privacy-policy,terms-conditions]
 //   (several files at once: node scripts/import-wordpress.js posts-1.json posts-2.json …)
+//   node scripts/import-wordpress.js --reconcile published-ids.json
+//     (takes down migrated stories whose WordPress post no longer exists)
 //
 // - Idempotent: keyed on legacyWpId; re-running updates rather than duplicates.
 // - Resumable: an unchanged post (same WordPress modified time) is skipped.
-// - Additive: never deletes.
+// - Additive: never deletes. A post that is no longer published in WordPress
+//   (an EXPORT_SINCE stub, or missing from a --reconcile ID list) is
+//   unpublished here, not deleted; republishing it in WordPress brings it back.
 // - Every article is published with its original WordPress dates.
 // Run with Strapi stopped or running — it boots its own instance.
 
@@ -24,6 +28,7 @@ const DEFAULT_PAGES = ['privacy-policy', 'disclaimers', 'terms-conditions', 'a-p
 
 const args = process.argv.slice(2);
 const pagesMode = args.includes('--pages');
+const reconcileMode = args.includes('--reconcile');
 const force = args.includes('--force');
 const onlyIdx = args.indexOf('--only');
 const only = onlyIdx >= 0 ? args[onlyIdx + 1].split(',') : null;
@@ -45,7 +50,8 @@ async function main() {
     for (const file of files) {
       console.log(`[import] ${file}`);
       const records = JSON.parse(fs.readFileSync(path.resolve(file), 'utf8'));
-      if (pagesMode) await importPages(app, records);
+      if (reconcileMode) await reconcile(app, records);
+      else if (pagesMode) await importPages(app, records);
       else await importArticles(app, records);
     }
   } finally {
@@ -68,7 +74,7 @@ function makeUpserter(app, uid, build) {
 }
 
 async function importArticles(app, posts) {
-  const stats = { seen: 0, created: 0, updated: 0, unchanged: 0, skipped: 0, flagged: 0, errors: 0, redirects: 0 };
+  const stats = { seen: 0, created: 0, updated: 0, unchanged: 0, unpublished: 0, skipped: 0, flagged: 0, errors: 0, redirects: 0 };
   const skipped = [];
   const category = makeUpserter(app, 'api::category.category', (r) => ({
     name: r.name, slug: r.slug, kind: r.kind, legacyTermId: r.legacyTermId,
@@ -84,6 +90,11 @@ async function importArticles(app, posts) {
   for (const post of posts) {
     stats.seen += 1;
     try {
+      if (post.post_status && post.post_status !== 'publish') {
+        if (await takeDown(app, post.id)) stats.unpublished += 1;
+        else stats.unchanged += 1;
+        continue;
+      }
       const mapped = mapArticle(post);
       if (mapped.skip) {
         stats.skipped += 1;
@@ -142,6 +153,35 @@ async function importArticles(app, posts) {
   }
   console.log('[import] done', JSON.stringify(stats));
   if (skipped.length) console.log('[import] skipped:\n  ' + skipped.join('\n  '));
+}
+
+// Unpublish (never delete) the migrated story for a WordPress post ID.
+async function takeDown(app, wpId) {
+  const live = await app.documents('api::article.article').findFirst({
+    filters: { legacyWpId: Number(wpId) },
+    status: 'published',
+    fields: ['documentId', 'slug'],
+  });
+  if (!live) return false;
+  await app.documents('api::article.article').unpublish({ documentId: live.documentId });
+  console.log(`[import] unpublished wp ${wpId} /${live.slug}/ (no longer published in WordPress)`);
+  return true;
+}
+
+async function reconcile(app, ids) {
+  const want = new Set(ids.map(Number));
+  const rows = await app.db.connection('articles').whereNotNull('published_at').whereNotNull('legacy_wp_id').select('legacy_wp_id');
+  const have = rows.map((r) => Number(r.legacy_wp_id));
+  const gone = have.filter((id) => !want.has(id));
+  // A short or broken ID list must not take the archive down.
+  if (want.size < have.length * 0.95 || gone.length > 200) {
+    console.error(`[import] reconcile refused: WordPress list has ${want.size} IDs, Strapi ${have.length} live, ${gone.length} would go`);
+    process.exitCode = 1;
+    return;
+  }
+  let n = 0;
+  for (const id of gone) if (await takeDown(app, id)) n += 1;
+  console.log('[import] reconcile done', JSON.stringify({ wordpress: want.size, strapi: have.length, unpublished: n }));
 }
 
 async function importPages(app, records) {

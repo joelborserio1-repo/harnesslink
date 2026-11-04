@@ -35,7 +35,32 @@ $meta_keys = [
   '_wp_page_template',
 ];
 
-$query = new WP_Query([
+// Keeping staging in step (migration/sync_from_wordpress.sh):
+//   EXPORT_SINCE="2026-11-05 03:00:00" (UTC) exports every post modified since
+//   then, in ANY status. Published ones come out in full; ones that have been
+//   unpublished, trashed or scheduled come out as a stub ({id, post_status, …})
+//   so the importer can take them down.
+//   EXPORT_IDS=1 prints just the IDs of every published post (nightly check for
+//   posts deleted outright, which leave no modified row behind).
+$since = getenv('EXPORT_SINCE') ?: '';
+if (getenv('EXPORT_IDS')) {
+  global $wpdb;
+  $in = implode(',', array_map(function ($t) use ($wpdb) { return $wpdb->prepare('%s', $t); }, $types));
+  $ids = $wpdb->get_col("SELECT ID FROM {$wpdb->posts} WHERE post_status = 'publish' AND post_type IN ($in)");
+  echo json_encode(array_map('intval', $ids));
+  return;
+}
+
+$query = new WP_Query($since ? [
+  'post_type'      => $types,
+  'post_status'    => ['publish', 'future', 'draft', 'pending', 'private', 'trash'],
+  'posts_per_page' => -1,
+  'orderby'        => 'modified',
+  'order'          => 'ASC',
+  'date_query'     => [['column' => 'post_modified_gmt', 'after' => $since, 'inclusive' => true]],
+  'ignore_sticky_posts' => true,
+  'no_found_rows'  => true,
+] : [
   'post_type'      => $types,
   'post_status'    => 'publish',
   'posts_per_page' => $limit > 0 ? $limit : -1,
@@ -73,6 +98,17 @@ function hl_render_body($post) {
 $out = [];
 foreach ($query->posts as $p) {
   $id = $p->ID;
+
+  if ($p->post_status !== 'publish') {
+    $out[] = [
+      'id' => $id,
+      'post_name' => $p->post_name,
+      'post_status' => $p->post_status,
+      'post_type' => $p->post_type,
+      'post_modified' => $p->post_modified_gmt ?: $p->post_modified,
+    ];
+    continue;
+  }
 
   $meta = [];
   foreach ($meta_keys as $k) {
