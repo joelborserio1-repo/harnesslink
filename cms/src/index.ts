@@ -5,6 +5,7 @@ import { applyPluginSettings } from './plugin-settings';
 import { setupReaders } from './readers-setup';
 import { registerRevisionCapture, registerRevisionRoutes } from './revisions';
 import { registerDashboardRoutes } from './dashboard';
+import { registerSocialRoutes } from './social';
 
 // What the public website may read without a token (Users & Permissions
 // "Public" role). Ads, subscribers, redirects and the 404 log are only reached
@@ -201,6 +202,7 @@ export default {
     registerRevisionCapture(strapi);
     registerDashboardRoutes(strapi);
     registerRevisionRoutes(strapi);
+    registerSocialRoutes(strapi);
   },
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {

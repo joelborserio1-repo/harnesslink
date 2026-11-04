@@ -3,6 +3,7 @@ import { ChartPie, Clock, Discuss, Feather, Monitor, PresentationChart, Calendar
 import { lightTheme } from '@strapi/design-system';
 import mark from './extensions/hl-mark.svg';
 import RevisionsPanel from './RevisionsPanel';
+import SocialPanel from './SocialPanel';
 
 // HarnessLink newsroom dashboard on the CMS home screen (widgets in ./widgets, data from
 // src/dashboard.ts). Traffic, social, advertising and site checks are for admins and editors;
@@ -98,7 +99,8 @@ export default {
     ]);
   },
   bootstrap(app: StrapiApp) {
-    // "Revisions" side panel in the story editor (src/revisions.ts).
-    (app.getPlugin('content-manager') as any).apis.addEditViewSidePanel([RevisionsPanel]);
+    // Story editor side panels: "Revisions" (src/revisions.ts) and
+    // "Share to social" via Postiz (src/social.ts).
+    (app.getPlugin('content-manager') as any).apis.addEditViewSidePanel([RevisionsPanel, SocialPanel]);
   },
 };
