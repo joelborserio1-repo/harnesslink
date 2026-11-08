@@ -3,7 +3,8 @@
 import { useState } from "react";
 
 // Reusable free-signup form (The Insider panel/page + the registration wall).
-// POSTs the email to /api/subscribe and shows a success state. `onDone` lets
+// POSTs first name, last name and email to /api/subscribe (the Mailchimp
+// audience requires all three) and shows a success state. `onDone` lets
 // the wall dismiss itself after a successful signup.
 export default function SubscribeForm({
   dark = false,
@@ -16,6 +17,8 @@ export default function SubscribeForm({
   source?: string;
   onDone?: () => void;
 }) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
 
@@ -26,7 +29,7 @@ export default function SubscribeForm({
       const res = await fetch("/api/subscribe/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, source }),
+        body: JSON.stringify({ firstName, lastName, email, source }),
       });
       if (!res.ok) throw new Error();
       setState("done");
@@ -47,10 +50,30 @@ export default function SubscribeForm({
 
   return (
     <form onSubmit={submit}>
+      <div className={`mb-2 grid grid-cols-2 gap-2`}>
+        {([
+          ["First name", firstName, setFirstName, "given-name"],
+          ["Last name", lastName, setLastName, "family-name"],
+        ] as const).map(([label, value, set, auto]) => (
+          <input
+            key={label}
+            type="text"
+            required
+            maxLength={60}
+            autoComplete={auto}
+            value={value}
+            onChange={(e) => set(e.target.value)}
+            placeholder={label}
+            aria-label={label}
+            className={`w-full min-w-0 border bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none placeholder:text-neutral-500 focus:bg-mist ${dark ? "border-white/40" : "border-navy"}`}
+          />
+        ))}
+      </div>
       <div className={`flex border ${dark ? "border-white/40" : "border-navy"}`}>
         <input
           type="email"
           required
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email address"
