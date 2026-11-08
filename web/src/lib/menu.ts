@@ -111,7 +111,6 @@ const DEFAULT_MAIN: MenuItem[] = [
     ),
   ]),
   link("The Insider", "/the-insider/"),
-  link("Contact Us", "/contact-us/"),
   link("Directory", "/directory/"),
   link("Login", "/login/"),
 ];

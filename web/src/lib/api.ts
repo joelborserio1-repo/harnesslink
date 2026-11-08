@@ -704,3 +704,181 @@ export async function getDirectoryListing(typeUrl: string, id: string) {
   return data?.listing ?? null;
 }
 
+
+// ---- Event pages (The Eureka and later big races; Strapi "Event page") ----
+
+type SEventMedia = { url: string; width?: number | null; height?: number | null; alternativeText?: string | null } | null;
+type SEventPage = {
+  title: string;
+  slug: string;
+  subtitle?: string | null;
+  logo?: SEventMedia;
+  heroImage?: SEventMedia;
+  eventStart?: string | null;
+  timezone?: string | null;
+  countdownFinishedText?: string | null;
+  venue?: string | null;
+  location?: string | null;
+  prizeMoney?: string | null;
+  distance?: string | null;
+  slots?: string | null;
+  eligibility?: string | null;
+  organiserLabel?: string | null;
+  organiserLogo?: SEventMedia;
+  showNews?: boolean;
+  newsCategory?: SRef | null;
+  newsCount?: number | null;
+  showOdds?: boolean;
+  oddsTitle?: string | null;
+  showSocial?: boolean;
+  socialTitle?: string | null;
+  curatorFeedId?: string | null;
+  xHandle?: string | null;
+  hashtags?: string | null;
+  showResults?: boolean;
+  resultsSponsorLabel?: string | null;
+  results?: Array<Record<string, string | null> & { winnerSilks?: SEventMedia; winnerPhoto?: SEventMedia }>;
+  showAbout?: boolean;
+  aboutHeading?: string | null;
+  aboutSubheading?: string | null;
+  aboutHtml?: string | null;
+  aboutImage?: SEventMedia;
+  showSlotHolders?: boolean;
+  slotHoldersHeading?: string | null;
+  slotHoldersNote?: string | null;
+  slotHolders?: Array<{ name: string; silks?: SEventMedia; runner?: string | null; trainer?: string | null; driver?: string | null; status: string; website?: string | null }>;
+  showAssociates?: boolean;
+  associatesHeading?: string | null;
+  associates?: Array<{ name: string; logo?: SEventMedia; url?: string | null }>;
+  seo?: SSeo;
+  updatedAt?: string | null;
+};
+
+export type EventImage = { src: string; width: number | null; height: number | null; alt: string } | null;
+export type EventOdds = {
+  source: "tab" | "backup";
+  marketUrl: string | null;
+  updatedAt?: string;
+  updatedLabel?: string | null;
+  runners: { runner: string; win: string; place: string }[];
+};
+
+const eventImage = (m: SEventMedia | undefined, alt = ""): EventImage =>
+  m?.url ? { src: media(m.url), width: m.width ?? null, height: m.height ?? null, alt: m.alternativeText || alt } : null;
+
+export async function getEventPage(slug: string) {
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) return null;
+  const img = { fields: ["url", "width", "height", "alternativeText"] };
+  const data = await strapi<List<SEventPage>>("/event-pages", {
+    filters: { slug: { $eq: slug } },
+    populate: {
+      logo: img,
+      heroImage: img,
+      organiserLogo: img,
+      aboutImage: img,
+      newsCategory: { fields: ["name", "slug"] },
+      results: { populate: { winnerSilks: img, winnerPhoto: img } },
+      slotHolders: { populate: { silks: img } },
+      associates: { populate: { logo: img } },
+      seo: "*",
+    },
+    pagination: { pageSize: 1 },
+  });
+  const e = data?.data?.[0];
+  if (!e) return null;
+  const news =
+    e.showNews !== false && e.newsCategory
+      ? (await articleList({ categories: { slug: { $eq: e.newsCategory.slug } } }, 1, e.newsCount || 6)).articles
+      : [];
+  const seo = e.seo || {};
+  return {
+    title: e.title,
+    slug: e.slug,
+    url: `/${e.slug}/`,
+    subtitle: e.subtitle ?? null,
+    logo: eventImage(e.logo, e.title),
+    hero: eventImage(e.heroImage),
+    start: e.eventStart ?? null,
+    timezone: e.timezone || "Australia/Sydney",
+    finishedText: e.countdownFinishedText || `${e.title} is under way`,
+    facts: {
+      venue: e.venue ?? null,
+      location: e.location ?? null,
+      prizeMoney: e.prizeMoney ?? null,
+      distance: e.distance ?? null,
+      slots: e.slots ?? null,
+      eligibility: e.eligibility ?? null,
+    },
+    organiser: e.organiserLogo ? { label: e.organiserLabel || "", logo: eventImage(e.organiserLogo, e.organiserLabel || "") } : null,
+    news: { show: e.showNews !== false && news.length > 0, category: e.newsCategory ? catRef(e.newsCategory) : null, articles: news },
+    odds: { show: e.showOdds !== false, title: e.oddsTitle || "Futures" },
+    social: {
+      show: e.showSocial !== false && !!(e.curatorFeedId || e.xHandle),
+      title: e.socialTitle || `${e.title} social`,
+      curatorFeedId: e.curatorFeedId && /^[a-f0-9-]{36}$/.test(e.curatorFeedId) ? e.curatorFeedId : null,
+      xHandle: (e.xHandle || "").replace(/^@/, "") || null,
+      hashtags: (e.hashtags || "").split(/[,\s]+/).map((h) => h.replace(/^#/, "")).filter(Boolean),
+    },
+    results: {
+      show: e.showResults !== false && !!e.results?.length,
+      sponsorLabel: e.resultsSponsorLabel ?? null,
+      rows: (e.results || []).map((r) => ({
+        year: r.year || "",
+        winner: r.winner || "",
+        silks: eventImage(r.winnerSilks, `${r.winner} silks`),
+        photo: eventImage(r.winnerPhoto, r.winner || ""),
+        driver: r.driver || "",
+        trainer: r.trainer || "",
+        slotHolder: r.slotHolder || "",
+        barrier: r.barrier || "",
+        odds: r.odds || "",
+        time: r.time || "",
+        second: r.second || "",
+        third: r.third || "",
+        storyUrl: r.storyUrl || null,
+        replayUrl: r.replayUrl || null,
+      })),
+    },
+    about: {
+      show: e.showAbout !== false && !!e.aboutHtml,
+      heading: e.aboutHeading || `About ${e.title}`,
+      subheading: e.aboutSubheading ?? null,
+      html: withMediaBase(e.aboutHtml ?? null),
+      image: eventImage(e.aboutImage, e.title),
+    },
+    slotHolders: {
+      show: e.showSlotHolders !== false && !!e.slotHolders?.length,
+      heading: e.slotHoldersHeading || "Slot holders",
+      note: e.slotHoldersNote ?? null,
+      rows: (e.slotHolders || []).map((s) => ({
+        name: s.name,
+        silks: eventImage(s.silks, `${s.name} silks`),
+        runner: s.runner || null,
+        trainer: s.trainer || null,
+        driver: s.driver || null,
+        status: s.status as "to_be_announced" | "reported" | "confirmed",
+        website: s.website || null,
+      })),
+    },
+    associates: {
+      show: e.showAssociates !== false && !!e.associates?.length,
+      heading: e.associatesHeading || "Official associates",
+      rows: (e.associates || []).map((a) => ({ name: a.name, logo: eventImage(a.logo, a.name), url: a.url || null })),
+    },
+    seo: {
+      title: seo.metaTitle || `${e.title}${e.subtitle ? ` – ${e.subtitle}` : ""} | Harnesslink`,
+      description: seo.metaDescription || e.subtitle || null,
+      canonical_url: seo.canonicalUrl || `${SITE}/${e.slug}/`,
+      robots: seo.robots || "index,follow",
+      og_title: seo.ogTitle ?? null,
+      og_description: seo.ogDescription ?? null,
+    },
+    modified_at: e.updatedAt ?? null,
+  };
+}
+
+export type EventPage = NonNullable<Awaited<ReturnType<typeof getEventPage>>>;
+
+export async function getEventOdds(slug: string): Promise<EventOdds | null> {
+  return strapi<EventOdds>(`/event-pages/${encodeURIComponent(slug)}/odds`, {}, { next: { revalidate: 300 } });
+}

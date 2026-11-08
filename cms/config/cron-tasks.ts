@@ -23,4 +23,12 @@ export default {
     },
     options: { rule: '* * * * *' },
   },
+  // TAB prices on event pages (The Eureka…): 8am and 4pm Sydney time, as the
+  // old WordPress plugin did. See src/api/event-page/services/odds.ts.
+  refreshEventOdds: {
+    task: async ({ strapi }: { strapi: Core.Strapi }) => {
+      await (strapi.service('api::event-page.odds') as any).refreshAll();
+    },
+    options: { rule: '0 8,16 * * *', tz: 'Australia/Sydney' },
+  },
 };

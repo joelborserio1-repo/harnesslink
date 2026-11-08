@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_event_results",
+  "info": { "displayName": "Previous winner", "icon": "trophy", "description": "One year's winner in the Previous winners table" },
+  "options": {},
+  "attributes": {
+    "year": { "type": "string", "required": true },
+    "winner": { "type": "string", "required": true },
+    "winnerSilks": { "type": "media", "multiple": false, "allowedTypes": ["images"] },
+    "winnerPhoto": { "type": "media", "multiple": false, "allowedTypes": ["images"] },
+    "driver": { "type": "string" },
+    "trainer": { "type": "string" },
+    "slotHolder": { "type": "string" },
+    "barrier": { "type": "string" },
+    "odds": { "type": "string" },
+    "time": { "type": "string" },
+    "second": { "type": "string" },
+    "third": { "type": "string" },
+    "storyUrl": { "type": "string" },
+    "replayUrl": { "type": "string" }
+  }
+}

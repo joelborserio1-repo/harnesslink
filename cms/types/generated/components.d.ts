@@ -111,6 +111,81 @@ export interface DirectoryProgeny extends Struct.ComponentSchema {
   };
 }
 
+export interface EventAssociate extends Struct.ComponentSchema {
+  collectionName: 'components_event_associates';
+  info: {
+    description: "An official associate's logo and link";
+    displayName: 'Associate';
+    icon: 'handHeart';
+  };
+  attributes: {
+    logo: Schema.Attribute.Media<'images'>;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    url: Schema.Attribute.String;
+  };
+}
+
+export interface EventPrice extends Struct.ComponentSchema {
+  collectionName: 'components_event_prices';
+  info: {
+    description: "A runner's win and place price (backup for when the TAB feed is unavailable)";
+    displayName: 'Price';
+    icon: 'chartBubble';
+  };
+  attributes: {
+    place: Schema.Attribute.String;
+    runner: Schema.Attribute.String & Schema.Attribute.Required;
+    win: Schema.Attribute.String;
+  };
+}
+
+export interface EventResult extends Struct.ComponentSchema {
+  collectionName: 'components_event_results';
+  info: {
+    description: "One year's winner in the Previous winners table";
+    displayName: 'Previous winner';
+    icon: 'trophy';
+  };
+  attributes: {
+    barrier: Schema.Attribute.String;
+    driver: Schema.Attribute.String;
+    odds: Schema.Attribute.String;
+    replayUrl: Schema.Attribute.String;
+    second: Schema.Attribute.String;
+    slotHolder: Schema.Attribute.String;
+    storyUrl: Schema.Attribute.String;
+    third: Schema.Attribute.String;
+    time: Schema.Attribute.String;
+    trainer: Schema.Attribute.String;
+    winner: Schema.Attribute.String & Schema.Attribute.Required;
+    winnerPhoto: Schema.Attribute.Media<'images'>;
+    winnerSilks: Schema.Attribute.Media<'images'>;
+    year: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
+export interface EventSlotHolder extends Struct.ComponentSchema {
+  collectionName: 'components_event_slot_holders';
+  info: {
+    description: "A slot holder, their silks and the runner they've chosen";
+    displayName: 'Slot holder';
+    icon: 'user';
+  };
+  attributes: {
+    driver: Schema.Attribute.String;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    runner: Schema.Attribute.String;
+    silks: Schema.Attribute.Media<'images'>;
+    status: Schema.Attribute.Enumeration<
+      ['to_be_announced', 'reported', 'confirmed']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'to_be_announced'>;
+    trainer: Schema.Attribute.String;
+    website: Schema.Attribute.String;
+  };
+}
+
 export interface SharedLegacyImage extends Struct.ComponentSchema {
   collectionName: 'components_shared_legacy_images';
   info: {
@@ -163,6 +238,10 @@ declare module '@strapi/strapi' {
       'directory.gallery-item': DirectoryGalleryItem;
       'directory.pedigree': DirectoryPedigree;
       'directory.progeny': DirectoryProgeny;
+      'event.associate': EventAssociate;
+      'event.price': EventPrice;
+      'event.result': EventResult;
+      'event.slot-holder': EventSlotHolder;
       'shared.legacy-image': SharedLegacyImage;
       'shared.seo': SharedSeo;
     }

@@ -78,4 +78,17 @@ export async function setupReaders(strapi: Core.Strapi) {
   await strapi.db
     .query('plugin::navigation.navigation-item')
     .updateMany({ where: { title: 'Login', externalPath: '/subscribe/' }, data: { externalPath: '/login/' } });
+
+  // 2026-11-09: Contact moved out of the main menu (the footer has it). Done
+  // once, so an editor can put it back under Navigation if they want.
+  const flags = strapi.store({ type: 'core', name: 'hl-migrations' });
+  if (!(await flags.get({ key: 'main-menu-no-contact' }))) {
+    const main = await strapi.db.query('plugin::navigation.navigation').findMany({ where: { slug: 'main-menu' }, select: ['id'] });
+    if (main.length) {
+      await strapi.db.query('plugin::navigation.navigation-item').deleteMany({
+        where: { title: 'Contact Us', externalPath: '/contact-us/', master: { id: { $in: main.map((m: { id: number }) => m.id) } } },
+      });
+    }
+    await flags.set({ key: 'main-menu-no-contact', value: true });
+  }
 }

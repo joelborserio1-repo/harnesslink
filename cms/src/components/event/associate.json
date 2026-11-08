@@ -1,0 +1,10 @@
+{
+  "collectionName": "components_event_associates",
+  "info": { "displayName": "Associate", "icon": "handHeart", "description": "An official associate's logo and link" },
+  "options": {},
+  "attributes": {
+    "name": { "type": "string", "required": true },
+    "logo": { "type": "media", "multiple": false, "allowedTypes": ["images"] },
+    "url": { "type": "string" }
+  }
+}

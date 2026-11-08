@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { draftMode } from "next/headers";
-import { getArticle, getPage, listArticles, type ArticleFull } from "@/lib/api";
+import { getArticle, getEventOdds, getEventPage, getPage, listArticles, type ArticleFull, type EventPage } from "@/lib/api";
+import EventView from "@/components/event/EventView";
 import StaticPageView from "@/components/StaticPageView";
 import { formatDate, formatTime } from "@/lib/format";
 import Breadcrumbs, { type Crumb } from "@/components/article/Breadcrumbs";
@@ -36,7 +37,25 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     // Articles and pages share the root namespace on WordPress; a slug that is
     // not an article may be a migrated static page.
     const page = await getPage(slug, { draft });
-    if (!page) return {};
+    if (!page) {
+      // …or an event page (The Eureka), the third thing that lives at the root.
+      const event = await getEventPage(slug);
+      if (!event) return {};
+      return {
+        title: { absolute: event.seo.title },
+        description: event.seo.description ?? undefined,
+        alternates: { canonical: event.seo.canonical_url },
+        robots: robotsFrom(event.seo.robots),
+        openGraph: {
+          type: "website",
+          title: event.seo.og_title ?? event.title,
+          description: event.seo.og_description ?? event.seo.description ?? undefined,
+          url: event.seo.canonical_url,
+          siteName: "Harnesslink",
+          images: event.hero?.src ? [{ url: event.hero.src }] : event.logo?.src ? [{ url: event.logo.src }] : undefined,
+        },
+      };
+    }
     return {
       title: { absolute: page.seo.title },
       description: page.seo.description ?? undefined,
@@ -97,6 +116,22 @@ function newsArticleJsonLd(article: ArticleFull) {
   };
 }
 
+function sportsEventJsonLd(event: EventPage) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "SportsEvent",
+    name: event.title,
+    description: event.seo.description ?? undefined,
+    url: event.seo.canonical_url,
+    startDate: event.start ?? undefined,
+    sport: "Harness racing",
+    location: event.facts.venue
+      ? { "@type": "Place", name: event.facts.venue, address: event.facts.location ?? undefined }
+      : undefined,
+    image: event.hero?.src ?? event.logo?.src ?? undefined,
+  };
+}
+
 export default async function ArticlePage({ params }: Params) {
   const { slug } = await params;
   // Draft mode is switched on by the CMS's Preview button (/api/preview/).
@@ -104,7 +139,17 @@ export default async function ArticlePage({ params }: Params) {
   const article = await getArticle(slug, { draft });
   if (!article) {
     const page = await getPage(slug, { draft });
-    if (!page) notFound();
+    if (!page) {
+      const event = await getEventPage(slug);
+      if (!event) notFound();
+      const odds = event.odds.show ? await getEventOdds(event.slug) : null;
+      return (
+        <>
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(sportsEventJsonLd(event)) }} />
+          <EventView event={event} odds={odds} />
+        </>
+      );
+    }
     return (
       <>
         {draft && <PreviewBanner path={`/${slug}/`} />}
@@ -282,7 +327,7 @@ export default async function ArticlePage({ params }: Params) {
                 </nav>
               )}
 
-              <Comments documentId={article.document_id} />
+              <Comments documentId={article.document_id} path={article.url} />
             </div>
           </article>
 

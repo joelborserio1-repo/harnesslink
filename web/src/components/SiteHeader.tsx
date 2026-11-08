@@ -11,13 +11,12 @@ import { SOCIAL } from "@/lib/site";
 // social icons and a search line at the right, then the big uppercase menu
 // (edited in Strapi under Navigation → "Main menu").
 export default async function SiteHeader() {
-  // Signed-in readers see their name where "Login" is, linking to their account.
-  const reader = (await cookies()).get(READER)?.value;
-  const name = reader ? decodeURIComponent(reader).slice(0, 20) : "";
+  // Signed out, the menu's "Login" item shows as on the live site. Signed in,
+  // it leaves the menu and a quiet "My account" link sits at the top left of
+  // the masthead instead (a person icon on phones).
+  const signedIn = !!(await cookies()).get(READER)?.value;
   const isLogin = (i: MenuItem) => i.href === "/login/" || i.title.toLowerCase() === "login";
-  const menu = (await getMenu("main-menu")).map((i) =>
-    name && isLogin(i) ? { ...i, title: name, href: "/my-account/", external: false } : i
-  );
+  const menu = (await getMenu("main-menu")).filter((i) => !(signedIn && isLogin(i)));
   return (
     <header className="bg-navy">
       <div className="wrap relative flex items-center justify-center pb-1 pt-5 sm:min-h-[83px] sm:pt-3">
@@ -28,6 +27,20 @@ export default async function SiteHeader() {
         >
           HarnessLink
         </Link>
+
+        {signedIn && (
+          <Link
+            href="/my-account/"
+            aria-label="My account"
+            className="font-ui absolute left-4 top-6 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.12em] text-white/85 hover:text-white sm:left-[25px] md:top-4"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" strokeLinecap="round" />
+            </svg>
+            <span className="hidden md:inline">My account</span>
+          </Link>
+        )}
 
         <div className="absolute right-4 top-3 hidden flex-col items-end gap-2 sm:right-[25px] md:flex">
           <ul className="flex items-center gap-2.5">

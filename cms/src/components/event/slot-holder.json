@@ -1,0 +1,14 @@
+{
+  "collectionName": "components_event_slot_holders",
+  "info": { "displayName": "Slot holder", "icon": "user", "description": "A slot holder, their silks and the runner they've chosen" },
+  "options": {},
+  "attributes": {
+    "name": { "type": "string", "required": true },
+    "silks": { "type": "media", "multiple": false, "allowedTypes": ["images"] },
+    "runner": { "type": "string" },
+    "trainer": { "type": "string" },
+    "driver": { "type": "string" },
+    "status": { "type": "enumeration", "enum": ["to_be_announced", "reported", "confirmed"], "default": "to_be_announced", "required": true },
+    "website": { "type": "string" }
+  }
+}

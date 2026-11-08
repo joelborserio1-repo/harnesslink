@@ -33,12 +33,13 @@ export async function getComments(documentId: string): Promise<ReaderComment[]> 
   }
 }
 
-export async function postComment(documentId: string, input: { name: string; email: string; content: string }) {
+export async function postComment(documentId: string, input: { authorId: string; name: string; email: string; content: string }) {
   const res = await fetch(`${STRAPI_URL}/api/comments/${relatedKey(documentId)}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    // The CMS only accepts comments the site sends (signed-in readers).
+    headers: { "Content-Type": "application/json", "x-hl-site": process.env.PREVIEW_SECRET || "" },
     body: JSON.stringify({
-      author: { id: crypto.randomUUID(), name: input.name, email: input.email },
+      author: { id: input.authorId, name: input.name, email: input.email },
       content: input.content,
     }),
     signal: AbortSignal.timeout(5000),

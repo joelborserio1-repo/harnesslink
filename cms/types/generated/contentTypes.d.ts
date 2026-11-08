@@ -833,6 +833,111 @@ export interface ApiDirectoryListingDirectoryListing
   };
 }
 
+export interface ApiEventPageEventPage extends Struct.CollectionTypeSchema {
+  collectionName: 'event_pages';
+  info: {
+    description: 'A big-race hub (The Eureka and the next one): countdown, news, TAB odds, social feed, previous winners, slot holders and associates.';
+    displayName: 'Event page';
+    pluralName: 'event-pages';
+    singularName: 'event-page';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    aboutHeading: Schema.Attribute.String;
+    aboutHtml: Schema.Attribute.RichText &
+      Schema.Attribute.CustomField<
+        'plugin::ckeditor5.CKEditor',
+        {
+          preset: 'defaultHtml';
+        }
+      >;
+    aboutImage: Schema.Attribute.Media<'images'>;
+    aboutSubheading: Schema.Attribute.String;
+    associates: Schema.Attribute.Component<'event.associate', true>;
+    associatesHeading: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Official associates'>;
+    backupPrices: Schema.Attribute.Component<'event.price', true>;
+    backupPricesAt: Schema.Attribute.String;
+    countdownFinishedText: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    curatorFeedId: Schema.Attribute.String;
+    distance: Schema.Attribute.String;
+    eligibility: Schema.Attribute.String;
+    eventStart: Schema.Attribute.DateTime;
+    hashtags: Schema.Attribute.String;
+    heroImage: Schema.Attribute.Media<'images'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::event-page.event-page'
+    > &
+      Schema.Attribute.Private;
+    location: Schema.Attribute.String;
+    logo: Schema.Attribute.Media<'images'>;
+    newsCategory: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::category.category'
+    >;
+    newsCount: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 24;
+          min: 3;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<6>;
+    oddsRunnersShown: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 40;
+          min: 3;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<10>;
+    oddsTitle: Schema.Attribute.String & Schema.Attribute.DefaultTo<'Futures'>;
+    organiserLabel: Schema.Attribute.String;
+    organiserLogo: Schema.Attribute.Media<'images'>;
+    prizeMoney: Schema.Attribute.String;
+    publishedAt: Schema.Attribute.DateTime;
+    results: Schema.Attribute.Component<'event.result', true>;
+    resultsSponsorLabel: Schema.Attribute.String;
+    seo: Schema.Attribute.Component<'shared.seo', false>;
+    showAbout: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    showAssociates: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    showNews: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    showOdds: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    showResults: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    showSlotHolders: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<true>;
+    showSocial: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    slotHolders: Schema.Attribute.Component<'event.slot-holder', true>;
+    slotHoldersHeading: Schema.Attribute.String;
+    slotHoldersNote: Schema.Attribute.String;
+    slots: Schema.Attribute.String;
+    slug: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    socialTitle: Schema.Attribute.String;
+    subtitle: Schema.Attribute.String;
+    tabMarketUrl: Schema.Attribute.String;
+    tabRaceName: Schema.Attribute.String;
+    timezone: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Australia/Sydney'>;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    venue: Schema.Attribute.String;
+    xHandle: Schema.Attribute.String;
+  };
+}
+
 export interface ApiMissedPathMissedPath extends Struct.CollectionTypeSchema {
   collectionName: 'missed_paths';
   info: {
@@ -1907,6 +2012,7 @@ declare module '@strapi/strapi' {
       'api::country.country': ApiCountryCountry;
       'api::directory-enquiry.directory-enquiry': ApiDirectoryEnquiryDirectoryEnquiry;
       'api::directory-listing.directory-listing': ApiDirectoryListingDirectoryListing;
+      'api::event-page.event-page': ApiEventPageEventPage;
       'api::missed-path.missed-path': ApiMissedPathMissedPath;
       'api::page.page': ApiPagePage;
       'api::redirect.redirect': ApiRedirectRedirect;

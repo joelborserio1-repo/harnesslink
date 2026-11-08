@@ -1,0 +1,10 @@
+{
+  "collectionName": "components_event_prices",
+  "info": { "displayName": "Price", "icon": "chartBubble", "description": "A runner's win and place price (backup for when the TAB feed is unavailable)" },
+  "options": {},
+  "attributes": {
+    "runner": { "type": "string", "required": true },
+    "win": { "type": "string" },
+    "place": { "type": "string" }
+  }
+}

@@ -5,7 +5,8 @@ import { submitComment, type CommentState } from "@/components/article/comment-a
 
 const FIELD = "mt-1 w-full border border-line bg-white px-3 py-2.5 text-[15px] text-ink outline-none focus:border-navy";
 
-export default function CommentForm({ documentId }: { documentId: string }) {
+// Shown to signed-in readers only; their name comes from their account.
+export default function CommentForm({ documentId, name }: { documentId: string; name: string }) {
   const [state, action, pending] = useActionState<CommentState, FormData>(submitComment, { status: "idle" });
 
   if (state.status === "sent") {
@@ -25,19 +26,9 @@ export default function CommentForm({ documentId }: { documentId: string }) {
         </label>
       </div>
       <label className="block text-[13px] font-semibold text-ink">
-        Comment
+        Comment <span className="font-normal text-muted">as {name}</span>
         <textarea name="content" required rows={4} maxLength={3000} className={FIELD} />
       </label>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block text-[13px] font-semibold text-ink">
-          Name
-          <input name="name" required maxLength={60} autoComplete="name" className={FIELD} />
-        </label>
-        <label className="block text-[13px] font-semibold text-ink">
-          Email <span className="font-normal text-muted">(never published)</span>
-          <input name="email" type="email" required autoComplete="email" className={FIELD} />
-        </label>
-      </div>
       {state.status === "error" && (
         <p role="alert" className="text-[14px] text-red">
           {state.message}

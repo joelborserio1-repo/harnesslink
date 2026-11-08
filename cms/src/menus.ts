@@ -43,7 +43,6 @@ const MAIN: Seed[] = [
     ],
   },
   { title: 'The Insider', url: '/the-insider/' },
-  { title: 'Contact Us', url: '/contact-us/' },
   { title: 'Directory', url: '/directory/' },
   { title: 'Login', url: '/subscribe/' },
 ];
