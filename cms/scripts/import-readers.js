@@ -8,8 +8,11 @@
 //
 // - Keeps their WordPress password hash; their first sign-in on the new site
 //   checks it and converts it (see src/api/reader/services/accounts.ts).
-// - Safe to rerun: an email that already has an account is left alone apart
-//   from recording its WordPress id.
+// - Safe to rerun (nightly, until cutover). For an email that already has an
+//   account: records its WordPress id, fills in missing names, and — while the
+//   reader hasn't signed in on the new site yet — takes their CURRENT WordPress
+//   password hash, so a password changed in WordPress works here too. Once
+//   they've signed in here, the new site's password is theirs and is kept.
 // - Doesn't touch Mailchimp: whether they get The Insider stays in Mailchimp.
 
 const fs = require('fs');
@@ -27,7 +30,7 @@ async function main() {
   const distDir = path.join(appDir, 'dist');
   const prebuilt = process.env.NODE_ENV === 'production' && fs.existsSync(path.join(distDir, 'src'));
   const app = await createStrapi(prebuilt ? { appDir, distDir } : await compileStrapi()).load();
-  const counts = { created: 0, linked: 0, skipped: 0, failed: 0 };
+  const counts = { created: 0, linked: 0, refreshed: 0, unchanged: 0, keptNewSitePassword: 0, skipped: 0, failed: 0 };
   try {
     const role = await app.db.query('plugin::users-permissions.role').findOne({ where: { type: 'authenticated' } });
     for (const r of readers) {
@@ -39,10 +42,19 @@ async function main() {
       try {
         const existing = await app.db.query(USER).findOne({ where: { email } });
         if (existing) {
-          if (!existing.legacyWpUserId) {
-            await app.db.query(USER).update({ where: { id: existing.id }, data: { legacyWpUserId: r.id } });
-            counts.linked++;
-          } else counts.skipped++;
+          const data = {};
+          if (!existing.legacyWpUserId) data.legacyWpUserId = r.id;
+          if (!existing.firstName && r.first_name) data.firstName = r.first_name;
+          if (!existing.lastName && r.last_name) data.lastName = r.last_name;
+          const wpHash = typeof r.pass === 'string' && r.pass.startsWith('$wp$2') ? r.pass : null;
+          const sameWpUser = !existing.legacyWpUserId || Number(existing.legacyWpUserId) === Number(r.id);
+          if (existing.password) counts.keptNewSitePassword++;
+          else if (sameWpUser && wpHash && wpHash !== existing.legacyPasswordHash) data.legacyPasswordHash = wpHash;
+          if (Object.keys(data).length) {
+            await app.db.query(USER).update({ where: { id: existing.id }, data });
+            if (data.legacyWpUserId) counts.linked++;
+            else counts.refreshed++;
+          } else counts.unchanged++;
           continue;
         }
         const data = {
