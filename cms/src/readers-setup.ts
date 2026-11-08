@@ -37,6 +37,10 @@ export async function setupReaders(strapi: Core.Strapi) {
       '<p>— Harnesslink</p>',
     ].join('\n');
     await store.set({ key: 'email', value: email });
+  } else if (reset && reset.from?.email === 'no-reply@harnesslink.com' && fromAddress !== reset.from.email) {
+    // Our earlier placeholder sender: move it to the Brevo-verified one.
+    reset.from = { ...reset.from, email: fromAddress };
+    await store.set({ key: 'email', value: email });
   }
 
   // Earlier Insider sign-ups (the old Subscriber list) join the reader list.
