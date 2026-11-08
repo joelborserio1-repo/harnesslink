@@ -59,7 +59,7 @@ SINCE=$(cat "$STATE/last-sync" 2>/dev/null || echo "$FIRST_SINCE")
 SINCE=$(date -u -d "$SINCE UTC - 10 minutes" '+%F %T')
 
 wp_export EXPORT_SINCE="$SINCE" "$TMP/changed.json"
-COUNT=$(grep -o '"id":' "$TMP/changed.json" | wc -l)
+COUNT=$( { grep -o '"id":' "$TMP/changed.json" || true; } | wc -l | tr -d ' ')
 if [ "$COUNT" -gt 0 ]; then
   log "$COUNT post(s) changed since $SINCE"
   import "$TMP/changed.json"
