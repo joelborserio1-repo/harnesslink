@@ -57,7 +57,10 @@ function Hero({ event }: { event: EventPage }) {
       <div className="wrap relative flex min-h-[220px] flex-col items-start justify-center gap-6 py-8 sm:min-h-[280px] md:flex-row md:items-center md:justify-between">
         <div className="max-w-[340px]">
           {event.logo ? (
-            <Img image={event.logo} className="h-auto w-[220px] sm:w-[300px]" />
+            // Official logos are drawn for light backgrounds: give them one.
+            <span className="inline-block bg-white/92 px-4 py-3">
+              <Img image={event.logo} className="h-auto w-[190px] sm:w-[250px]" />
+            </span>
           ) : (
             <h1 className="font-headline text-[40px] font-semibold text-white">{event.title}</h1>
           )}
@@ -98,9 +101,10 @@ function NavBand({ event }: { event: EventPage }) {
           ))}
         </nav>
         {facts.length > 0 && (
-          <ul className="font-ui flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted">
+          <ul className="font-ui flex flex-wrap gap-x-2 gap-y-1 text-[12px] text-muted">
             {facts.map((t, i) => (
-              <li key={t} className={i ? "border-l border-line pl-4" : ""}>
+              <li key={t}>
+                {i > 0 && <span className="mr-2 text-line" aria-hidden>·</span>}
                 {t}
               </li>
             ))}
@@ -284,7 +288,7 @@ function About({ event }: { event: EventPage }) {
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:items-start">
         <div>
           {event.about.subheading && <p className="font-headline mb-4 text-[22px] font-semibold leading-snug text-navy">{event.about.subheading}</p>}
-          <div className="article-body text-[15px] leading-[1.7] text-[#33363d]" dangerouslySetInnerHTML={{ __html: event.about.html || "" }} />
+          <div className="text-[15px] leading-[1.7] text-[#33363d] [&_a]:text-navy [&_a]:underline [&_p]:mb-4 [&_p:last-child]:mb-0" dangerouslySetInnerHTML={{ __html: event.about.html || "" }} />
           {boxes.length > 0 && (
             <dl className="mt-6 grid grid-cols-2 border-l border-t border-line">
               {boxes.map(([label, value]) => (
@@ -378,11 +382,11 @@ export default function EventView({ event, odds }: { event: EventPage; odds: Eve
               <section className="sheet px-5 py-6 sm:px-8">
                 <SectionHead
                   id="news"
-                  title={`Latest ${event.title} news`}
+                  title="Latest news"
                   aside={
                     event.news.category && (
                       <Link href={event.news.category.url} className="font-ui text-[12px] font-bold uppercase tracking-[0.1em] text-navy hover:text-blue">
-                        All {event.title} news →
+                        All news →
                       </Link>
                     )
                   }
