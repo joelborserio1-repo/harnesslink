@@ -11,3 +11,10 @@ harnesslink-directory.zip
 # Local note with the staging CMS login (never commit)
 /.staging-cms-admin.txt
 /STAGING-CMS-LOGIN.txt
+
+# Service keys saved locally for Claude to install on the server; never commit.
+/.brevo-smtp.txt
+/.mailchimp.txt
+/.r2.txt
+/.fastapi-token.txt
+/.postiz-keys.txt
