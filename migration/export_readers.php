@@ -5,7 +5,8 @@
  * READ-ONLY. Runs inside WP-CLI on the live server:
  *   sudo -u <site user> wp eval-file export_readers.php > readers.json
  *
- * Exports subscribers only (staff are invited into Strapi instead), with
+ * Exports every account (subscribers, and staff, who are readers too; their
+ * back-end access is invited separately in Strapi), with
  * their WordPress password HASH so they can keep their password: the new
  * site checks it on their first sign-in, then stores its own hash and
  * forgets this one. The output contains password hashes — keep it
@@ -13,9 +14,10 @@
  */
 
 $out = [];
-foreach (get_users(['role' => 'subscriber', 'orderby' => 'ID', 'order' => 'ASC']) as $u) {
+foreach (get_users(['orderby' => 'ID', 'order' => 'ASC']) as $u) {
   $out[] = [
     'id'         => (int) $u->ID,
+    'login'      => $u->user_login, // named in WordPress's login cookie
     'email'      => strtolower(trim($u->user_email)),
     'first_name' => (string) get_user_meta($u->ID, 'first_name', true),
     'last_name'  => (string) get_user_meta($u->ID, 'last_name', true),

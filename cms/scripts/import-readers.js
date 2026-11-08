@@ -20,6 +20,8 @@ const path = require('path');
 const { createStrapi, compileStrapi } = require('@strapi/strapi');
 
 const USER = 'plugin::users-permissions.user';
+// WordPress signs its login cookie with these 4 characters of the user's hash.
+const passFrag = (pass) => (typeof pass === 'string' && pass.length >= 12 ? pass.slice(8, 12) : null);
 
 async function main() {
   const file = process.argv[2];
@@ -48,12 +50,17 @@ async function main() {
           if (!existing.lastName && r.last_name) data.lastName = r.last_name;
           const wpHash = typeof r.pass === 'string' && r.pass.startsWith('$wp$2') ? r.pass : null;
           const sameWpUser = !existing.legacyWpUserId || Number(existing.legacyWpUserId) === Number(r.id);
+          // Always current, so a reader still logged in to WordPress at
+          // cutover is signed in here automatically.
+          if (sameWpUser && r.login && existing.legacyWpLogin !== r.login) data.legacyWpLogin = r.login;
+          if (sameWpUser && passFrag(r.pass) && existing.legacyWpPassFrag !== passFrag(r.pass)) data.legacyWpPassFrag = passFrag(r.pass);
           if (existing.password) counts.keptNewSitePassword++;
           else if (sameWpUser && wpHash && wpHash !== existing.legacyPasswordHash) data.legacyPasswordHash = wpHash;
           if (Object.keys(data).length) {
             await app.db.query(USER).update({ where: { id: existing.id }, data });
             if (data.legacyWpUserId) counts.linked++;
-            else counts.refreshed++;
+            else if (data.legacyPasswordHash || data.firstName || data.lastName) counts.refreshed++;
+            else counts.unchanged++;
           } else counts.unchanged++;
           continue;
         }
@@ -71,6 +78,8 @@ async function main() {
           signedUpAt: r.registered ? new Date(r.registered) : null,
           legacyWpUserId: r.id,
           legacyPasswordHash: typeof r.pass === 'string' && r.pass.startsWith('$wp$2') ? r.pass : null,
+          legacyWpLogin: r.login || null,
+          legacyWpPassFrag: passFrag(r.pass),
         };
         try {
           await app.documents(USER).create({ data });

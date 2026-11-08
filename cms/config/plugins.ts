@@ -24,12 +24,13 @@ const deniedTypes = [
 ];
 
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin => ({
-  // Reader accounts. Plain 30-day tokens: the website keeps one in a secure
-  // cookie and swaps it for a fresh one each day the reader visits.
+  // Reader accounts. One-year tokens: the website keeps one in a secure
+  // cookie and swaps it for a fresh one each day the reader visits, so
+  // regular readers are never asked to sign in again.
   'users-permissions': {
     config: {
       jwtManagement: 'legacy-support',
-      jwt: { expiresIn: '30d' },
+      jwt: { expiresIn: '365d' },
     },
   },
   // Sign-in emails (password reset) through Brevo's SMTP relay. Without

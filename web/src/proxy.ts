@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { RENEW_AFTER_MS, SESSION, SESSION_AT, clearSession, readerApi, setSession } from "@/lib/reader";
+import { RENEW_AFTER_MS, SESSION, SESSION_AT, WP_LOGIN_COOKIE, WP_TRIED, clearSession, readerApi, setSession } from "@/lib/reader";
 
 const STRAPI_URL = (process.env.STRAPI_URL || "http://127.0.0.1:1337").replace(/\/$/, "");
 
@@ -36,7 +36,14 @@ export async function proxy(req: NextRequest) {
 
   const headers = new Headers(req.headers);
   headers.set("x-invoked-path", pathname);
-  const renewal = await renewSession(req);
+  const wp = await fromWordPress(req);
+  if (wp?.signedIn) {
+    // Load the same page again so it renders signed in.
+    const again = withRobots(NextResponse.redirect(req.url, 307));
+    wp.apply(again);
+    return again;
+  }
+  const renewal = (await renewSession(req)) || wp?.apply || null;
   // Reader's country for ad targeting: Cloudflare's CF-IPCountry, or
   // ?geo=NZ to preview what a reader in another country sees.
   const geo = req.nextUrl.searchParams.get("geo") || req.headers.get("cf-ipcountry") || "";
@@ -46,7 +53,7 @@ export async function proxy(req: NextRequest) {
   return res;
 }
 
-// Signed-in readers get a fresh 30-day session once a day while they keep
+// Signed-in readers get a fresh one-year session once a day while they keep
 // visiting, so regular readers are never signed out. Returns a function that
 // writes the new cookies onto the response (or clears a dead session).
 async function renewSession(req: NextRequest): Promise<((res: NextResponse) => void) | null> {
@@ -62,6 +69,28 @@ async function renewSession(req: NextRequest): Promise<((res: NextResponse) => v
     // CMS unreachable: keep the current session and try again next visit
   }
   return null;
+}
+
+// A visitor with no session here who is still logged in to the old WordPress
+// site (same domain after cutover) is signed in to their imported account.
+// Tried once a day at most; the CMS checks the cookie's signature.
+async function fromWordPress(req: NextRequest): Promise<{ signedIn: boolean; apply: (res: NextResponse) => void } | null> {
+  if (req.cookies.get(SESSION)?.value || req.cookies.get(WP_TRIED)?.value) return null;
+  const wp = req.cookies.getAll().find((c) => WP_LOGIN_COOKIE.test(c.name));
+  if (!wp?.value) return null;
+  try {
+    const { ok, data } = await readerApi("wp-session", { method: "POST", body: { cookie: wp.value }, site: true });
+    if (ok && data?.token) return { signedIn: true, apply: (res) => setSession(res, data.token, data.reader) };
+  } catch {
+    // CMS unreachable: try again on a later visit
+    return null;
+  }
+  return {
+    signedIn: false,
+    apply: (res) => {
+      res.cookies.set(WP_TRIED, "1", { path: "/", maxAge: 24 * 60 * 60, sameSite: "lax", httpOnly: true, secure: process.env.NODE_ENV === "production" });
+    },
+  };
 }
 
 // Skip Next internals, the API, and anything with a file extension (assets).

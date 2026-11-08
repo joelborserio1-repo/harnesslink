@@ -1,6 +1,6 @@
 import type { NextResponse } from "next/server";
 
-// Reader sign-in. Strapi issues a 30-day token; the site keeps it in a
+// Reader sign-in. Strapi issues a one-year token; the site keeps it in a
 // secure, script-proof cookie and swaps it for a fresh one once a day while
 // the reader keeps visiting (proxy.ts) — so active readers stay signed in.
 // `hl_reader` (readable by the page) only holds their first name, for the
@@ -9,7 +9,12 @@ export const STRAPI_URL = (process.env.STRAPI_URL || "http://127.0.0.1:1337").re
 export const SESSION = "hl_session";
 export const SESSION_AT = "hl_session_at";
 export const READER = "hl_reader";
-export const MAX_AGE = 30 * 24 * 60 * 60; // seconds
+export const MAX_AGE = 365 * 24 * 60 * 60; // seconds — renewed daily, so effectively "stay signed in"
+// Old WordPress login cookie (wordpress_logged_in_ + md5 of the site URL).
+// When the new site takes over harnesslink.com, visitors still logged in to
+// WordPress are signed in here from it (proxy.ts → /api/readers/wp-session).
+export const WP_LOGIN_COOKIE = /^wordpress_logged_in_[a-f0-9]{32}$/;
+export const WP_TRIED = "hl_wp_tried";
 export const RENEW_AFTER_MS = 24 * 60 * 60 * 1000;
 
 export type Reader = { email: string; firstName: string; lastName: string; insider: boolean };
@@ -28,12 +33,13 @@ export function clearSession(res: NextResponse) {
 }
 
 // Server-to-server call to the CMS's reader routes.
-export async function readerApi(path: string, init: { method?: string; body?: unknown; token?: string } = {}) {
+export async function readerApi(path: string, init: { method?: string; body?: unknown; token?: string; site?: boolean } = {}) {
   const res = await fetch(`${STRAPI_URL}/api/readers/${path}`, {
     method: init.method || (init.body ? "POST" : "GET"),
     headers: {
       "Content-Type": "application/json",
       ...(init.token ? { Authorization: `Bearer ${init.token}` } : {}),
+      ...(init.site ? { "x-hl-site": process.env.PREVIEW_SECRET || "" } : {}),
     },
     body: init.body ? JSON.stringify(init.body) : undefined,
     cache: "no-store",

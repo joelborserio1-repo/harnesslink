@@ -17,7 +17,7 @@ export async function submitComment(_prev: CommentState, form: FormData): Promis
   if (!token) return { status: "error", message: "Please sign in to comment." };
   const me = await readerApi("me", { token });
   if (!me.ok) return { status: "error", message: "Your session has ended — please sign in again to comment." };
-  const reader = me.data as { email?: string; firstName?: string; lastName?: string };
+  const reader = ((me.data as { reader?: unknown })?.reader || {}) as { email?: string; firstName?: string; lastName?: string };
   const name = [reader.firstName, reader.lastName].filter(Boolean).join(" ").trim();
   if (!reader.email || name.length < 2) return { status: "error", message: "Add your name under My account, then post your comment." };
 

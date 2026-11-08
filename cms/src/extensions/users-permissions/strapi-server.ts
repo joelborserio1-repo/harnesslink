@@ -18,6 +18,11 @@ export default (plugin: any) => {
     // password hash until their first sign-in converts it (then cleared).
     legacyWpUserId: { type: 'biginteger', unique: true },
     legacyPasswordHash: { type: 'string', private: true, configurable: false },
+    // For signing in readers who arrive still logged in to the old WordPress
+    // site (its login cookie names the user and is signed with part of their
+    // WordPress password hash). See api/reader/services/wp-cookie.ts.
+    legacyWpLogin: { type: 'string', private: true, configurable: false },
+    legacyWpPassFrag: { type: 'string', private: true, configurable: false },
     // When the current password-reset link was sent (links last 2 hours).
     resetRequestedAt: { type: 'datetime', private: true, configurable: false },
   });

@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto';
 import type { Core } from '@strapi/strapi';
 import type { Context } from 'koa';
 
@@ -105,7 +106,22 @@ export default ({ strapi }: { strapi: Core.Strapi }) => {
       await session(ctx, reader);
     },
 
-    // POST /api/readers/refresh (Bearer) — a fresh 30-day token.
+    // POST /api/readers/wp-session { cookie } — the site passes on the old
+    // WordPress login cookie of a visitor with no session here; if it's
+    // genuine, they're signed in to their imported account. Only the site
+    // may call this (shared secret), so it can't be used to probe logins.
+    async wpSession(ctx: Context) {
+      const secret = Buffer.from(process.env.PREVIEW_SECRET || '');
+      const sent = Buffer.from(String(ctx.get('x-hl-site') || ''));
+      if (!secret.length || sent.length !== secret.length || !timingSafeEqual(sent, secret)) return fail(ctx, 403, 'forbidden', 'Not allowed.');
+      const body = (ctx.request.body || {}) as Record<string, unknown>;
+      const reader = await (strapi.service('api::reader.wp-cookie') as any).readerFor(String(body.cookie || ''));
+      if (!reader) return fail(ctx, 401, 'no-match', 'No matching account.');
+      await strapi.db.query(USER).update({ where: { id: reader.id }, data: { lastSignInAt: new Date() } });
+      await session(ctx, reader);
+    },
+
+    // POST /api/readers/refresh (Bearer) — a fresh token (365 days).
     async refresh(ctx: Context) {
       const reader = await accounts().fromToken(ctx.get('authorization'));
       if (!reader) return fail(ctx, 401, 'signed-out', 'Please sign in again.');
