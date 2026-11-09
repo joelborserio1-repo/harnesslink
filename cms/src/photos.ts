@@ -73,13 +73,13 @@ export async function searchPhotos(strapi: Core.Strapi, q: string, page = 1, pag
   let rows: any[];
   let total: number;
   if (tsq) {
-    // Best match first, nudged towards recent photos (a horse's current
-    // colours, a driver's current face).
+    // Best match, weighted firmly towards recent photos (a horse's current
+    // colours, a driver's current face): this year ×1.3, five years ago ×0.47.
     const res = await db.raw(
       `SELECT ${cols}, count(*) OVER () AS total
          FROM ${PHOTO_TABLE}, to_tsquery('simple', ?) q
         WHERE on_disk AND search @@ q
-        ORDER BY ts_rank(search, q) * (1 + 1 / (1 + extract(epoch FROM now() - coalesce(last_used_at, uploaded_at)) / 31557600)) DESC,
+        ORDER BY ts_rank(search, q) * (0.3 + 1 / (1 + extract(epoch FROM now() - coalesce(last_used_at, uploaded_at)) / 31557600)) DESC,
                  uploaded_at DESC
         LIMIT ? OFFSET ?`,
       [tsq, pageSize, offset],
