@@ -15,11 +15,15 @@ const ALLOWED_TAGS = [
   'img', 'figure', 'figcaption', 'picture', 'source',
   'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption',
   'iframe', 'span', 'div', 'hr', 'pre', 'code',
+  // WordPress's own [video] / [audio] players (uploaded MP4s, MP3s…).
+  'video', 'audio', 'track',
 ];
 const ALLOWED_ATTRS = [
   'href', 'src', 'srcset', 'sizes', 'alt', 'title', 'width', 'height',
   'colspan', 'rowspan', 'target', 'rel', 'loading',
   'allow', 'allowfullscreen', 'frameborder', 'class',
+  // <video>/<audio>/<source>/<track>: never autoplay.
+  'controls', 'poster', 'preload', 'type', 'playsinline', 'muted', 'loop', 'kind', 'srclang', 'label',
 ];
 
 // Strapi's slug field accepts only these characters.

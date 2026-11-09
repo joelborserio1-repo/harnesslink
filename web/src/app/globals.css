@@ -148,6 +148,11 @@ body {
 .prose-article a { color: var(--color-blue); text-decoration: underline; text-underline-offset: 2px; }
 .prose-article a:hover { color: var(--color-navy); }
 .prose-article img { max-width: 100%; height: auto; }
+/* WordPress [video]/[audio] players: full column width, natural height. */
+.prose-article .wp-video,
+.prose-article .wp-audio-shortcode { width: 100% !important; max-width: 100%; margin: 1.75rem 0; }
+.prose-article video { display: block; width: 100%; max-width: 100%; height: auto; background: #000; }
+.prose-article audio { display: block; width: 100%; }
 .prose-article figure { margin: 1.75rem 0; max-width: 100%; }
 /* WordPress writes an inline pixel width on caption figures. */
 .prose-article figure[style] { width: auto !important; }

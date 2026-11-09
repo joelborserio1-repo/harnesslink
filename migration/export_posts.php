@@ -43,6 +43,9 @@ $meta_keys = [
 //   EXPORT_IDS=1 prints just the IDs of every published post (nightly check for
 //   posts deleted outright, which leave no modified row behind).
 $since = getenv('EXPORT_SINCE') ?: '';
+// EXPORT_POST_IDS="1,2,3" re-exports just those published posts (e.g. to
+// re-import stories after an importer fix, with import-wordpress.js --force).
+$only_ids = array_filter(array_map('intval', explode(',', (string) getenv('EXPORT_POST_IDS'))));
 if (getenv('EXPORT_IDS')) {
   global $wpdb;
   $in = implode(',', array_map(function ($t) use ($wpdb) { return $wpdb->prepare('%s', $t); }, $types));
@@ -51,7 +54,16 @@ if (getenv('EXPORT_IDS')) {
   return;
 }
 
-$query = new WP_Query($since ? [
+$query = new WP_Query($only_ids ? [
+  'post_type'      => $types,
+  'post_status'    => 'publish',
+  'post__in'       => $only_ids,
+  'posts_per_page' => -1,
+  'orderby'        => 'ID',
+  'order'          => 'ASC',
+  'ignore_sticky_posts' => true,
+  'no_found_rows'  => true,
+] : ($since ? [
   'post_type'      => $types,
   'post_status'    => ['publish', 'future', 'draft', 'pending', 'private', 'trash'],
   'posts_per_page' => -1,
@@ -69,7 +81,7 @@ $query = new WP_Query($since ? [
   'order'          => $page > 0 ? 'ASC' : 'DESC',
   'ignore_sticky_posts' => true,
   'no_found_rows'  => true,
-]);
+]));
 
 // The body as WordPress core renders it on the live site: [embed]/auto-embeds,
 // blocks, typography, paragraphs (wpautop — most classic posts store none),
