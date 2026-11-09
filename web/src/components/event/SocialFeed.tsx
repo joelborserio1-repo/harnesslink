@@ -19,7 +19,7 @@ export default function SocialFeed({ feedId }: { feedId: string }) {
   }, [feedId]);
 
   return (
-    <div ref={box} className="event-social max-h-[620px] overflow-y-auto">
+    <div ref={box} className="event-social h-full max-h-[620px] overflow-y-auto lg:max-h-none">
       <div id="curator-feed-default-feed-layout">
         <a href="https://curator.io" target="_blank" rel="noopener noreferrer" className="crt-logo crt-tag text-[11px] text-muted">
           Powered by Curator.io

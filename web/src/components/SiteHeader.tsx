@@ -7,19 +7,42 @@ import { getMenu, type MenuItem } from "@/lib/menu";
 import { READER } from "@/lib/reader";
 import { SOCIAL } from "@/lib/site";
 
-// The live site's header: navy masthead with the centred wordmark, round
-// social icons and a search line at the right, then the big uppercase menu
-// (edited in Strapi under Navigation → "Main menu").
+// The masthead: round social icons at the top left, the centred wordmark,
+// and at the top right the reader's account links above the search line;
+// then the big uppercase menu (edited in Strapi under Navigation → "Main
+// menu"). Sign in / Register live up here, so a "Login" menu item is skipped.
 export default async function SiteHeader() {
-  // Signed out, the menu's "Login" item shows as on the live site. Signed in,
-  // it leaves the menu and a quiet "My account" link sits at the top left of
-  // the masthead instead (a person icon on phones).
   const signedIn = !!(await cookies()).get(READER)?.value;
   const isLogin = (i: MenuItem) => i.href === "/login/" || i.title.toLowerCase() === "login";
-  const menu = (await getMenu("main-menu")).filter((i) => !(signedIn && isLogin(i)));
+  const menu = (await getMenu("main-menu")).filter((i) => !isLogin(i));
+  const account = "font-ui text-[12px] font-semibold uppercase tracking-[0.12em] text-white/85 hover:text-white";
+  const person = (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" strokeLinecap="round" />
+    </svg>
+  );
   return (
     <header className="bg-navy">
       <div className="wrap relative flex items-center justify-center pb-1 pt-5 sm:min-h-[83px] sm:pt-3">
+        <ul className="absolute left-4 top-4 hidden items-center gap-2.5 sm:left-[25px] md:flex">
+          {SOCIAL.map((s) => (
+            <li key={s.label}>
+              <a
+                href={s.href}
+                aria-label={s.label}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="grid h-7 w-7 place-items-center rounded-full bg-white text-navy hover:bg-white/85"
+              >
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden>
+                  <path d={s.path} />
+                </svg>
+              </a>
+            </li>
+          ))}
+        </ul>
+
         <Link
           href="/"
           aria-label="Harnesslink — home"
@@ -28,38 +51,25 @@ export default async function SiteHeader() {
           HarnessLink
         </Link>
 
-        {signedIn && (
-          <Link
-            href="/my-account/"
-            aria-label="My account"
-            className="font-ui absolute left-4 top-6 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.12em] text-white/85 hover:text-white sm:left-[25px] md:top-4"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-              <circle cx="12" cy="8" r="4" />
-              <path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" strokeLinecap="round" />
-            </svg>
-            <span className="hidden md:inline">My account</span>
-          </Link>
-        )}
-
         <div className="absolute right-4 top-3 hidden flex-col items-end gap-2 sm:right-[25px] md:flex">
-          <ul className="flex items-center gap-2.5">
-            {SOCIAL.map((s) => (
-              <li key={s.label}>
-                <a
-                  href={s.href}
-                  aria-label={s.label}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="grid h-7 w-7 place-items-center rounded-full bg-white text-navy hover:bg-white/85"
-                >
-                  <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden>
-                    <path d={s.path} />
-                  </svg>
-                </a>
-              </li>
-            ))}
-          </ul>
+          {signedIn ? (
+            <Link href="/my-account/" className={`flex items-center gap-1.5 ${account}`}>
+              {person}
+              My account
+            </Link>
+          ) : (
+            <p className="flex items-center gap-2">
+              <Link href="/login/" className={account}>
+                Sign in
+              </Link>
+              <span className="text-white/40" aria-hidden>
+                ·
+              </span>
+              <Link href="/register/" className={account}>
+                Register
+              </Link>
+            </p>
+          )}
           <form action="/search/" className="flex w-[150px] items-center border-b border-white/60">
             <input
               type="search"
@@ -75,12 +85,22 @@ export default async function SiteHeader() {
             </button>
           </form>
         </div>
-        <Link href="/search/" aria-label="Search" className="absolute right-4 top-6 text-white md:hidden">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
-            <circle cx="11" cy="11" r="7" />
-            <path d="M21 21l-4.3-4.3" strokeLinecap="round" />
-          </svg>
-        </Link>
+
+        {/* Phones: account and search icons at the top right. */}
+        <div className="absolute right-4 top-6 flex items-center gap-4 text-white md:hidden">
+          <Link href={signedIn ? "/my-account/" : "/login/"} aria-label={signedIn ? "My account" : "Sign in"}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" strokeLinecap="round" />
+            </svg>
+          </Link>
+          <Link href="/search/" aria-label="Search">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+              <circle cx="11" cy="11" r="7" />
+              <path d="M21 21l-4.3-4.3" strokeLinecap="round" />
+            </svg>
+          </Link>
+        </div>
       </div>
 
       <nav aria-label="Primary">

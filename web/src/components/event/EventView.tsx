@@ -166,7 +166,7 @@ function OddsPanel({ title, odds }: { title: string; odds: EventOdds }) {
 function SocialPanel({ event }: { event: EventPage }) {
   const s = event.social;
   return (
-    <section className="sheet" aria-labelledby="event-social">
+    <section className="sheet flex min-h-0 flex-col lg:min-h-[320px] lg:flex-1" aria-labelledby="event-social">
       <div className="flex items-center gap-3 border-b border-line px-4 py-3">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" className="text-ink" aria-hidden>
           <path d="M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.33l4.37 5.77L17.75 3zm-1.08 16.17h1.7L7.4 4.74H5.58l11.09 14.43z" />
@@ -175,7 +175,7 @@ function SocialPanel({ event }: { event: EventPage }) {
           {s.title}
         </h2>
       </div>
-      <div className="px-3 py-3">
+      <div className="min-h-0 flex-1 px-3 py-3">
         {s.curatorFeedId ? (
           <SocialFeed feedId={s.curatorFeedId} />
         ) : (
@@ -187,14 +187,14 @@ function SocialPanel({ event }: { event: EventPage }) {
         )}
       </div>
       {(s.xHandle || s.hashtags.length > 0) && (
-        <p className="border-t border-line px-4 py-3 text-[11px] leading-relaxed text-muted">
+        <p className="flex flex-wrap gap-x-3 gap-y-1 border-t border-line px-4 py-3 text-[11px] leading-relaxed text-muted">
           {s.xHandle && (
-            <a href={`https://x.com/${s.xHandle}`} target="_blank" rel="noopener noreferrer" className="mr-2 font-bold text-navy hover:text-blue">
+            <a href={`https://x.com/${s.xHandle}`} target="_blank" rel="noopener noreferrer" className="font-bold text-navy hover:text-blue">
               @{s.xHandle}
             </a>
           )}
           {s.hashtags.map((h) => (
-            <a key={h} href={`https://x.com/hashtag/${encodeURIComponent(h)}`} target="_blank" rel="noopener noreferrer" className="mr-2 hover:text-blue">
+            <a key={h} href={`https://x.com/hashtag/${encodeURIComponent(h)}`} target="_blank" rel="noopener noreferrer" className="break-all hover:text-blue">
               #{h}
             </a>
           ))}
@@ -377,7 +377,7 @@ export default function EventView({ event, odds }: { event: EventPage; odds: Eve
       <NavBand event={event} />
       <div className="wrap my-7 space-y-7">
         {(event.news.show || aside) && (
-          <div className={`grid gap-7 ${aside ? "lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start" : ""}`}>
+          <div className={`grid gap-7 ${aside ? "lg:grid-cols-[minmax(0,1fr)_340px]" : ""}`}>
             {event.news.show && (
               <section className="sheet px-5 py-6 sm:px-8">
                 <SectionHead
@@ -399,10 +399,19 @@ export default function EventView({ event, odds }: { event: EventPage; odds: Eve
               </section>
             )}
             {aside && (
-              <aside className="space-y-7">
-                {showOdds && <OddsPanel title={event.odds.title} odds={odds!} />}
-                {event.social.show && <SocialPanel event={event} />}
-              </aside>
+              // Beside the news on wide screens the column takes the news'
+              // height: the odds sit at the top and the social feed fills
+              // (and scrolls within) the rest, so neither side leaves a gap.
+              <div className={`relative min-w-0 ${event.news.show ? "" : "lg:col-start-2"}`}>
+                <aside className={`flex flex-col gap-7 ${event.news.show ? "lg:absolute lg:inset-0" : ""}`}>
+                  {showOdds && (
+                    <div className="shrink-0">
+                      <OddsPanel title={event.odds.title} odds={odds!} />
+                    </div>
+                  )}
+                  {event.social.show && <SocialPanel event={event} />}
+                </aside>
+              </div>
             )}
           </div>
         )}
