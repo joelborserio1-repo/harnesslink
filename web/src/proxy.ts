@@ -48,6 +48,9 @@ export async function proxy(req: NextRequest) {
   // ?geo=NZ to preview what a reader in another country sees.
   const geo = req.nextUrl.searchParams.get("geo") || req.headers.get("cf-ipcountry") || "";
   headers.set("x-hl-country", /^[A-Za-z]{2}$/.test(geo) ? geo.toUpperCase() : "");
+  // ?geo= previews show ads but don't count towards advertisers' reports.
+  if (req.nextUrl.searchParams.get("geo")) headers.set("x-hl-geo-preview", "1");
+  else headers.delete("x-hl-geo-preview");
   const res = withRobots(NextResponse.next({ request: { headers } }));
   renewal?.(res);
   return res;

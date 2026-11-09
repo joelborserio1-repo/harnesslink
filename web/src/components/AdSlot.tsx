@@ -19,7 +19,7 @@ const FORMATS: Record<AdFormat, { w: number; h: number }> = {
   mpu: { w: 300, h: 250 },
 };
 
-function Creative({ ad, format }: { ad: AdCreative; format: AdFormat }) {
+function Creative({ ad, format, track }: { ad: AdCreative; format: AdFormat; track: string | null }) {
   const f = FORMATS[format];
   const w = ad.width ?? f.w;
   const h = ad.height ?? f.h;
@@ -31,11 +31,11 @@ function Creative({ ad, format }: { ad: AdCreative; format: AdFormat }) {
       className="relative w-full overflow-hidden"
       style={box ? { maxWidth: f.w, aspectRatio: `${f.w} / ${f.h}` } : { maxWidth: f.w, aspectRatio: `${w} / ${h}` }}
     >
-      <AdImpression id={ad.id} />
+      {track !== null && <AdImpression id={ad.id} query={track} />}
       {ad.html ? (
         <div className="h-full w-full" dangerouslySetInnerHTML={{ __html: ad.html }} />
       ) : ad.image_url ? (
-        <a href={ad.click_url} target="_blank" rel="noopener sponsored" className="block h-full w-full">
+        <a href={`${ad.click_url}${track || ""}`} target="_blank" rel="noopener sponsored" className="block h-full w-full">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={ad.image_url}
@@ -61,7 +61,11 @@ export default async function AdSlot({
   format: AdFormat;
   className?: string;
 }) {
-  const country = (await headers()).get("x-hl-country") || "";
+  const h = await headers();
+  const country = h.get("x-hl-country") || "";
+  // Placement and country go with each impression and click, for the
+  // advertiser's report; ?geo= previews aren't counted at all.
+  const track = h.get("x-hl-geo-preview") ? null : `?${new URLSearchParams({ z: zone, ...(country ? { c: country } : {}) })}`;
   const entry = (await getAds(country))[zone];
   const ads = Array.isArray(entry) ? entry : [];
   if (ads.length === 0) return null;
@@ -69,7 +73,7 @@ export default async function AdSlot({
   return (
     <div data-ad-zone={zone} className={`flex flex-col items-center gap-2.5 ${className}`}>
       {ads.map((ad) => (
-        <Creative key={ad.id} ad={ad} format={format} />
+        <Creative key={ad.id} ad={ad} format={format} track={track} />
       ))}
     </div>
   );

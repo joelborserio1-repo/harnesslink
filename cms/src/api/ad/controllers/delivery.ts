@@ -1,6 +1,7 @@
 import type { Core } from '@strapi/strapi';
 import type { Context } from 'koa';
 import { ZONES, marketOf, showsIn, weightedSample, type Zone } from '../zones';
+import { recordAdEvent } from '../stats';
 
 const UID = 'api::ad.ad';
 
@@ -52,14 +53,19 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async click(ctx: Context) {
     const { documentId } = ctx.params;
     const ad = await strapi.documents(UID).findOne({ documentId, fields: ['linkUrl'] });
-    if (ad) await strapi.db.connection('ads').where({ document_id: documentId }).increment('clicks', 1);
+    if (ad) {
+      await strapi.db.connection('ads').where({ document_id: documentId }).increment('clicks', 1);
+      await recordAdEvent(strapi, ctx, documentId, 'clicks').catch((e) => strapi.log.warn(`[ads] ${e.message}`));
+    }
     ctx.status = 302;
     ctx.redirect(ad?.linkUrl || '/');
   },
 
   // POST /api/ads/:documentId/impression — one viewable impression.
   async impression(ctx: Context) {
-    await strapi.db.connection('ads').where({ document_id: ctx.params.documentId }).increment('impressions', 1);
+    const counted = await strapi.db.connection('ads').where({ document_id: ctx.params.documentId }).increment('impressions', 1);
+    // Only real ads get a report row.
+    if (Number(counted) > 0) await recordAdEvent(strapi, ctx, ctx.params.documentId, 'impressions').catch((e) => strapi.log.warn(`[ads] ${e.message}`));
     ctx.status = 204;
   },
 });

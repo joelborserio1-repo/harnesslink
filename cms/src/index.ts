@@ -5,6 +5,7 @@ import { applyPluginSettings } from './plugin-settings';
 import { setupReaders } from './readers-setup';
 import { registerRevisionCapture, registerRevisionRoutes } from './revisions';
 import { registerDashboardRoutes } from './dashboard';
+import { ensureAdStats, registerAdReportRoutes } from './api/ad/stats';
 import { registerSocialRoutes } from './social';
 
 // What the public website may read without a token (Users & Permissions
@@ -205,10 +206,12 @@ export default {
     registerDashboardRoutes(strapi);
     registerRevisionRoutes(strapi);
     registerSocialRoutes(strapi);
+    registerAdReportRoutes(strapi);
   },
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
     await ensureIndexes(strapi);
+    await ensureAdStats(strapi);
     await grantPublicRead(strapi);
     await authorsCannotPublish(strapi);
     await applyEditorLayouts(strapi);
