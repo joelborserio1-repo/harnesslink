@@ -6,8 +6,13 @@
 #   sync_from_wordpress.sh            every 10 minutes: posts changed since the
 #                                     last good run (new, edited, re-slugged,
 #                                     unpublished or trashed)
-#   sync_from_wordpress.sh nightly    also: posts deleted outright (ID check)
-#                                     and new reader accounts
+#   sync_from_wordpress.sh nightly    also: posts deleted outright (ID check),
+#                                     photos deleted outright, and new reader
+#                                     accounts
+#
+# Photos (export_photos.php → import-photos.js) ride along: every run brings
+# across photos uploaded or edited since the last good run and refreshes which
+# stories each photo appeared in, for the newsroom's photo search.
 #
 # Cron (root, on the staging server):
 #   */10 * * * * /root/harnesslink/migration/sync_from_wordpress.sh >> /var/log/hl-sync.log 2>&1
@@ -30,8 +35,9 @@ flock -n 9 || { echo "$(date -u '+%F %T') sync already running, skipping"; exit 
 log() { echo "$(date -u '+%F %T') $*"; }
 wp_export() { # env assignments..., output file
   local out="${!#}"; local envs=("${@:1:$#-1}")
-  install -m 644 "$REPO/migration/export_posts.php" /tmp/hl_export_posts.php
-  ( cd "$WP" && sudo -u "$WP_USER" env "${envs[@]}" /usr/local/bin/wp eval-file /tmp/hl_export_posts.php --path="$WP/" ) > "$out" 2>/dev/null
+  local script=${EXPORTER:-export_posts.php}
+  install -m 644 "$REPO/migration/$script" "/tmp/hl_$script"
+  ( cd "$WP" && sudo -u "$WP_USER" env "${envs[@]}" /usr/local/bin/wp eval-file "/tmp/hl_$script" --path="$WP/" ) > "$out" 2>/dev/null
   [ "$(head -c1 "$out")" = "[" ] || { log "export failed (not JSON)"; return 1; }
 }
 import() { # file, extra importer args...
@@ -64,12 +70,33 @@ if [ "$COUNT" -gt 0 ]; then
   log "$COUNT post(s) changed since $SINCE"
   import "$TMP/changed.json"
 fi
+
+photos() { # extra importer args / files
+  cd "$REPO"
+  local st=0
+  docker compose exec -T -e CRON_ENABLED=false -e NODE_ENV=production cms \
+    sh -c "cd /app && node scripts/import-photos.js $*; s=\$?; rm -f /tmp/hl-photos.json; exit \$s" \
+    > "$TMP/photos.log" 2>&1 || st=$?
+  grep -E '\[photos\]' "$TMP/photos.log" | grep -v '0 upserted' | sed "s/^/$(date -u '+%F %T') /" || true
+  [ "$st" -eq 0 ] || { log "photo import failed (exit $st); will retry from the same point next run"; tail -3 "$TMP/photos.log"; return 1; }
+}
+EXPORTER=export_photos.php wp_export EXPORT_SINCE="$SINCE" "$TMP/photos.json"
+# Skip when nothing changed at all (starting Strapi costs ~20s).
+if [ "$(head -c2 "$TMP/photos.json")" != "[]" ] || [ "$COUNT" -gt 0 ]; then
+  docker compose -f "$REPO/docker-compose.yml" exec -T cms sh -c "umask 077; cat > /tmp/hl-photos.json" < "$TMP/photos.json"
+  photos /tmp/hl-photos.json
+fi
+
 echo "$STARTED" > "$STATE/last-sync"
 
 if [ "${1:-}" = "nightly" ]; then
   wp_export EXPORT_IDS=1 "$TMP/ids.json"
   log "nightly: checking for deleted posts"
   import "$TMP/ids.json" --reconcile
+  log "nightly: checking for deleted photos"
+  EXPORTER=export_photos.php wp_export EXPORT_IDS=1 "$TMP/photo-ids.json"
+  docker compose -f "$REPO/docker-compose.yml" exec -T cms sh -c "umask 077; cat > /tmp/hl-photos.json" < "$TMP/photo-ids.json"
+  photos --reconcile /tmp/hl-photos.json
   if [ -x /root/harnesslink-backups/import-readers.sh ]; then
     log "nightly: readers"
     /root/harnesslink-backups/import-readers.sh 2>&1 | grep -E 'done|failed' || true
