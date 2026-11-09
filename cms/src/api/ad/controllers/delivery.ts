@@ -1,7 +1,7 @@
 import type { Core } from '@strapi/strapi';
 import type { Context } from 'koa';
 import { ZONES, marketOf, showsIn, weightedSample, type Zone } from '../zones';
-import { recordAdEvent } from '../stats';
+import { isBot, recordAdEvent } from '../stats';
 
 const UID = 'api::ad.ad';
 
@@ -53,7 +53,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async click(ctx: Context) {
     const { documentId } = ctx.params;
     const ad = await strapi.documents(UID).findOne({ documentId, fields: ['linkUrl'] });
-    if (ad) {
+    if (ad && !isBot(ctx)) {
       await strapi.db.connection('ads').where({ document_id: documentId }).increment('clicks', 1);
       await recordAdEvent(strapi, ctx, documentId, 'clicks').catch((e) => strapi.log.warn(`[ads] ${e.message}`));
     }
@@ -63,6 +63,10 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
 
   // POST /api/ads/:documentId/impression — one viewable impression.
   async impression(ctx: Context) {
+    if (isBot(ctx)) {
+      ctx.status = 204;
+      return;
+    }
     const counted = await strapi.db.connection('ads').where({ document_id: ctx.params.documentId }).increment('impressions', 1);
     // Only real ads get a report row.
     if (Number(counted) > 0) await recordAdEvent(strapi, ctx, ctx.params.documentId, 'impressions').catch((e) => strapi.log.warn(`[ads] ${e.message}`));

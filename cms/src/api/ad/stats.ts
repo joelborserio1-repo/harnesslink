@@ -52,8 +52,10 @@ function countryOf(ctx: Context) {
   return /^[A-Z]{2}$/.test(c) ? c : 'XX';
 }
 
+export const isBot = (ctx: Context) => BOTS.test(String(ctx.get('user-agent') || ''));
+
 export async function recordAdEvent(strapi: Core.Strapi, ctx: Context, documentId: string, kind: 'impressions' | 'clicks') {
-  if (BOTS.test(String(ctx.get('user-agent') || ''))) return;
+  if (isBot(ctx)) return;
   if (!/^[a-z0-9]{10,64}$/i.test(documentId)) return;
   const zone = String(ctx.query.z || '');
   const row = {
