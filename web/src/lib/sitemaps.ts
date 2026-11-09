@@ -1,8 +1,9 @@
 // XML for the sitemaps and RSS feed, built from the CMS's lean listings. Same
 // output as the Rails builder it replaces: a paginated index, 10,000 URLs per
 // article sitemap, a Google News sitemap of the last 48 hours, and an archive
-// sitemap of section, country, page, writer and tag URLs.
-import { sitemapArchives, sitemapArticles, listArticles } from "@/lib/api";
+// sitemap of section, country, page, writer and tag URLs, event pages (The
+// Eureka) and The Insider's past editions (/edition/<slug>/, as on WordPress).
+import { sitemapArchives, sitemapArticles, listArticles, listEventPageSlugs, listInsiderEditions } from "@/lib/api";
 
 export const PER_PAGE = 10_000;
 const NEWS_WINDOW_MS = 48 * 60 * 60 * 1000;
@@ -67,8 +68,12 @@ ${urls.join("\n")}
 }
 
 export async function archivesXml() {
-  const a = await sitemapArchives();
+  const [a, events, editions] = await Promise.all([sitemapArchives(), listEventPageSlugs(), listInsiderEditions()]);
   const paths = [
+    ...events.map((s) => `/${s}/`),
+    "/the-insider/",
+    "/the-insider/editions/",
+    ...editions.map((e) => e.url),
     ...a.categories.map((s) => `/category/${s}/`),
     ...a.countries.map((s) => `/country/${s}/`),
     ...a.pages.map((p) => `/${p}/`),

@@ -926,3 +926,8 @@ export async function getInsiderEdition(slug: string) {
     older: i >= 0 && i < all.length - 1 ? all[i + 1] : null,
   };
 }
+
+export async function listEventPageSlugs(): Promise<string[]> {
+  const data = await strapi<List<{ slug: string }>>("/event-pages", { fields: ["slug"], pagination: { pageSize: 100 } });
+  return (data?.data || []).map((e) => e.slug);
+}
