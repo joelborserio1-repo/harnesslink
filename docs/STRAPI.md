@@ -64,6 +64,7 @@ Strapi's Content History is a paid plan feature, so `src/revisions.ts` keeps our
 
 - **New uploads** go to R2 when `R2_BUCKET` (+ `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_PUBLIC_URL`) are set (official `@strapi/provider-upload-aws-s3`, under `strapi/`). Unset: server disk.
 - **WordPress photos** are copied with the same paths by `migration/sync_media_to_r2.sh` (rclone in a container, read-only on WordPress, rerunnable — run once, then again at cutover). Only the dated folders are copied (~113 GB); `wpallimport/` and plugin folders are skipped.
+- **Photo archive** (newsroom menu): every WordPress photo (~134k records, ~93k with a file on disk; the rest 404 on the live site too and are hidden), searchable by title, caption, alt text, file name and the headlines of the stories it ran with, recent photos first. Table `hl_photos` (`src/photos.ts`), loaded by `scripts/import-photos.js` from `migration/export_photos.php`; the 10-minute sync brings new and edited photos across and the nightly run drops deleted ones. Admin route `GET /hl-photos/search?q=`.
 - **The site** rewrites `harnesslink.com/wp-content/uploads/…` to `R2_PUBLIC_URL/wp-content/uploads/…` (env `MEDIA_URL` in web) in story HTML, lead photos and search results — no database rewrite, so it's reversible by unsetting the variable.
 
 ## Ads: placement, dates, countries
