@@ -68,7 +68,9 @@ Strapi's Content History is a paid plan feature, so `src/revisions.ts` keeps our
 
 ## Ads: placement, dates, countries
 
-*Start date* / *Finish date* bound when an ad runs. The **Show in …** ticks (Australia, New Zealand, USA, Canada, UK & Ireland, Europe, everywhere else) limit it to readers in those countries; none ticked = everywhere. The reader's country comes from Cloudflare's `CF-IPCountry` header, so the site must be proxied through Cloudflare (orange cloud) for targeting to work — without it every reader counts as "everywhere else". Add `?geo=NZ` to any page to preview what a reader in another country sees.
+*Start date* / *Finish date* bound when an ad runs. The **Show in …** ticks (Australia, New Zealand, USA, Canada, UK & Ireland, Europe, everywhere else) limit it to readers in those countries; none ticked = everywhere. The reader's country comes from Cloudflare's `CF-IPCountry` header, so the site must be proxied through Cloudflare (orange cloud) for targeting to work — without it every reader counts as "everywhere else". Add `?geo=NZ` to any page to preview what a reader in another country sees (previews aren't counted in reports).
+
+**Reporting.** Every viewable impression (at least half the ad on screen) and click is added to a daily row per ad × country × placement (table `hl_ad_daily`, New Zealand days; bots aren't counted). Open an ad → **Performance** panel: last 7 / 30 / 90 days or all time, impressions, clicks and click-through rate by country and placement, a day-by-day table, and **Download CSV for the advertiser**. The ad's lifetime *impressions*/*clicks* fields still count everything since before daily reporting began. HTML ads (third-party tags) report impressions only; their clicks happen inside the advertiser's code.
 
 ## Not used (paid in Strapi)
 
