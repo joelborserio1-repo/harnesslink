@@ -18,6 +18,7 @@ const PUBLIC_READ = [
   'api::page.page',
   'api::country.country',
   'api::event-page.event-page',
+  'api::insider-edition.insider-edition',
 ];
 
 // Plugin endpoints the website calls: menus, and reader comments (read and

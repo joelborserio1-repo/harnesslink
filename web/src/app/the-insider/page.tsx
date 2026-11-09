@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import SubscribeForm from "@/components/SubscribeForm";
+import InsiderEditions from "@/components/InsiderEditions";
+import { listInsiderEditions } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +13,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://harnesslink.com/the-insider/" },
 };
 
-export default function InsiderPage() {
+export default async function InsiderPage() {
+  const editions = await listInsiderEditions();
   return (
     <div className="mx-auto max-w-5xl px-5 py-8">
       {/* Sign-up hero */}
@@ -38,13 +42,14 @@ export default function InsiderPage() {
         <h2 className="mb-4 border-b-2 border-navy pb-2 font-headline text-2xl font-extrabold text-navy">
           Past Editions
         </h2>
-        {/* The published editions live in the WordPress `edition` post type and
-            arrive with the importer. Until then, say so rather than show
-            made-up edition titles. */}
-        <p className="max-w-[60ch] text-[15px] text-[#474b54]">
-          Past editions will be listed here once the archive is migrated. Subscribe above and the
-          next one lands in your inbox on Thursday.
-        </p>
+        <InsiderEditions editions={editions} limit={6} />
+        {editions.length > 6 && (
+          <p className="mt-5">
+            <Link href="/the-insider/editions/" className="font-ui text-[12px] font-bold uppercase tracking-[0.1em] text-navy hover:text-blue">
+              All {editions.length} past editions →
+            </Link>
+          </p>
+        )}
       </section>
     </div>
   );

@@ -882,3 +882,47 @@ export type EventPage = NonNullable<Awaited<ReturnType<typeof getEventPage>>>;
 export async function getEventOdds(slug: string): Promise<EventOdds | null> {
   return strapi<EventOdds>(`/event-pages/${encodeURIComponent(slug)}/odds`, {}, { next: { revalidate: 300 } });
 }
+
+// ---- The Insider: past editions (copied from the Mailchimp archive) ----
+
+export type InsiderEditionSummary = { slug: string; url: string; title: string; date: string; summary: string | null };
+type SInsiderEdition = { slug: string; title: string; editionDate: string; summary?: string | null; html?: string; updatedAt?: string; seo?: SSeo };
+
+const editionSummary = (e: SInsiderEdition): InsiderEditionSummary => ({
+  slug: e.slug,
+  url: `/edition/${e.slug}/`, // same address as the old WordPress editions
+  title: e.title,
+  date: e.editionDate,
+  summary: e.summary ?? null,
+});
+
+export async function listInsiderEditions(): Promise<InsiderEditionSummary[]> {
+  const data = await strapi<List<SInsiderEdition>>("/insider-editions", {
+    fields: ["slug", "title", "editionDate", "summary"],
+    sort: ["editionDate:desc"],
+    pagination: { pageSize: 200 },
+  });
+  return (data?.data || []).map(editionSummary);
+}
+
+export async function getInsiderEdition(slug: string) {
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) return null;
+  const data = await strapi<List<SInsiderEdition>>("/insider-editions", {
+    fields: ["slug", "title", "editionDate", "summary", "html", "updatedAt"],
+    filters: { slug: { $eq: slug } },
+    populate: { seo: "*" },
+    pagination: { pageSize: 1 },
+  });
+  const e = data?.data?.[0];
+  if (!e) return null;
+  const all = await listInsiderEditions();
+  const i = all.findIndex((x) => x.slug === e.slug);
+  return {
+    ...editionSummary(e),
+    html: e.html || "",
+    seoTitle: e.seo?.metaTitle || null,
+    seoDescription: e.seo?.metaDescription || null,
+    newer: i > 0 ? all[i - 1] : null,
+    older: i >= 0 && i < all.length - 1 ? all[i + 1] : null,
+  };
+}

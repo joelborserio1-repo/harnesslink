@@ -31,4 +31,11 @@ export default {
     },
     options: { rule: '0 8,16 * * *', tz: 'Australia/Sydney' },
   },
+  // The Insider: copy new editions from the Mailchimp archive.
+  copyInsiderEditions: {
+    task: async ({ strapi }: { strapi: Core.Strapi }) => {
+      await (strapi.service('api::insider-edition.sync') as any).run();
+    },
+    options: { rule: '15 */6 * * *', tz: 'Pacific/Auckland' },
+  },
 };

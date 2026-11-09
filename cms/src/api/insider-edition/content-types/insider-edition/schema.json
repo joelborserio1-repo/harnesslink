@@ -1,0 +1,55 @@
+{
+  "kind": "collectionType",
+  "collectionName": "insider_editions",
+  "info": {
+    "singularName": "insider-edition",
+    "pluralName": "insider-editions",
+    "displayName": "Insider edition",
+    "description": "Past editions of The Insider (/edition/<slug>/). The WordPress editions were imported; new ones are copied from the Mailchimp archive every 6 hours. Unpublish one to hide it."
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "regex": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "editionDate": {
+      "type": "date",
+      "required": true
+    },
+    "sentAt": {
+      "type": "datetime"
+    },
+    "summary": {
+      "type": "text"
+    },
+    "html": {
+      "type": "text",
+      "required": true
+    },
+    "mailchimpUrl": {
+      "type": "string"
+    },
+    "mailchimpTitle": {
+      "type": "string"
+    },
+    "legacyWpId": {
+      "type": "biginteger",
+      "unique": true
+    },
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.seo"
+    }
+  }
+}

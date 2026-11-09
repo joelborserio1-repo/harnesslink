@@ -938,6 +938,47 @@ export interface ApiEventPageEventPage extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiInsiderEditionInsiderEdition
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'insider_editions';
+  info: {
+    description: 'Past editions of The Insider (/edition/<slug>/). The WordPress editions were imported; new ones are copied from the Mailchimp archive every 6 hours. Unpublish one to hide it.';
+    displayName: 'Insider edition';
+    pluralName: 'insider-editions';
+    singularName: 'insider-edition';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    editionDate: Schema.Attribute.Date & Schema.Attribute.Required;
+    html: Schema.Attribute.Text & Schema.Attribute.Required;
+    legacyWpId: Schema.Attribute.BigInteger & Schema.Attribute.Unique;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::insider-edition.insider-edition'
+    > &
+      Schema.Attribute.Private;
+    mailchimpTitle: Schema.Attribute.String;
+    mailchimpUrl: Schema.Attribute.String;
+    publishedAt: Schema.Attribute.DateTime;
+    sentAt: Schema.Attribute.DateTime;
+    seo: Schema.Attribute.Component<'shared.seo', false>;
+    slug: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    summary: Schema.Attribute.Text;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiMissedPathMissedPath extends Struct.CollectionTypeSchema {
   collectionName: 'missed_paths';
   info: {
@@ -1957,6 +1998,8 @@ export interface PluginUsersPermissionsUser
       }>;
     lastSignInAt: Schema.Attribute.DateTime;
     legacyPasswordHash: Schema.Attribute.String & Schema.Attribute.Private;
+    legacyWpLogin: Schema.Attribute.String & Schema.Attribute.Private;
+    legacyWpPassFrag: Schema.Attribute.String & Schema.Attribute.Private;
     legacyWpUserId: Schema.Attribute.BigInteger & Schema.Attribute.Unique;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
@@ -2013,6 +2056,7 @@ declare module '@strapi/strapi' {
       'api::directory-enquiry.directory-enquiry': ApiDirectoryEnquiryDirectoryEnquiry;
       'api::directory-listing.directory-listing': ApiDirectoryListingDirectoryListing;
       'api::event-page.event-page': ApiEventPageEventPage;
+      'api::insider-edition.insider-edition': ApiInsiderEditionInsiderEdition;
       'api::missed-path.missed-path': ApiMissedPathMissedPath;
       'api::page.page': ApiPagePage;
       'api::redirect.redirect': ApiRedirectRedirect;
