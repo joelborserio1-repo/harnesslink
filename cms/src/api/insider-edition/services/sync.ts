@@ -92,16 +92,22 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     const res = await fetch(e.url, { redirect: 'follow', headers: { 'User-Agent': 'Harnesslink site (archive copy)' }, signal: AbortSignal.timeout(20_000) });
     if (!res.ok) throw new Error(`${e.url} answered ${res.status}`);
     const raw = await res.text();
+    // The email's own subject is the most reliable record of which edition it
+    // is (WordPress's date field was sometimes wrong), and lets the archive
+    // check recognise editions that came from WordPress.
+    const titleTag = raw.match(/<title>([^<]*)<\/title>/i);
+    const subject = e.subject || (titleTag ? baseSubject(titleTag[1]) : null);
+    const date = (subject && editionDate(subject)) || e.date;
     return strapi.documents(UID).create({
       data: {
         title: e.title,
         slug: e.slug,
-        editionDate: e.date,
-        sentAt: e.sentAt || new Date(`${e.date}T00:00:00Z`).toISOString(),
+        editionDate: date,
+        sentAt: e.sentAt || new Date(`${date}T00:00:00Z`).toISOString(),
         summary: previewText(raw),
         html: cleanEmail(raw),
         mailchimpUrl: res.url || e.url,
-        mailchimpTitle: e.subject || null,
+        mailchimpTitle: subject,
         legacyWpId: e.legacyWpId ?? null,
         seo: e.seo || undefined,
       } as any,
