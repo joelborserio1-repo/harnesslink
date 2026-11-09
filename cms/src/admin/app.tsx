@@ -1,5 +1,5 @@
 import type { StrapiApp } from '@strapi/strapi/admin';
-import { ChartPie, Clock, Discuss, Feather, Monitor, PresentationChart, Calendar } from '@strapi/icons';
+import { ChartPie, Clock, Discuss, Feather, Monitor, PresentationChart, Calendar, Images } from '@strapi/icons';
 import { lightTheme } from '@strapi/design-system';
 import mark from './extensions/hl-mark.svg';
 import RevisionsPanel from './RevisionsPanel';
@@ -46,6 +46,15 @@ export default {
     },
   },
   register(app: StrapiApp) {
+    // Every photo from the old site, searchable (src/photos.ts).
+    app.addMenuLink({
+      to: 'photo-archive',
+      icon: Images,
+      intlLabel: { id: 'hl.photos.menu', defaultMessage: 'Photo archive' },
+      Component: () => import('./PhotoArchive'),
+      permissions: [],
+      position: 3,
+    });
     app.widgets.register([
       {
         id: 'hl-newsroom',
