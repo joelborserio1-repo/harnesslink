@@ -22,8 +22,13 @@ type Result = { total: number; page: number; pageSize: number; photos: Photo[] }
 
 const date = (s: string | null) => (s ? new Date(s).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
 
-export function PhotoSearch({ onPick, pickLabel }: { onPick?: (p: Photo) => void; pickLabel?: string }) {
+export type { Photo };
+
+// compact: the narrow version for a story's side panel. actions: extra buttons
+// for the opened photo (e.g. "Make lead photo").
+export function PhotoSearch({ compact, actions }: { compact?: boolean; actions?: (p: Photo) => React.ReactNode }) {
   const { get } = useFetchClient();
+  const size = compact ? 12 : 30;
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
   const [res, setRes] = useState<Result | null>(null);
@@ -34,12 +39,12 @@ export function PhotoSearch({ onPick, pickLabel }: { onPick?: (p: Photo) => void
   useEffect(() => {
     const n = ++seq.current;
     const t = setTimeout(() => {
-      get<Result>(`/hl-photos/search?q=${encodeURIComponent(q)}&page=${page}&pageSize=30`)
+      get<Result>(`/hl-photos/search?q=${encodeURIComponent(q)}&page=${page}&pageSize=${size}`)
         .then(({ data }) => n === seq.current && setRes(data))
-        .catch(() => n === seq.current && setRes({ total: 0, page: 1, pageSize: 30, photos: [] }));
+        .catch(() => n === seq.current && setRes({ total: 0, page: 1, pageSize: size, photos: [] }));
     }, 250);
     return () => clearTimeout(t);
-  }, [get, q, page]);
+  }, [get, q, page, size]);
 
   const pages = res ? Math.ceil(res.total / res.pageSize) : 0;
   const label = (p: Photo) => p.caption || p.alt || p.title;
@@ -48,7 +53,7 @@ export function PhotoSearch({ onPick, pickLabel }: { onPick?: (p: Photo) => void
     <Flex direction="column" alignItems="stretch" gap={4}>
       <TextInput
         aria-label="Search photos"
-        placeholder="Horse, driver, trainer, track or headline…"
+        placeholder={compact ? 'Search photos…' : 'Horse, driver, trainer, track or headline…'}
         value={q}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
           setQ(e.target.value);
@@ -60,12 +65,12 @@ export function PhotoSearch({ onPick, pickLabel }: { onPick?: (p: Photo) => void
       </Typography>
 
       {open && (
-        <Box background="neutral0" padding={4} hasRadius shadow="tableShadow">
+        <Box background="neutral0" padding={compact ? 0 : 4} hasRadius shadow={compact ? undefined : 'tableShadow'}>
           <Flex gap={4} alignItems="flex-start" wrap="wrap">
-            <a href={open.url} target="_blank" rel="noreferrer">
-              <img src={open.thumb} alt={open.alt} style={{ maxWidth: 360, maxHeight: 260, display: 'block' }} />
+            <a href={open.url} target="_blank" rel="noreferrer" style={{ maxWidth: '100%' }}>
+              <img src={open.thumb} alt={open.alt} style={{ maxWidth: compact ? '100%' : 360, maxHeight: 260, display: 'block' }} />
             </a>
-            <Flex direction="column" alignItems="flex-start" gap={2} style={{ flex: 1, minWidth: 240 }}>
+            <Flex direction="column" alignItems="flex-start" gap={2} style={{ flex: 1, minWidth: compact ? 0 : 240 }}>
               <Typography variant="delta">{label(open)}</Typography>
               <Typography variant="pi" textColor="neutral600">
                 {[open.width && open.height ? `${open.width} × ${open.height}` : '', date(open.uploadedAt)].filter(Boolean).join(' · ')}
@@ -83,7 +88,7 @@ export function PhotoSearch({ onPick, pickLabel }: { onPick?: (p: Photo) => void
                 </Box>
               )}
               <Flex gap={2} wrap="wrap">
-                {onPick && <Button onClick={() => onPick(open)}>{pickLabel || 'Use this photo'}</Button>}
+                {actions?.(open)}
                 <Button
                   variant="secondary"
                   onClick={() => navigator.clipboard.writeText(open.url).then(() => (setCopied(true), setTimeout(() => setCopied(false), 1500)))}
@@ -99,7 +104,7 @@ export function PhotoSearch({ onPick, pickLabel }: { onPick?: (p: Photo) => void
         </Box>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${compact ? 110 : 160}px, 1fr))`, gap: compact ? 8 : 12 }}>
         {res?.photos.map((p) => (
           <button
             key={p.id}
@@ -109,7 +114,7 @@ export function PhotoSearch({ onPick, pickLabel }: { onPick?: (p: Photo) => void
             style={{ border: open?.id === p.id ? '2px solid #00205E' : '1px solid #dcdce4', padding: 0, background: '#fff', cursor: 'pointer', textAlign: 'left' }}
           >
             <img src={p.thumb} alt={p.alt} loading="lazy" style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover', display: 'block', background: '#f0f0f5' }} />
-            <div style={{ padding: '6px 8px', fontSize: 12, lineHeight: 1.3, height: 46, overflow: 'hidden' }}>{label(p)}</div>
+            {!compact && <div style={{ padding: '6px 8px', fontSize: 12, lineHeight: 1.3, height: 46, overflow: 'hidden' }}>{label(p)}</div>}
           </button>
         ))}
       </div>
@@ -117,13 +122,13 @@ export function PhotoSearch({ onPick, pickLabel }: { onPick?: (p: Photo) => void
       {pages > 1 && (
         <Flex gap={2} justifyContent="center">
           <Button variant="tertiary" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-            Previous
+            {compact ? '‹' : 'Previous'}
           </Button>
           <Typography variant="pi">
-            Page {page} of {Math.min(pages, 200)}
+            {compact ? `${page} / ${Math.min(pages, 200)}` : `Page ${page} of ${Math.min(pages, 200)}`}
           </Typography>
           <Button variant="tertiary" disabled={page >= Math.min(pages, 200)} onClick={() => setPage(page + 1)}>
-            Next
+            {compact ? '›' : 'Next'}
           </Button>
         </Flex>
       )}

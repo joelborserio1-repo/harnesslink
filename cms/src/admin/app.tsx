@@ -5,6 +5,7 @@ import mark from './extensions/hl-mark.svg';
 import RevisionsPanel from './RevisionsPanel';
 import SocialPanel from './SocialPanel';
 import AdPerformancePanel from './AdPerformancePanel';
+import PhotosPanel from './PhotosPanel';
 
 // HarnessLink newsroom dashboard on the CMS home screen (widgets in ./widgets, data from
 // src/dashboard.ts). Traffic, social, advertising and site checks are for admins and editors;
@@ -109,9 +110,10 @@ export default {
     ]);
   },
   bootstrap(app: StrapiApp) {
-    // Edit-view side panels: on stories, "Revisions" (src/revisions.ts) and
+    // Edit-view side panels: on stories, "Photos" (archive search and upload),
+    // "Revisions" (src/revisions.ts) and
     // "Share to social" via Postiz (src/social.ts); on ads, "Performance"
     // (src/api/ad/stats.ts).
-    (app.getPlugin('content-manager') as any).apis.addEditViewSidePanel([RevisionsPanel, SocialPanel, AdPerformancePanel]);
+    (app.getPlugin('content-manager') as any).apis.addEditViewSidePanel([PhotosPanel, RevisionsPanel, SocialPanel, AdPerformancePanel]);
   },
 };

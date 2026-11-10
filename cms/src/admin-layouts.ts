@@ -17,7 +17,7 @@ type Layout = {
   fields: Record<string, FieldMeta>;
 };
 
-export const LAYOUT_VERSION = '2026-10-27.1';
+export const LAYOUT_VERSION = '2026-11-10.1';
 
 const SEO_HELP = 'Search and social-media title/description. Leave blank to use the headline and standfirst.';
 
@@ -36,13 +36,13 @@ export const LAYOUTS: Layout[] = [
       [['embed', 12]],
       [['excerpt', 12]],
       [['featuredImage', 6], ['authors', 6]],
+      [['legacyImage', 12]],
       [['primaryCategory', 6], ['categories', 6]],
       [['tags', 12]],
       [['publishDate', 6], ['modifiedDate', 6]],
       [['seo', 12]],
       [['bodyFormat', 4], ['needsReview', 4], ['viewCount', 4]],
       [['body', 12]],
-      [['legacyImage', 12]],
       [['legacyWpId', 4], ['legacyUrl', 8]],
       [['importFlags', 12]],
     ],
@@ -52,7 +52,7 @@ export const LAYOUTS: Layout[] = [
       excerpt: { label: 'Standfirst / summary', description: 'One or two sentences for story cards, search and social shares. Leave empty to use the start of the story.' },
       slug: { label: 'URL', description: 'The story lives at harnesslink.com/<this>/. Never change it after publishing.' },
       body: { label: 'Story (block editor — older test stories only)', description: 'Not used for new stories. Write in Story above.' },
-      featuredImage: { label: 'Lead photo', description: 'Shown on story cards and at the top of the story. Fill in the alt text in the media library.' },
+      featuredImage: { label: 'Lead photo', description: 'Shown on story cards and at the top of the story. Easiest from the Photos panel on the right (upload or archive).' },
       authors: { label: 'Byline', description: 'Filled in with you when you start a story (if your writer profile has your login email). First writer listed is the main byline.' },
       primaryCategory: { label: 'Main section', description: 'The country/section shown above the headline (e.g. Australia).' },
       categories: { label: 'All sections', description: 'Every section the story should appear in, including Top 4.' },
@@ -66,7 +66,7 @@ export const LAYOUTS: Layout[] = [
       needsReview: { label: 'Needs a check', description: 'Set by the migration when something in the old story may not display correctly.' },
       viewCount: { label: 'Views', editable: false },
       bodyHtml: { label: 'Story', description: 'Write and format the story here, as in WordPress. Paste from Word or Google Docs keeps formatting; use the image button to add photos from the media library.' },
-      legacyImage: { label: 'Migrated lead photo', description: 'Photo still served from the old WordPress uploads. Replace it by adding a Lead photo above.' },
+      legacyImage: { label: 'Lead photo from the archive', description: 'Set with "Make lead photo" in the Photos panel. An uploaded Lead photo above takes its place.' },
       legacyWpId: { label: 'WordPress ID', editable: false },
       legacyUrl: { label: 'Original URL', editable: false },
       importFlags: { label: 'Migration notes', editable: false },
