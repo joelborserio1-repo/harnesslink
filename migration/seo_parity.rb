@@ -112,12 +112,14 @@ end
 module Norm
   module_function
 
-  # Entities decoded, quotes/dashes folded, lower case, whitespace collapsed.
+  # Entities decoded, lower case, punctuation (dashes, pipes, quotes) folded to
+  # spaces — so "Title - Harnesslink" and "Title | Harnesslink" compare equal;
+  # the separator itself is a site-wide setting, not a per-page difference.
   def text(str)
     CGI.unescapeHTML(CGI.unescapeHTML(str.to_s))
        .tr("\u2018\u2019\u201C\u201D\u2013\u2014\u00A0", "''\"\"-- ")
        .gsub(/&[a-z#0-9]+;/i, " ")
-       .downcase.gsub(/[^a-z0-9' -]+/, " ").gsub(/\s+/, " ").strip
+       .downcase.gsub(/[^a-z0-9']+/, " ").gsub(/\s+/, " ").strip
   end
 end
 
@@ -129,7 +131,6 @@ module Extract
         .gsub(%r{<iframe\b[^>]*>.*?</iframe>}mi, " ") # fallback text inside an iframe is never shown
         .gsub(%r{<style\b[^>]*>.*?</style>}mi, " ")
         .gsub(/<[^>]+>/, " ")
-        .gsub(/&[a-z#0-9]+;/i, " ")
         .gsub(/\s+/, " ").strip
   end
 
