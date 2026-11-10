@@ -126,6 +126,7 @@ module Extract
 
   def strip_tags(html)
     html.gsub(%r{<script\b[^>]*>.*?</script>}mi, " ")
+        .gsub(%r{<iframe\b[^>]*>.*?</iframe>}mi, " ") # fallback text inside an iframe is never shown
         .gsub(%r{<style\b[^>]*>.*?</style>}mi, " ")
         .gsub(/<[^>]+>/, " ")
         .gsub(/&[a-z#0-9]+;/i, " ")
@@ -178,7 +179,8 @@ module Extract
 
   def paragraphs(html)
     region = body_region(html) or return nil
-    region.scan(%r{<p\b[^>]*>(.*?)</p>}mi).map { |m| Norm.text(strip_tags(m[0])) }.select { |t| t.length >= 40 }
+    # Cloudflare hides email addresses on live as "[email protected]".
+    region.scan(%r{<p\b[^>]*>(.*?)</p>}mi).map { |m| Norm.text(strip_tags(m[0])).sub(/ ?email protected.*\z/, "") }.select { |t| t.length >= 40 }
   end
 
   def jsonld_types(html)
