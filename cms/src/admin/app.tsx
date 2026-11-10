@@ -1,5 +1,5 @@
 import type { StrapiApp } from '@strapi/strapi/admin';
-import { ChartPie, Clock, Discuss, Feather, Monitor, PresentationChart, Calendar, Images } from '@strapi/icons';
+import { ChartPie, Clock, Discuss, Feather, Monitor, PresentationChart, Calendar, Images, Plus } from '@strapi/icons';
 import { lightTheme } from '@strapi/design-system';
 import mark from './extensions/hl-mark.svg';
 import RevisionsPanel from './RevisionsPanel';
@@ -48,6 +48,15 @@ export default {
     },
   },
   register(app: StrapiApp) {
+    // "New story" at the top of the left menu opens a blank story (./NewStory).
+    app.addMenuLink({
+      to: 'new-story',
+      icon: Plus,
+      intlLabel: { id: 'hl.newstory.menu', defaultMessage: 'New story' },
+      Component: () => import('./NewStory'),
+      permissions: [{ action: 'plugin::content-manager.explorer.create', subject: 'api::article.article' }],
+      position: 0,
+    });
     // Every photo from the old site, searchable (src/photos.ts).
     app.addMenuLink({
       to: 'photo-archive',
@@ -62,6 +71,7 @@ export default {
         id: 'hl-newsroom',
         icon: Feather,
         title: { id: 'hl.dashboard.newsroom', defaultMessage: 'Newsroom' },
+        link: { label: { id: 'hl.dashboard.newstory', defaultMessage: 'New story' }, href: '/content-manager/collection-types/api::article.article/create' },
         component: async () => (await widgets()).NewsroomWidget,
       },
       {
@@ -71,6 +81,7 @@ export default {
         id: 'hl-waiting',
         icon: Clock,
         title: { id: 'hl.dashboard.waiting', defaultMessage: 'Stories waiting to be published' },
+        link: { label: { id: 'hl.dashboard.newstory', defaultMessage: 'New story' }, href: '/content-manager/collection-types/api::article.article/create' },
         component: async () => (await import('./StoriesWaitingWidget')).default,
       },
       {
