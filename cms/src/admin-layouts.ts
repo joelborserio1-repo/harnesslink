@@ -17,7 +17,7 @@ type Layout = {
   fields: Record<string, FieldMeta>;
 };
 
-export const LAYOUT_VERSION = '2026-11-10.1';
+export const LAYOUT_VERSION = '2026-11-10.2';
 
 const SEO_HELP = 'Search and social-media title/description. Leave blank to use the headline and standfirst.';
 
@@ -91,9 +91,9 @@ export const LAYOUTS: Layout[] = [
     fields: {
       name: { label: 'Name', description: 'For your reference, e.g. "Lazarus — box, Oct".' },
       zone: { label: 'Placement', description: 'billboard = full-width 1360×150 · banners = 800×120 · rails = 300×250 boxes (three shown at once).' },
-      image: { label: 'Creative', description: 'Upload the artwork at the placement size.' },
+      image: { label: 'Creative', description: 'Upload the artwork, then pick its size in the Size panel on the right.' },
       linkUrl: { label: 'Click-through URL' },
-      imageWidth: { label: 'Width (px)', description: 'Lets the page reserve space so nothing jumps while the ad loads.' },
+      imageWidth: { label: 'Width (px)', description: 'Set from the Size panel on the right (or type it). Lets the page reserve space while the ad loads.' },
       imageHeight: { label: 'Height (px)' },
       alt: { label: 'Alt text' },
       active: { label: 'Running', description: 'Switch off to pause the ad.' },

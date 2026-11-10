@@ -6,6 +6,7 @@ import RevisionsPanel from './RevisionsPanel';
 import SocialPanel from './SocialPanel';
 import AdPerformancePanel from './AdPerformancePanel';
 import PhotosPanel from './PhotosPanel';
+import AdSizePanel from './AdSizePanel';
 
 // HarnessLink newsroom dashboard on the CMS home screen (widgets in ./widgets, data from
 // src/dashboard.ts). Traffic, social, advertising and site checks are for admins and editors;
@@ -112,8 +113,8 @@ export default {
   bootstrap(app: StrapiApp) {
     // Edit-view side panels: on stories, "Photos" (archive search and upload),
     // "Revisions" (src/revisions.ts) and
-    // "Share to social" via Postiz (src/social.ts); on ads, "Performance"
+    // "Share to social" via Postiz (src/social.ts); on ads, "Size" (pick the display size for the artwork) and "Performance"
     // (src/api/ad/stats.ts).
-    (app.getPlugin('content-manager') as any).apis.addEditViewSidePanel([PhotosPanel, RevisionsPanel, SocialPanel, AdPerformancePanel]);
+    (app.getPlugin('content-manager') as any).apis.addEditViewSidePanel([PhotosPanel, RevisionsPanel, SocialPanel, AdSizePanel, AdPerformancePanel]);
   },
 };
