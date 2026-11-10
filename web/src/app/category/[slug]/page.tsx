@@ -1,3 +1,4 @@
+import { SITE_URL, pageSocial } from "@/lib/seo";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCategory } from "@/lib/api";
@@ -13,12 +14,18 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const data = await getCategory(slug);
   if (!data) return {};
   const geo = data.category.kind === "geographic";
+  // Title as on the live site ("USA - Harnesslink") until after cutover; a
+  // more descriptive one ("USA Harness Racing News") is planned once rankings
+  // have settled.
+  const description = geo
+    ? `${data.category.name} harness racing news, results and features — updated daily by Harnesslink.`
+    : `The latest ${data.category.name} harness racing news from Harnesslink.`;
+  const url = `${SITE_URL}/category/${data.category.slug}/`;
   return {
-    title: geo ? `${data.category.name} Harness Racing News` : data.category.name,
-    description: geo
-      ? `${data.category.name} harness racing news, results and features — updated daily by Harnesslink.`
-      : `The latest ${data.category.name} harness racing news from Harnesslink.`,
-    alternates: { canonical: `https://harnesslink.com/category/${data.category.slug}/` },
+    title: data.category.name,
+    description,
+    alternates: { canonical: url },
+    ...pageSocial({ title: `${data.category.name} - Harnesslink`, description, url }),
   };
 }
 

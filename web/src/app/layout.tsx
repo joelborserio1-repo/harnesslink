@@ -4,15 +4,16 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Suspense } from "react";
 import MatomoTracker from "@/components/MatomoTracker";
+import { DEFAULT_ROBOTS, DEFAULT_SHARE_IMAGE, HOME_DESCRIPTION, SITE_NAME, SITE_URL, TITLE_TEMPLATE } from "@/lib/seo";
 
+// Defaults for every page; pages override what they know (src/lib/seo.ts).
 export const metadata: Metadata = {
-  metadataBase: new URL("https://harnesslink.com"),
-  title: {
-    default: "Harnesslink — Harness Racing News",
-    template: "%s | Harnesslink",
-  },
-  description:
-    "Harness racing's global news source — results, features and analysis from Australia, New Zealand, North America and Europe.",
+  metadataBase: new URL(SITE_URL),
+  title: { default: SITE_NAME, template: TITLE_TEMPLATE },
+  description: HOME_DESCRIPTION,
+  robots: DEFAULT_ROBOTS,
+  openGraph: { type: "website", locale: "en_US", siteName: SITE_NAME, images: [DEFAULT_SHARE_IMAGE] },
+  twitter: { card: "summary_large_image", images: [DEFAULT_SHARE_IMAGE.url] },
 };
 
 export default function RootLayout({

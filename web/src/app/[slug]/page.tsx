@@ -16,6 +16,7 @@ import AdSlot from "@/components/AdSlot";
 import ArticleTile from "@/components/home/ArticleTile";
 import ShareLinks from "@/components/article/ShareLinks";
 import PreviewBanner from "@/components/PreviewBanner";
+import { DEFAULT_SHARE_IMAGE, pageSocial, robotsFrom, shareImages, SITE_NAME } from "@/lib/seo";
 
 // SSR per request on staging (no build-time API dependency). For production,
 // switch to ISR: `export const revalidate = 60` + a generateStaticParams that
@@ -23,11 +24,6 @@ import PreviewBanner from "@/components/PreviewBanner";
 export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ slug: string }> };
-
-function robotsFrom(value: string) {
-  const tokens = value.split(",").map((t) => t.trim().toLowerCase());
-  return { index: !tokens.includes("noindex"), follow: !tokens.includes("nofollow") };
-}
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
@@ -46,14 +42,12 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
         description: event.seo.description ?? undefined,
         alternates: { canonical: event.seo.canonical_url },
         robots: robotsFrom(event.seo.robots),
-        openGraph: {
-          type: "website",
+        ...pageSocial({
           title: event.seo.og_title ?? event.title,
-          description: event.seo.og_description ?? event.seo.description ?? undefined,
+          description: event.seo.og_description ?? event.seo.description,
           url: event.seo.canonical_url,
-          siteName: "Harnesslink",
-          images: event.hero?.src ? [{ url: event.hero.src }] : event.logo?.src ? [{ url: event.logo.src }] : undefined,
-        },
+          image: event.hero?.src ? event.hero : event.logo,
+        }),
       };
     }
     return {
@@ -61,12 +55,16 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       description: page.seo.description ?? undefined,
       alternates: { canonical: page.seo.canonical_url },
       robots: draft ? { index: false, follow: false } : robotsFrom(page.seo.robots),
+      ...pageSocial({ title: page.seo.title, description: page.seo.description, url: page.seo.canonical_url }),
     };
   }
 
   const { seo } = article;
+  const images = shareImages(article.featured_image, article.title);
   return {
-    title: article.title, // the layout template appends "| Harnesslink"
+    // Rank Math's stored title (usually "<headline> - Harnesslink", sometimes
+    // hand-written), exactly as the live site shows it.
+    title: { absolute: seo.title },
     description: seo.description ?? undefined,
     alternates: { canonical: seo.canonical_url },
     robots: draft ? { index: false, follow: false } : robotsFrom(seo.robots),
@@ -75,17 +73,20 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       title: seo.og_title ?? article.title,
       description: seo.og_description ?? seo.description ?? undefined,
       url: seo.canonical_url,
-      siteName: "Harnesslink",
+      siteName: SITE_NAME,
+      locale: "en_US",
       publishedTime: article.published_at ?? undefined,
       modifiedTime: article.modified_at ?? undefined,
       authors: article.authors.map((a) => a.name),
       section: article.category?.name,
-      images: article.featured_image?.src ? [{ url: article.featured_image.src }] : undefined,
+      tags: article.tags.map((t) => t.name),
+      images,
     },
     twitter: {
       card: "summary_large_image",
       title: seo.twitter_title ?? seo.og_title ?? article.title,
       description: seo.twitter_description ?? seo.description ?? undefined,
+      images: images.map((i) => i.url),
     },
   };
 }
@@ -112,7 +113,7 @@ function newsArticleJsonLd(article: ArticleFull) {
     },
     mainEntityOfPage: { "@type": "WebPage", "@id": article.seo.canonical_url },
     articleSection: article.category?.name,
-    image: article.featured_image?.src ? [article.featured_image.src] : undefined,
+    image: [article.featured_image?.src || DEFAULT_SHARE_IMAGE.url],
   };
 }
 

@@ -8,6 +8,15 @@ import InternationalGrid from "@/components/home/InternationalGrid";
 import WireList from "@/components/home/WireList";
 import NextToGo from "@/components/home/NextToGo";
 import { getRaceBoard } from "@/lib/harnesslink";
+import type { Metadata } from "next";
+import { HOME_DESCRIPTION, HOME_TITLE, SITE_URL, pageSocial } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  title: { absolute: HOME_TITLE },
+  description: HOME_DESCRIPTION,
+  alternates: { canonical: `${SITE_URL}/` },
+  ...pageSocial({ title: HOME_TITLE, description: HOME_DESCRIPTION, url: `${SITE_URL}/` }),
+};
 
 export const dynamic = "force-dynamic";
 

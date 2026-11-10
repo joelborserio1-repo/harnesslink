@@ -62,13 +62,34 @@ function parseRobots(value) {
   return out || null;
 }
 
+// WordPress keeps some titles, names and descriptions HTML-escaped
+// ("Terms &amp; Conditions"); the site prints these as text, so they're stored
+// decoded. Bodies stay HTML and are not touched.
+const NAMED = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', ndash: '\u2013', mdash: '\u2014', lsquo: '\u2018', rsquo: '\u2019', ldquo: '\u201C', rdquo: '\u201D', hellip: '\u2026', eacute: '\u00E9', rsquor: '\u2019' };
+function decodeEntities(value) {
+  if (value === null || value === undefined) return value;
+  let s = String(value);
+  // Twice, for the odd double-escaped "&amp;amp;".
+  for (let i = 0; i < 2 && /&(#\d+|#x[0-9a-f]+|[a-z]+);/i.test(s); i++) {
+    s = s.replace(/&(#\d+|#x[0-9a-f]+|[a-z]+);/gi, (m, e) => {
+      if (e[0] === '#') {
+        const n = e[1] === 'x' || e[1] === 'X' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+        return Number.isFinite(n) && n > 0 && n < 0x110000 ? String.fromCodePoint(n) : m;
+      }
+      const c = NAMED[e.toLowerCase()];
+      return c === undefined ? m : c;
+    });
+  }
+  return s;
+}
+
 // The common Rank Math template variables, as the live site renders them.
 function expandVars(value, post, siteName = 'Harnesslink') {
   if (!value) return null;
   const primary = (post.categories || [])[0];
   const year = (parseGmt(post.post_date) || new Date().toISOString()).slice(0, 4);
   const out = String(value)
-    .replaceAll('%title%', post.post_title || '')
+    .replaceAll('%title%', decodeEntities(post.post_title || ''))
     .replaceAll('%sitename%', siteName)
     .replaceAll('%sep%', '-') // Rank Math separator on the live site is a hyphen
     .replaceAll('%page%', '')
@@ -76,12 +97,12 @@ function expandVars(value, post, siteName = 'Harnesslink') {
     .replaceAll('%currentyear%', year)
     .replace(/\s{2,}/g, ' ')
     .trim();
-  return out || null;
+  return decodeEntities(out) || null;
 }
 
 // Hand-written excerpt, else WordPress's own auto-summary from the export.
 function excerptOf(post) {
-  return (post.post_excerpt || post.post_excerpt_auto || '').trim() || null;
+  return decodeEntities((post.post_excerpt || post.post_excerpt_auto || '').trim()) || null;
 }
 
 function seoFrom(post) {
@@ -147,19 +168,19 @@ function mapArticle(post) {
     flags,
     refs: {
       categories: (post.categories || []).map((c) => ({
-        name: c.name,
+        name: decodeEntities(c.name),
         slug: c.slug,
         legacyTermId: c.legacy_term_id || null,
         kind: c.kind || (EDITORIAL.includes(c.name) ? 'editorial' : 'geographic'),
       })),
-      tags: (post.tags || []).map((t) => ({ name: t.name, slug: t.slug, legacyTermId: t.legacy_term_id || null })),
-      authors: (post.authors || []).map((a) => ({ name: a.name, slug: a.slug, bio: a.bio || null, refs: a.refs || {} })),
+      tags: (post.tags || []).map((t) => ({ name: decodeEntities(t.name), slug: t.slug, legacyTermId: t.legacy_term_id || null })),
+      authors: (post.authors || []).map((a) => ({ name: decodeEntities(a.name), slug: a.slug, bio: a.bio || null, refs: a.refs || {} })),
       oldSlugs: post.old_slugs || [],
     },
     data: {
-      title: post.post_title || slug,
+      title: decodeEntities(post.post_title) || slug,
       slug,
-      subtitle: meta.post_subtitle || null,
+      subtitle: decodeEntities(meta.post_subtitle) || null,
       excerpt: excerptOf(post),
       bodyFormat: 'legacy_html',
       bodyHtml: sanitize(bodyOf(post)),
@@ -181,7 +202,7 @@ function mapPage(post) {
   return {
     path,
     data: {
-      title: post.post_title || path,
+      title: decodeEntities(post.post_title) || path,
       path,
       bodyFormat: 'legacy_html',
       bodyHtml: sanitize(bodyOf(post)),
@@ -192,4 +213,4 @@ function mapPage(post) {
   };
 }
 
-module.exports = { mapArticle, mapPage, sanitize, parseGmt, parseRobots, expandVars, UID_SAFE };
+module.exports = { mapArticle, mapPage, sanitize, parseGmt, parseRobots, expandVars, decodeEntities, UID_SAFE };
