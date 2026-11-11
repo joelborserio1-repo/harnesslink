@@ -558,6 +558,18 @@ export async function getPage(path: string, { draft = false } = {}): Promise<Sta
   };
 }
 
+// Published pages under a path ("podcasts" → podcasts/…), newest first (by
+// WordPress ID for migrated pages, then creation). Titles and paths only.
+export async function listPagesUnder(prefix: string): Promise<{ title: string; url: string }[]> {
+  const data = await strapi<List<{ title: string; path: string }>>("/pages", {
+    filters: { path: { $startsWith: `${prefix}/` } },
+    fields: ["title", "path"],
+    sort: ["legacyWpId:desc", "createdAt:desc"],
+    pagination: { pageSize: 100 },
+  });
+  return (data?.data ?? []).map((p) => ({ title: p.title, url: `/${p.path}/` }));
+}
+
 // ---- Sitemaps & feed (lean listings from the CMS) ----
 
 export type SitemapArticle = { slug: string; title: string; publishDate: string | null; lastmod: string | null };
