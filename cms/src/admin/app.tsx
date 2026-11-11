@@ -7,6 +7,7 @@ import SocialPanel from './SocialPanel';
 import AdPerformancePanel from './AdPerformancePanel';
 import PhotosPanel from './PhotosPanel';
 import AdSizePanel from './AdSizePanel';
+import { configureEditor } from './ckeditor';
 
 // HarnessLink newsroom dashboard on the CMS home screen (widgets in ./widgets, data from
 // src/dashboard.ts). Traffic, social, advertising and site checks are for admins and editors;
@@ -48,6 +49,8 @@ export default {
     },
   },
   register(app: StrapiApp) {
+    // Story editor: "Code" button first in the toolbar (./ckeditor).
+    configureEditor();
     // "New story" at the top of the left menu opens a blank story (./NewStory).
     app.addMenuLink({
       to: 'new-story',
