@@ -134,6 +134,9 @@ services:
       API_BASE: http://api        # directory (Rails) until it moves to Strapi
       STRAPI_URL: http://cms:1337 # server-to-server, inside the compose network
       STRAPI_PUBLIC_URL: ${CMS_PUBLIC_URL:-} # where browsers load CMS media from
+      # WordPress-era photos and audio from R2 (https://media.harnesslink.com),
+      # same paths as wp-content/uploads. Unset = still from harnesslink.com.
+      MEDIA_URL: ${MEDIA_URL:-}
       # "true" on staging so search engines never index it. MUST be unset in production.
       NOINDEX: ${NOINDEX:-}
       # Site search (server-side only; the key never reaches browsers). Falls
