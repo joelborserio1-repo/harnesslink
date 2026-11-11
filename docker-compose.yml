@@ -137,6 +137,10 @@ services:
       # WordPress-era photos and audio from R2 (https://media.harnesslink.com),
       # same paths as wp-content/uploads. Unset = still from harnesslink.com.
       MEDIA_URL: ${MEDIA_URL:-}
+      # Resized photos via the imgproxy service (lib/img.ts). Off unless both are set.
+      IMGPROXY_INTERNAL_URL: http://imgproxy:8080
+      IMGPROXY_KEY: ${IMGPROXY_KEY:-}
+      IMGPROXY_SALT: ${IMGPROXY_SALT:-}
       # "true" on staging so search engines never index it. MUST be unset in production.
       NOINDEX: ${NOINDEX:-}
       # Site search (server-side only; the key never reaches browsers). Falls
@@ -181,9 +185,10 @@ services:
       IMGPROXY_ENABLE_AVIF_DETECTION: "true"
       IMGPROXY_KEY: ${IMGPROXY_KEY:-}
       IMGPROXY_SALT: ${IMGPROXY_SALT:-}
-      IMGPROXY_ALLOWED_SOURCES: "https://harnesslink.com/,https://staging.harnesslink.com/"
+      IMGPROXY_ALLOWED_SOURCES: "https://media.harnesslink.com/,https://harnesslink.com/,https://staging.harnesslink.com/"
     ports:
-      - "${IMGPROXY_PORT:-8081}:8080"
+      # Local only: the site reaches it inside the network (web/src/lib/img.ts).
+      - "127.0.0.1:${IMGPROXY_PORT:-8081}:8080"
 
 volumes:
   pgdata:

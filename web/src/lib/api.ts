@@ -1,6 +1,7 @@
 // Server-side content client: everything comes from the Strapi CMS
 // (STRAPI_URL). Fetches run in React Server Components, so no browser CORS is
 // involved.
+import { canResize, resizeBodyImages, resizedSrcset } from "@/lib/img";
 import { blocksToHtml } from "@/lib/blocks";
 import { previewHeaders } from "@/lib/preview";
 
@@ -235,9 +236,12 @@ function thumbFrom(a: { featuredImage?: SMedia; legacyImage?: SLegacyImage; titl
   }
   const l = a.legacyImage;
   if (l?.url) {
+    const src = legacyMedia(l.url);
     return {
-      src: legacyMedia(l.url),
-      srcset: "",
+      src,
+      // Resized WebPs once photos are on R2 (lib/img.ts); src stays the
+      // original for browsers without srcset and for sharing.
+      srcset: canResize(src) ? resizedSrcset(src, l.width) : "",
       sizes: "(max-width: 768px) 100vw, 800px",
       width: l.width ?? null,
       height: l.height ?? null,
@@ -304,7 +308,7 @@ function videoPlayer(url: string): string {
 // (the page needs the CMS's public address in front), videos need players.
 function withMediaBase(html: string | null): string | null {
   if (!html) return html;
-  return legacyMedia(html)
+  return resizeBodyImages(legacyMedia(html))
     .replace(/((?:src|href|srcset)=["']|,\s*)\/uploads\//g, `$1${MEDIA_BASE}/uploads/`)
     .replace(/<oembed url="([^"]+)"><\/oembed>/g, (_, url: string) =>
       /^https?:\/\//.test(url) ? `<div class="article-embed">${videoPlayer(url.replace(/&amp;/g, "&"))}</div>` : ""
