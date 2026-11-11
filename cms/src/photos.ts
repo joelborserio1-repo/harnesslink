@@ -17,7 +17,12 @@ const FILE_WORDS = `regexp_replace(regexp_replace(url, '^.*/|\\.[A-Za-z0-9]+$', 
 
 export async function ensurePhotoTable(strapi: Core.Strapi) {
   const db = strapi.db.connection;
-  if (await db.schema.hasTable(PHOTO_TABLE)) return;
+  if (await db.schema.hasTable(PHOTO_TABLE)) {
+    if (!(await db.schema.hasColumn(PHOTO_TABLE, 'file_id'))) {
+      await db.schema.alterTable(PHOTO_TABLE, (t) => t.bigInteger('file_id'));
+    }
+    return;
+  }
   await db.schema.createTable(PHOTO_TABLE, (t) => {
     t.bigInteger('wp_id').primary();
     t.text('url').notNullable();
@@ -33,6 +38,7 @@ export async function ensurePhotoTable(strapi: Core.Strapi) {
     t.timestamp('modified_at', { useTz: true });
     t.bigInteger('parent_wp_id');
     t.boolean('on_disk').notNullable().defaultTo(true);
+    t.bigInteger('file_id'); // newsroom uploads: the Strapi upload's id
     // Headlines of the stories it appeared in (featured or in the body), and
     // when it was last used — filled by the usage refresh.
     t.text('stories').notNullable().defaultTo('');
@@ -69,7 +75,7 @@ export async function searchPhotos(strapi: Core.Strapi, q: string, page = 1, pag
   const db = strapi.db.connection;
   const tsq = photoQuery(q);
   const offset = (Math.max(page, 1) - 1) * pageSize;
-  const cols = 'wp_id, url, thumb, title, alt, caption, width, height, uploaded_at, stories, story_count, last_used_at';
+  const cols = 'wp_id, file_id, url, thumb, title, alt, caption, width, height, uploaded_at, stories, story_count, last_used_at';
   let rows: any[];
   let total: number;
   if (tsq) {
@@ -96,6 +102,7 @@ export async function searchPhotos(strapi: Core.Strapi, q: string, page = 1, pag
     pageSize,
     photos: rows.map((r) => ({
       id: Number(r.wp_id),
+      fileId: r.file_id ? Number(r.file_id) : null,
       url: r.url,
       thumb: r.thumb || r.url,
       title: r.title,
@@ -109,6 +116,92 @@ export async function searchPhotos(strapi: Core.Strapi, q: string, page = 1, pag
       lastUsedAt: r.last_used_at,
     })),
   };
+}
+
+// ---- Newsroom uploads ----
+
+type UploadFile = {
+  id: number;
+  name?: string;
+  url: string;
+  mime?: string;
+  width?: number | null;
+  height?: number | null;
+  alternativeText?: string | null;
+  caption?: string | null;
+  formats?: Record<string, { url: string; width: number }> | string | null;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+};
+
+// Upload URLs are /uploads/x.jpg on the server's disk, absolute on R2.
+function absoluteUrl(url: string) {
+  if (/^https?:\/\//.test(url)) return url;
+  const base = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
+  return `${base}${url}`;
+}
+
+function uploadRow(f: UploadFile) {
+  const formats = typeof f.formats === 'string' ? JSON.parse(f.formats) : f.formats || {};
+  const small = Object.values(formats as Record<string, { url: string; width: number }>)
+    .filter((x) => x.width >= 300)
+    .sort((a, b) => a.width - b.width)[0];
+  return {
+    wp_id: -f.id,
+    file_id: f.id,
+    url: absoluteUrl(f.url),
+    thumb: small ? absoluteUrl(small.url) : null,
+    title: String(f.name || '').replace(/\.[A-Za-z0-9]+$/, ''),
+    alt: f.alternativeText || '',
+    caption: f.caption || '',
+    description: '',
+    mime: (f.mime || '').slice(0, 40),
+    width: f.width ?? null,
+    height: f.height ?? null,
+    uploaded_at: f.createdAt ? new Date(f.createdAt) : new Date(),
+    modified_at: f.updatedAt ? new Date(f.updatedAt) : new Date(),
+    on_disk: true,
+    synced_at: new Date(),
+  };
+}
+
+const isImage = (f: UploadFile) => String(f.mime || '').startsWith('image/');
+
+async function saveUpload(strapi: Core.Strapi, f: UploadFile) {
+  const db = strapi.db.connection;
+  if (!isImage(f)) return;
+  const row = uploadRow(f);
+  const { wp_id, ...rest } = row;
+  await db(PHOTO_TABLE).insert(row).onConflict('wp_id').merge(rest);
+}
+
+// Keep newsroom uploads in the archive as they are added, edited (caption,
+// alt text) or deleted; at start-up, add any that are missing.
+export function registerUploadSync(strapi: Core.Strapi) {
+  const warn = (e: Error) => strapi.log.warn(`[photos] upload sync: ${e.message}`);
+  strapi.db.lifecycles.subscribe({
+    models: ['plugin::upload.file'],
+    async afterCreate(event: any) {
+      await saveUpload(strapi, event.result).catch(warn);
+    },
+    async afterUpdate(event: any) {
+      await saveUpload(strapi, event.result).catch(warn);
+    },
+    async afterDelete(event: any) {
+      const id = event.result?.id;
+      if (id) await strapi.db.connection(PHOTO_TABLE).where({ wp_id: -id }).del().catch(warn);
+    },
+  } as any);
+}
+
+export async function backfillUploads(strapi: Core.Strapi) {
+  const db = strapi.db.connection;
+  const files: UploadFile[] = await db('files')
+    .whereLike('mime', 'image/%')
+    .whereNotExists(db(PHOTO_TABLE).select(db.raw('1')).whereRaw(`${PHOTO_TABLE}.wp_id = -files.id`))
+    .select('id', 'name', 'url', 'mime', 'width', 'height', 'alternative_text as alternativeText', 'caption', 'formats', 'created_at as createdAt', 'updated_at as updatedAt');
+  for (const f of files) await saveUpload(strapi, f);
+  if (files.length) strapi.log.info(`[photos] added ${files.length} newsroom uploads to the archive`);
 }
 
 export function registerPhotoRoutes(strapi: Core.Strapi) {

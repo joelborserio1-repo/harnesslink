@@ -55,10 +55,11 @@ async function upsert(db, photos) {
 
 async function reconcile(db, ids) {
   const keep = new Set(ids.map(Number));
-  const have = (await db(TABLE).count({ n: '*' }))[0].n;
+  // Only WordPress photos (newsroom uploads have negative ids and are kept).
+  const have = (await db(TABLE).where('wp_id', '>', 0).count({ n: '*' }))[0].n;
   // Guard against a short or failed export wiping the archive.
   if (keep.size < Number(have) * 0.95) throw new Error(`refused: WordPress listed ${keep.size} photos, archive has ${have}`);
-  const gone = (await db(TABLE).pluck('wp_id')).map(Number).filter((id) => !keep.has(id));
+  const gone = (await db(TABLE).where('wp_id', '>', 0).pluck('wp_id')).map(Number).filter((id) => !keep.has(id));
   if (gone.length > 2000) throw new Error(`refused: ${gone.length} photos would be removed`);
   for (let i = 0; i < gone.length; i += 1000) await db(TABLE).whereIn('wp_id', gone.slice(i, i + 1000)).del();
   return gone.length;
@@ -66,7 +67,7 @@ async function reconcile(db, ids) {
 
 // Which published stories used each photo: as the featured image, as the post
 // it was uploaded into, or in the body (WordPress marks inline images with a
-// wp-image-<id> class). Keeps the five most recent headlines.
+// wp-image-<id> class); newsroom uploads, as a story's lead photo. Keeps the five most recent headlines.
 async function refreshUsage(db) {
   await db.raw(`
     WITH pub AS (
@@ -82,6 +83,10 @@ async function refreshUsage(db) {
       UNION
       SELECT m[1]::bigint, a.id FROM pub a, regexp_matches(a.body_html, 'wp-image-([0-9]{1,9})', 'g') m
        WHERE a.body_html LIKE '%wp-image-%'
+      UNION
+      -- Newsroom uploads used as a story's lead photo (archive id = -upload id).
+      SELECT -r.file_id, a.id FROM files_related_mph r JOIN pub a ON a.id = r.related_id
+       WHERE r.related_type = 'api::article.article'
     ), ranked AS (
       SELECT u.wp_id, a.title, a.publish_date,
              row_number() OVER (PARTITION BY u.wp_id ORDER BY a.publish_date DESC NULLS LAST) AS rn,

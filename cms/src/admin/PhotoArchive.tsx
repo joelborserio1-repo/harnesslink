@@ -7,6 +7,7 @@ import { Layouts, useFetchClient } from '@strapi/strapi/admin';
 
 type Photo = {
   id: number;
+  fileId: number | null; // set for photos uploaded in the newsroom
   url: string;
   thumb: string;
   title: string;

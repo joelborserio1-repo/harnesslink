@@ -24,7 +24,7 @@ function storyEditor(): any {
 type Uploaded = { id: number; url: string; width?: number; height?: number; alternativeText?: string; caption?: string };
 
 function Photos() {
-  const { post } = useFetchClient();
+  const { get, post } = useFetchClient();
   const { toggleNotification } = useNotification();
   const values = useForm('PhotosPanel', (s: any) => s.values) as Record<string, any>;
   const onChange = useForm('PhotosPanel', (s: any) => s.onChange) as (name: string, value: unknown) => void;
@@ -49,7 +49,18 @@ function Photos() {
     }
   };
 
-  const leadFromArchive = (p: Photo) => {
+  const leadFromArchive = async (p: Photo) => {
+    // A photo uploaded in the newsroom is a media-library file: use it as is.
+    if (p.fileId) {
+      try {
+        const { data } = await get<Uploaded>(`/upload/files/${p.fileId}`);
+        onChange('featuredImage', data);
+        ok('Lead photo set — save the story to keep it');
+      } catch {
+        toggleNotification({ type: 'danger', message: 'Could not load that photo' });
+      }
+      return;
+    }
     onChange('legacyImage', {
       ...(values.legacyImage?.id ? { id: values.legacyImage.id } : {}),
       url: p.url,
