@@ -118,6 +118,13 @@
     "legacyUrl": {
       "type": "string",
       "unique": true
+    },
+    "syndicationSource": {
+      "type": "string"
+    },
+    "syndicationUrl": {
+      "type": "string",
+      "unique": true
     }
   }
 }

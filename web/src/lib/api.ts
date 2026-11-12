@@ -184,6 +184,7 @@ type SArticle = {
   tags?: SRef[];
   seo?: SSeo;
   embed?: string | { oembed?: { html?: string } } | null;
+  syndicationUrl?: string | null;
 };
 
 // The oEmbed field stores the provider's response as JSON; its `html` is the
@@ -352,7 +353,9 @@ export async function getArticle(slug: string, { draft = false } = {}): Promise<
   ]);
 
   const seo = a.seo || {};
-  const canonical = seo.canonicalUrl || `${SITE}/${a.slug}/`;
+  // Republished partner stories (HRV syndication) point search engines at the
+  // original, so the partner keeps the ranking and we carry no duplicate.
+  const canonical = seo.canonicalUrl || a.syndicationUrl || `${SITE}/${a.slug}/`;
   const bodyHtml = a.bodyFormat === "blocks" ? blocksToHtml(a.body, MEDIA_BASE) : withMediaBase(a.bodyHtml ?? null);
 
   return {

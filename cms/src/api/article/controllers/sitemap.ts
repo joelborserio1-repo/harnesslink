@@ -13,7 +13,8 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     const page = Math.max(Number(ctx.query.page) || 1, 1);
     const since = ctx.query.since ? new Date(String(ctx.query.since)) : null;
 
-    const live = db('articles').whereNotNull('published_at');
+    // Republished partner stories canonicalise to the partner, so they stay out.
+    const live = db('articles').whereNotNull('published_at').whereNull('syndication_url');
     if (since && !Number.isNaN(since.getTime())) live.where('publish_date', '>=', since.toISOString());
 
     const [{ count }] = await live.clone().count({ count: '*' });
