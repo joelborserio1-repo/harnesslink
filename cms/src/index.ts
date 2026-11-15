@@ -8,6 +8,7 @@ import { registerDashboardRoutes } from './dashboard';
 import { ensureAdStats, registerAdReportRoutes } from './api/ad/stats';
 import { registerSocialRoutes } from './social';
 import { backfillUploads, ensurePhotoTable, registerPhotoRoutes, registerUploadSync } from './photos';
+import { ensureEmailIntakeTable } from './email-intake';
 
 // What the public website may read without a token (Users & Permissions
 // "Public" role). Ads, subscribers, redirects and the 404 log are only reached
@@ -215,6 +216,7 @@ export default {
     await ensureIndexes(strapi);
     await ensureAdStats(strapi);
     await ensurePhotoTable(strapi);
+    await ensureEmailIntakeTable(strapi);
     registerUploadSync(strapi);
     await backfillUploads(strapi);
     await grantPublicRead(strapi);

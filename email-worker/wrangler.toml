@@ -1,0 +1,15 @@
+# Deploy: cd email-worker && npx wrangler@4 deploy
+# Secret (once): npx wrangler@4 secret put INTAKE_SECRET   (same value as the
+# server's EMAIL_INTAKE_SECRET). Then in Email Routing → Routing rules:
+# stories@in.harnesslink.com → Send to a Worker → harnesslink-story-intake.
+name = "harnesslink-story-intake"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+account_id = "0d79616065248dc7418dd880cba53c74"
+workers_dev = false
+
+[vars]
+INTAKE_URL = "https://staging.harnesslink.com/cms/api/email-intake"
+
+[observability]
+enabled = true

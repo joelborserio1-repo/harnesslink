@@ -19,3 +19,4 @@ harnesslink-directory.zip
 /.fastapi-token.txt
 /.postiz-keys.txt
 /.hrv-token.txt
+/.email-intake-secret.txt
