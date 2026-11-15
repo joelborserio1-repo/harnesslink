@@ -135,7 +135,7 @@ type UploadFile = {
 };
 
 // Upload URLs are /uploads/x.jpg on the server's disk, absolute on R2.
-function absoluteUrl(url: string) {
+export function absoluteUrl(url: string) {
   if (/^https?:\/\//.test(url)) return url;
   const base = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
   return `${base}${url}`;

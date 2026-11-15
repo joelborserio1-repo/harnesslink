@@ -6,7 +6,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { CATEGORIES, HOUSE_STYLE } from './house-style';
-import { searchPhotos } from './photos';
+import { absoluteUrl, searchPhotos } from './photos';
 
 // Emailed stories, step 2: a stored email (hl_email_intake, src/email-intake.ts)
 // becomes a draft story.
@@ -308,7 +308,7 @@ async function createDraft(strapi: Core.Strapi, row: Row, mail: ParsedMail, from
     const f = uploaded.get(Number(a || b));
     if (!f) return '';
     const size = f.width && f.height ? ` width="${f.width}" height="${f.height}"` : '';
-    return `<figure class="image"><img src="${esc(f.url)}" alt="${esc(f.alt)}"${size}>${f.caption ? `<figcaption><strong>${esc(f.caption)}</strong></figcaption>` : ''}</figure>`;
+    return `<figure class="image"><img src="${esc(absoluteUrl(f.url))}" alt="${esc(f.alt)}"${size}>${f.caption ? `<figcaption><strong>${esc(f.caption)}</strong></figcaption>` : ''}</figure>`;
   });
   const outlet = r.outlet_name.trim();
   if (outlet) {
