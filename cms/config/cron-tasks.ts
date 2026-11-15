@@ -1,9 +1,18 @@
 import type { Core } from '@strapi/strapi';
+import { processWaiting } from '../src/email-processor';
 
 // Scheduled publishing on Strapi's built-in cron (Strapi's own Releases
 // scheduler is a paid feature). An editor fills in "Scheduled for" on a draft;
 // within a minute of that time it is published.
 export default {
+  // Emailed stories still waiting (CMS restarted, Claude busy, key added
+  // later): every 5 minutes. src/email-processor.ts.
+  processEmailedStories: {
+    task: async ({ strapi }: { strapi: Core.Strapi }) => {
+      await processWaiting(strapi);
+    },
+    options: { rule: '*/5 * * * *' },
+  },
   publishScheduledArticles: {
     task: async ({ strapi }: { strapi: Core.Strapi }) => {
       const uid = 'api::article.article';

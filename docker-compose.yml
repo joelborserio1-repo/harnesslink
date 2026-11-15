@@ -101,6 +101,11 @@ services:
       R2_PUBLIC_URL: ${R2_PUBLIC_URL:-}
       # Emailed stories: shared secret with the story-intake Worker (email-worker/). Unset = intake refuses everything.
       EMAIL_INTAKE_SECRET: ${EMAIL_INTAKE_SECRET:-}
+      # Approved senders (addresses or @domains, comma separated) and staff domains whose forwards count.
+      EMAIL_INTAKE_SENDERS: ${EMAIL_INTAKE_SENDERS:-}
+      EMAIL_INTAKE_STAFF: ${EMAIL_INTAKE_STAFF:-harnesslink.com}
+      # Claude, for formatting emailed stories. Unset = emails wait.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       # Home-screen dashboard (src/dashboard.ts). Each widget shows "not connected" until its key is set.
       MATOMO_URL: ${MATOMO_URL:-}
       MATOMO_SITE_ID: ${MATOMO_SITE_ID:-1}

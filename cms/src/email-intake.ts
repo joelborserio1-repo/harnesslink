@@ -1,4 +1,5 @@
 import type { Core } from '@strapi/strapi';
+import { processEmail } from './email-processor';
 
 // Emailed stories (stories@in.harnesslink.com). The Cloudflare Worker in
 // email-worker/ posts each raw message to /api/email-intake, which stores it
@@ -6,11 +7,20 @@ import type { Core } from '@strapi/strapi';
 // attachments, Claude formatting) is a separate step that reads this table,
 // so nothing that arrives is lost while that step is being built or is down.
 //
-// hl_email_intake.status: received → drafted | skipped | failed
+// hl_email_intake.status: received → processing → drafted | skipped | failed
 
 export async function ensureEmailIntakeTable(strapi: Core.Strapi) {
   const db = strapi.db.connection;
-  if (await db.schema.hasTable('hl_email_intake')) return;
+  if (await db.schema.hasTable('hl_email_intake')) {
+    // Added with the draft step (src/email-processor.ts); additive.
+    if (!(await db.schema.hasColumn('hl_email_intake', 'attempts'))) {
+      await db.schema.alterTable('hl_email_intake', (t) => {
+        t.integer('attempts').notNullable().defaultTo(0);
+        t.timestamp('claimed_at', { useTz: true });
+      });
+    }
+    return;
+  }
   await db.schema.createTable('hl_email_intake', (t) => {
     t.increments('id');
     t.text('message_id').unique();
@@ -25,6 +35,8 @@ export async function ensureEmailIntakeTable(strapi: Core.Strapi) {
     t.string('article_document_id', 64);
     t.timestamp('received_at', { useTz: true }).notNullable().defaultTo(db.fn.now()).index();
     t.timestamp('processed_at', { useTz: true });
+    t.integer('attempts').notNullable().defaultTo(0);
+    t.timestamp('claimed_at', { useTz: true });
   });
 }
 
@@ -61,5 +73,11 @@ export async function storeEmail(strapi: Core.Strapi, raw: Buffer, envelope: { f
     .ignore()
     .returning('id');
   strapi.log.info(`[email-intake] stored #${row?.id ?? '?'} from ${envelope.from || '?'} (${raw.length} bytes)`);
+  // Turn it into a draft in the background; the Worker gets its answer now.
+  if (row?.id) {
+    setImmediate(() => {
+      processEmail(strapi, row.id).catch((err) => strapi.log.error(`[email-intake] #${row.id}: ${err}`));
+    });
+  }
   return { id: row?.id ?? null, duplicate: !row };
 }
