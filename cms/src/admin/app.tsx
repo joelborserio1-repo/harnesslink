@@ -6,6 +6,7 @@ import RevisionsPanel from './RevisionsPanel';
 import SocialPanel from './SocialPanel';
 import AdPerformancePanel from './AdPerformancePanel';
 import PhotosPanel from './PhotosPanel';
+import LeadPhotoPanel from './LeadPhotoPanel';
 import AdSizePanel from './AdSizePanel';
 import { configureEditor } from './ckeditor';
 
@@ -129,6 +130,6 @@ export default {
     // "Revisions" (src/revisions.ts) and
     // "Share to social" via Postiz (src/social.ts); on ads, "Size" (pick the display size for the artwork) and "Performance"
     // (src/api/ad/stats.ts).
-    (app.getPlugin('content-manager') as any).apis.addEditViewSidePanel([PhotosPanel, RevisionsPanel, SocialPanel, AdSizePanel, AdPerformancePanel]);
+    (app.getPlugin('content-manager') as any).apis.addEditViewSidePanel([LeadPhotoPanel, PhotosPanel, RevisionsPanel, SocialPanel, AdSizePanel, AdPerformancePanel]);
   },
 };
