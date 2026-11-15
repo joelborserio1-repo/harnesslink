@@ -35,6 +35,7 @@ Layout (body_html)
 Photos
 - Attached photos are listed with numbers. Choose the best one as the lead photo (lead_photo). If there are other good story photos, place each one where it belongs by writing a line containing only [[PHOTO n]] between paragraphs.
 - Ignore logos, signatures, banners and tiny images.
+- Always fill photo_search_terms with the main horse's name, then the driver or trainer, so we can find an archive photo if none is attached.
 - For every photo you use, write a short caption naming the horse and driver or person if the email says who it is, and the photographer credit if given (e.g. "Race Images"). Never guess who is in a photo.
 
 Other fields

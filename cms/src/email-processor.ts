@@ -6,6 +6,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { CATEGORIES, HOUSE_STYLE } from './house-style';
+import { searchPhotos } from './photos';
 
 // Emailed stories, step 2: a stored email (hl_email_intake, src/email-intake.ts)
 // becomes a draft story.
@@ -46,6 +47,7 @@ type Result = {
   category: string;
   lead_photo: number;
   photos: { photo: number; caption: string; alt: string }[];
+  photo_search_terms: string[];
 };
 
 const SCHEMA = {
@@ -53,7 +55,7 @@ const SCHEMA = {
   additionalProperties: false,
   required: [
     'is_story', 'skip_reason', 'title', 'excerpt', 'seo_title', 'seo_description', 'body_html',
-    'author_name', 'outlet_name', 'outlet_url', 'category', 'lead_photo', 'photos',
+    'author_name', 'outlet_name', 'outlet_url', 'category', 'lead_photo', 'photos', 'photo_search_terms',
   ],
   properties: {
     is_story: { type: 'boolean' },
@@ -68,6 +70,11 @@ const SCHEMA = {
     outlet_url: { type: 'string', description: "The outlet's website if the email shows one, else empty." },
     category: { type: 'string', enum: [...CATEGORIES] },
     lead_photo: { type: 'integer', description: 'Number of the lead photo, or 0 for none.' },
+    photo_search_terms: {
+      type: 'array',
+      description: 'Names to search our photo archive with if no photo is attached: the main horse first, then its driver or trainer. Full names exactly as written. Up to 4.',
+      items: { type: 'string' },
+    },
     photos: {
       type: 'array',
       description: 'Every photo used (the lead photo and any [[PHOTO n]] in the body).',
@@ -258,6 +265,23 @@ async function uploadPhoto(strapi: Core.Strapi, a: Attachment, caption: string, 
   }
 }
 
+// No photo attached: the best recent archive photo whose title, caption or alt
+// text actually names the horse (or person), so a loose match is never used.
+async function archivePhoto(strapi: Core.Strapi, terms: string[]) {
+  for (const raw of terms.slice(0, 4)) {
+    const term = raw.trim();
+    if (term.length < 3) continue;
+    const words = term.toLowerCase().split(/\s+/).filter(Boolean);
+    const { photos } = await searchPhotos(strapi, term, 1, 10);
+    const hit = photos.find((p) => {
+      const text = `${p.title || ''} ${p.caption || ''} ${p.alt || ''}`.toLowerCase();
+      return words.every((w) => text.includes(w));
+    });
+    if (hit) return { ...hit, term };
+  }
+  return null;
+}
+
 async function findOrCreateAuthor(strapi: Core.Strapi, name: string) {
   const clean = name.replace(/^by\s+/i, '').trim().slice(0, 120);
   if (!clean) return null;
@@ -295,6 +319,7 @@ async function createDraft(strapi: Core.Strapi, row: Row, mail: ParsedMail, from
   const category = await db('categories').where('name', r.category).whereNotNull('published_at').first('document_id');
   const author = await findOrCreateAuthor(strapi, r.author_name);
   const lead = uploaded.get(r.lead_photo);
+  const suggested = lead ? null : await archivePhoto(strapi, r.photo_search_terms || []);
 
   const doc = await strapi.documents('api::article.article').create({
     data: {
@@ -307,6 +332,10 @@ async function createDraft(strapi: Core.Strapi, row: Row, mail: ParsedMail, from
       ...(category ? { primaryCategory: category.document_id, categories: [category.document_id] } : {}),
       ...(author ? { authors: [author] } : {}),
       ...(lead ? { featuredImage: lead.id } : {}),
+      ...(suggested?.fileId ? { featuredImage: suggested.fileId } : {}),
+      ...(suggested && !suggested.fileId
+        ? { legacyImage: { url: suggested.url, width: suggested.width, height: suggested.height, alt: suggested.alt || suggested.term, caption: suggested.caption } }
+        : {}),
       seo: { metaTitle: r.seo_title.slice(0, 70), metaDescription: r.seo_description.slice(0, 170) },
       importFlags: {
         source: 'email',
@@ -315,6 +344,14 @@ async function createDraft(strapi: Core.Strapi, row: Row, mail: ParsedMail, from
         subject: mail.subject || null,
         outlet: outlet || null,
         author: r.author_name || null,
+        ...(suggested
+          ? {
+              editorNote: `No photo was attached. The lead photo was picked from our archive by searching "${suggested.term}". Check it shows the right horse or person before publishing.`,
+              suggestedPhoto: suggested.url,
+            }
+          : !lead
+            ? { editorNote: 'No photo was attached and none was found in the archive. Add a lead photo from the Photos panel.' }
+            : {}),
       },
     } as never,
   });
