@@ -485,17 +485,18 @@ body {
 
 /* best bets */
 .fg-bests { margin-bottom: 8px; }
-.fg-best-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0; border-top: 1px solid var(--color-line); border-left: 1px solid var(--color-line); }
-.fg-best { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px 16px; border-right: 1px solid var(--color-line); border-bottom: 1px solid var(--color-line); text-decoration: none; color: inherit; }
-.fg-best:hover { background: var(--color-mist); }
-.fg-best-bet { border-top: 3px solid var(--color-accent); margin-top: -1px; }
-.fg-best-head { display: flex; flex-direction: column; font-size: 13px; color: var(--color-muted); }
-.fg-best-horse { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }
-.fg-best-horse strong { display: block; font-size: 17px; color: var(--color-navy); line-height: 1.2; }
-.fg-best-sub { display: block; font-size: 13px; color: var(--color-muted); }
-.fg-best-comment { font-size: 14px; line-height: 1.45; color: #3a3e47; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.fg-best-grid.is-value .fg-best-comment { display: none; }
-.fg-best-grid.is-value .fg-best-horse strong { font-size: 15px; }
+.fg-besttable { width: 100%; border-collapse: collapse; font-size: 14px; border-top: 2px solid var(--color-navy); }
+.fg-besttable thead th { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--color-muted); padding: 8px 12px 6px 0; border-bottom: 1px solid var(--color-line); }
+.fg-besttable tbody th, .fg-besttable td { padding: 12px 12px 12px 0; border-bottom: 1px solid var(--color-line); vertical-align: top; text-align: left; }
+.fg-besttable tbody th { width: 17%; font-weight: 400; }
+.fg-besttable tbody th a { display: block; font-family: var(--font-serif); font-size: 17px; font-weight: 700; color: var(--color-navy); text-decoration: none; }
+.fg-besttable tbody th span { font-size: 12px; color: var(--color-muted); }
+.fg-bestcell a { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 10px; align-items: start; text-decoration: none; color: inherit; }
+.fg-bestcell a:hover strong { text-decoration: underline; }
+.fg-bestcell-bet { width: 52%; }
+.fg-bestcell-body strong { display: block; color: var(--color-navy); font-size: 15px; line-height: 1.25; }
+.fg-bestcell-sub { display: block; font-size: 12px; color: var(--color-muted); margin-top: 1px; }
+.fg-bestcell-comment { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 13px; line-height: 1.4; color: #3a3e47; margin-top: 4px; }
 
 /* outcome marks */
 .fg-outcome { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 2px 6px; border: 1px solid var(--color-line); color: var(--color-muted); white-space: nowrap; }
@@ -527,9 +528,11 @@ body {
 .fg-race-meta { display: block; font-size: 12px; color: var(--color-muted); margin-top: 2px; }
 .fg-races-picks ol { display: flex; flex-direction: column; gap: 5px; }
 .fg-races-picks li { display: flex; align-items: center; gap: 7px; line-height: 1.25; }
+.fg-pick-price { margin-left: auto; font-size: 13px; }
+.fg-races-picks { width: 46%; }
 .fg-races-picks li.is-top > span:first-of-type { font-weight: 700; color: var(--color-navy); }
 .fg-races-picks li.is-scratched > span:first-of-type { text-decoration: line-through; color: var(--color-muted); }
-.fg-races-result { width: 24%; text-align: right; white-space: nowrap; }
+.fg-races-result { width: 20%; text-align: right; }
 .fg-races-result .fg-label { margin-right: 2px; }
 .fg-div { display: block; font-weight: 600; color: var(--color-navy); font-variant-numeric: tabular-nums; }
 .fg-later, .fg-past { margin-top: 10px; }
@@ -550,4 +553,10 @@ body {
   .fg-races td { border: 0; padding: 3px 0; text-align: left; }
   .fg-races-result { white-space: normal; }
   .fg-div { display: inline; margin-left: 6px; }
+  .fg-besttable thead { display: none; }
+  .fg-besttable, .fg-besttable tbody, .fg-besttable tr, .fg-besttable th, .fg-besttable td { display: block; width: 100% !important; }
+  .fg-besttable tr { padding: 10px 0; border-bottom: 1px solid var(--color-line); }
+  .fg-besttable tbody th, .fg-besttable td { border: 0; padding: 4px 0; }
+  .fg-bestcell-value::before { content: "Best value"; display: block; font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--color-accent); margin: 4px 0 4px; }
+  .fg-bestcell-bet::before { content: "Best bet"; display: block; font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--color-accent); margin: 2px 0 4px; }
 }

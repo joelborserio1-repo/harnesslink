@@ -81,7 +81,11 @@ function Countdown({ iso, now, tz }: { iso: string; now: number | null; tz: stri
   const mins = Math.round((new Date(iso).getTime() - now) / 60_000);
   if (mins <= 0) return <>Jumping</>;
   if (mins < 60) return <>{mins} min</>;
-  return <>{timeAt(iso, tz)}</>;
+  return (
+    <>
+      {Math.floor(mins / 60)}h {String(mins % 60).padStart(2, "0")}m
+    </>
+  );
 }
 
 // ---------- next to go ----------
@@ -113,7 +117,9 @@ function NextToGo({ cards, live, now }: { cards: FormGuideCard[]; live: Record<n
                   <strong>
                     {c.venue} R{r.no}
                   </strong>{" "}
-                  <span>{timeAt(r.startTime, c.timezone)} local · {startBits(r)}</span>
+                  <span>
+                    Jumps {timeAt(r.startTime, c.timezone)} local · {startBits(r)}
+                  </span>
                 </span>
                 {top && (
                   <span className="fg-next-pick">
@@ -135,33 +141,59 @@ function NextToGo({ cards, live, now }: { cards: FormGuideCard[]; live: Record<n
 
 // ---------- best bets ----------
 
-function BestTile({ c, b, kind, live }: { c: FormGuideCard; b: FormGuideBest; kind: "bet" | "value"; live: Record<number, Live> }) {
+function BestCell({ c, b, kind, live }: { c: FormGuideCard; b: FormGuideBest | null; kind: "bet" | "value"; live: Record<number, Live> }) {
+  if (!b) return <td className="fg-muted">–</td>;
   const rl = raceLive(live, c, { id: b.raceId });
   const n = placing(rl, b.no);
   const div = n === 1 ? winDividend(rl?.dividends) : null;
   return (
-    <Link href={`${c.path}#race-${b.race}`} className={`fg-best fg-best-${kind}`}>
-      <span className="fg-best-head">
-        <span className="fg-label">{kind === "bet" ? "Best bet" : "Best value"}</span>
-        <span>
-          {c.venue} · R{b.race} · {timeAt(b.startTime, c.timezone)}
-        </span>
-      </span>
-      <span className="fg-best-horse">
-        <Silk path={b.silk} colours={b.colours} alt="" size={44} />
-        <span>
+    <td className={`fg-bestcell fg-bestcell-${kind}`}>
+      <Link href={`${c.path}#race-${b.race}`}>
+        <Silk path={b.silk} colours={b.colours} alt="" size={kind === "bet" ? 36 : 28} />
+        <span className="fg-bestcell-body">
           <strong>
             {b.horse} <span className="fg-no">({b.no})</span>
           </strong>
-          <span className="fg-best-sub">
-            {b.driver ? `Driver ${b.driver} · ` : ""}
-            {rl?.resulted ? (div ? `Paid $${div}` : "Result in") : <span className="fg-price">{money(price(rl, b))}</span>}
+          <span className="fg-bestcell-sub">
+            R{b.race} · {timeAt(b.startTime, c.timezone)} ·{" "}
+            {rl?.resulted ? (div ? <span className="fg-price">Paid ${div}</span> : "Run") : <span className="fg-price">{money(price(rl, b))}</span>}
           </span>
+          {kind === "bet" && b.comment && <span className="fg-bestcell-comment">{b.comment}</span>}
         </span>
         <Outcome n={n} />
-      </span>
-      {b.comment && <span className="fg-best-comment">{b.comment}</span>}
-    </Link>
+      </Link>
+    </td>
+  );
+}
+
+function BestBets({ cards, live }: { cards: FormGuideCard[]; live: Record<number, Live> }) {
+  const rows = cards.filter((c) => c.bestBet || c.bestValue);
+  if (!rows.length) return null;
+  return (
+    <section className="fg-bests">
+      <h2 className="fg-section-h">Harness Analyst best bets today</h2>
+      <table className="fg-besttable">
+        <thead>
+          <tr>
+            <th scope="col">Meeting</th>
+            <th scope="col">Best bet</th>
+            <th scope="col">Best value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((c) => (
+            <tr key={c.slug}>
+              <th scope="row">
+                <a href={`#${c.slug}`}>{c.venue}</a>
+                <span>First race {timeAt(c.firstRace, c.timezone)}</span>
+              </th>
+              <BestCell c={c} b={c.bestBet} kind="bet" live={live} />
+              <BestCell c={c} b={c.bestValue} kind="value" live={live} />
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
   );
 }
 
@@ -195,7 +227,7 @@ function tally(c: FormGuideCard, live: Record<number, Live>) {
   return { run, top, any };
 }
 
-function MeetingBlock({ c, live, past }: { c: FormGuideCard; live: Record<number, Live>; past: boolean }) {
+function MeetingBlock({ c, live }: { c: FormGuideCard; live: Record<number, Live> }) {
   const l = live[c.meetingId];
   const t = tally(c, live);
   const bb = c.bestBet ? placing(raceLive(live, c, { id: c.bestBet.raceId }), c.bestBet.no) : 0;
@@ -228,7 +260,7 @@ function MeetingBlock({ c, live, past }: { c: FormGuideCard; live: Record<number
           <tr>
             <th scope="col">Race</th>
             <th scope="col">Our tips</th>
-            <th scope="col">{past ? "Result" : "Price / result"}</th>
+            <th scope="col">Result</th>
           </tr>
         </thead>
         <tbody>
@@ -260,7 +292,7 @@ function MeetingBlock({ c, live, past }: { c: FormGuideCard; live: Record<number
                             <span>
                               {p.horse} <span className="fg-no">({p.no})</span>
                             </span>
-                            {scr ? <span className="fg-scr">Scratched</span> : <Outcome n={n} />}
+                            {scr ? <span className="fg-scr">Scratched</span> : n ? <Outcome n={n} /> : !rl?.resulted && <span className="fg-price fg-pick-price">{money(price(rl, p))}</span>}
                           </li>
                         );
                       })}
@@ -275,8 +307,8 @@ function MeetingBlock({ c, live, past }: { c: FormGuideCard; live: Record<number
                       <span className="fg-label">1st</span> {r.names[w] || `No. ${w}`} ({w})
                       {div && <span className="fg-div">${div}</span>}
                     </>
-                  ) : r.picks[0] ? (
-                    <span className="fg-price">{money(price(rl, r.picks[0]))}</span>
+                  ) : r.startTime ? (
+                    <span className="fg-muted">Jumps {timeAt(r.startTime, c.timezone)}</span>
                   ) : (
                     <span className="fg-muted">–</span>
                   )}
@@ -300,8 +332,6 @@ export default function FormGuideHub({ cards, today }: { cards: FormGuideCard[];
   const live = useLiveAll(cards.map((c) => c.meetingId));
   const now = useNow();
 
-  const bests = todays.flatMap((c) => (c.bestBet ? [{ c, b: c.bestBet, kind: "bet" as const }] : []));
-  const values = todays.flatMap((c) => (c.bestValue ? [{ c, b: c.bestValue, kind: "value" as const }] : []));
   const byCountry = (list: FormGuideCard[]) => ["NZ", "AU"].map((k) => [k, list.filter((c) => c.country === k)] as const).filter(([, l]) => l.length);
 
   return (
@@ -319,26 +349,7 @@ export default function FormGuideHub({ cards, today }: { cards: FormGuideCard[];
 
       <NextToGo cards={todays} live={live} now={now} />
 
-      {bests.length > 0 && (
-        <section className="fg-bests">
-          <h2 className="fg-section-h">Harness Analyst best bets today</h2>
-          <div className="fg-best-grid">
-            {bests.map(({ c, b, kind }) => (
-              <BestTile key={c.slug} c={c} b={b} kind={kind} live={live} />
-            ))}
-          </div>
-          {values.length > 0 && (
-            <>
-              <h3 className="fg-sub-h">Best value</h3>
-              <div className="fg-best-grid is-value">
-                {values.map(({ c, b, kind }) => (
-                  <BestTile key={c.slug} c={c} b={b} kind={kind} live={live} />
-                ))}
-              </div>
-            </>
-          )}
-        </section>
-      )}
+      <BestBets cards={todays} live={live} />
 
       {todays.length > 0 ? (
         <section>
@@ -347,7 +358,7 @@ export default function FormGuideHub({ cards, today }: { cards: FormGuideCard[];
             <div key={k} className="fg-country">
               <h3 className="fg-country-h">{COUNTRY[k] || k}</h3>
               {list.map((c) => (
-                <MeetingBlock key={c.slug} c={c} live={live} past={false} />
+                <MeetingBlock key={c.slug} c={c} live={live} />
               ))}
             </div>
           ))}
@@ -360,7 +371,7 @@ export default function FormGuideHub({ cards, today }: { cards: FormGuideCard[];
         <section className="fg-later">
           <h2 className="fg-day-h">Coming up</h2>
           {ahead.map((c) => (
-            <MeetingBlock key={c.slug} c={c} live={live} past={false} />
+            <MeetingBlock key={c.slug} c={c} live={live} />
           ))}
         </section>
       )}
@@ -371,7 +382,7 @@ export default function FormGuideHub({ cards, today }: { cards: FormGuideCard[];
           {past
             .filter((c) => c.date === d)
             .map((c) => (
-              <MeetingBlock key={c.slug} c={c} live={live} past />
+              <MeetingBlock key={c.slug} c={c} live={live} />
             ))}
         </section>
       ))}
