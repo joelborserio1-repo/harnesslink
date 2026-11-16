@@ -75,47 +75,58 @@ export async function buildDailyFormGuide(strapi: Core.Strapi, opts: { date?: st
 }
 
 // Public list for /form-guide/: published cards from `days` days back to the
-// furthest day ahead, compact (no fields).
-export async function formGuideList(strapi: Core.Strapi, days = 3) {
+// furthest day ahead, compact: each race with our picks (no full fields).
+type Pick = { no: number; horse: string; driver: string | null; silk: string | null; colours: string | null; win: number | null; comment?: string };
+export async function formGuideList(strapi: Core.Strapi, days = 2) {
   const since = nzDate(new Date(Date.now() - days * 86_400_000));
   const rows = await strapi.db
     .connection('articles')
     .whereNotNull('published_at')
     .where('slug', 'like', 'form-guide-%')
     .whereRaw(`race_analysis->'meeting'->>'date' >= ?`, [since])
-    .select(
-      'slug',
-      'title',
-      strapi.db.connection.raw(`race_analysis->'meeting'->>'id' as meeting_id`),
-      strapi.db.connection.raw(`race_analysis->'meeting'->>'date' as date`),
-      strapi.db.connection.raw(`race_analysis->'meeting'->>'venue' as venue`),
-      strapi.db.connection.raw(`race_analysis->'meeting'->>'country' as country`),
-      strapi.db.connection.raw(`race_analysis->'meeting'->>'timezone' as timezone`),
-      strapi.db.connection.raw(`race_analysis->'meeting'->>'trackCondition' as track_condition`),
-      strapi.db.connection.raw(`jsonb_array_length(race_analysis->'meeting'->'races') as races`),
-      strapi.db.connection.raw(`race_analysis->'meeting'->'races'->0->>'startTime' as first_race`),
-      strapi.db.connection.raw(`race_analysis->'bestBet'->>'race' as best_race`),
-      strapi.db.connection.raw(
-        `(select e->>'horse' from jsonb_array_elements(race_analysis->'meeting'->'races') r, jsonb_array_elements(r->'entries') e
-          where (r->>'no')::int = (race_analysis->'bestBet'->>'race')::int and (e->>'no')::int = (race_analysis->'bestBet'->>'no')::int limit 1) as best_horse`
-      ),
-      strapi.db.connection.raw(`(select count(*) from jsonb_each(coalesce(race_analysis->'notes','{}'::jsonb)) n where jsonb_array_length(coalesce(n.value->'picks','[]'::jsonb)) > 0) as tipped`)
-    );
-  return rows
-    .map((r: any) => ({
+    .select('slug', 'title', 'race_analysis');
+  const cards = rows.map((r: any) => {
+    const ra = r.race_analysis || {};
+    const m = ra.meeting || {};
+    const notes = ra.notes || {};
+    const pick = (race: any, no: number, comment?: string): Pick | null => {
+      const e = (race?.entries || []).find((x: any) => x.no === no);
+      return e ? { no, horse: e.horse, driver: e.driver, silk: e.silk, colours: e.colours, win: e.win, ...(comment ? { comment } : {}) } : null;
+    };
+    const races = (m.races || []).map((race: any) => ({
+      id: race.id,
+      no: race.no,
+      name: race.name,
+      distance: race.distance,
+      start: race.start,
+      gait: race.gait,
+      startTime: race.startTime,
+      starters: (race.entries || []).filter((e: any) => !e.scratched && !e.emergency).length,
+      names: Object.fromEntries((race.entries || []).map((e: any) => [e.no, e.horse])),
+      picks: ((notes[race.id]?.picks || []) as { no: number }[]).map((p) => pick(race, p.no)).filter(Boolean),
+    }));
+    const best = (b: any) => {
+      const race = b && (m.races || []).find((x: any) => x.no === b.race);
+      const comment = race && (notes[race.id]?.picks || []).find((p: any) => p.no === b.no)?.comment;
+      const p = race && pick(race, b.no, comment);
+      return p ? { race: b.race, raceId: race.id, startTime: race.startTime, ...p } : null;
+    };
+    return {
       slug: r.slug,
       path: `/form-guide/${String(r.slug).replace(/^form-guide-/, '')}/`,
       title: r.title,
-      meetingId: Number(r.meeting_id),
-      date: r.date,
-      venue: r.venue,
-      country: r.country,
-      timezone: r.timezone,
-      trackCondition: r.track_condition,
-      races: Number(r.races),
-      firstRace: r.first_race,
-      hasTips: Number(r.tipped) > 0,
-      bestBet: r.best_horse ? { race: Number(r.best_race), horse: r.best_horse } : null,
-    }))
-    .sort((a: any, b: any) => (a.date === b.date ? String(a.firstRace).localeCompare(String(b.firstRace)) : b.date.localeCompare(a.date)));
+      meetingId: Number(m.id),
+      date: m.date,
+      venue: m.venue,
+      country: m.country,
+      timezone: m.timezone,
+      trackCondition: m.trackCondition || null,
+      firstRace: races.find((x: any) => x.startTime)?.startTime || null,
+      races,
+      hasTips: races.some((x: any) => x.picks.length),
+      bestBet: best(ra.bestBet),
+      bestValue: best(ra.bestValue),
+    };
+  });
+  return cards.sort((a: any, b: any) => (a.date === b.date ? String(a.firstRace).localeCompare(String(b.firstRace)) : b.date.localeCompare(a.date)));
 }

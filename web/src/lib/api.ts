@@ -306,6 +306,28 @@ async function articleList(filters: Query | undefined, page: number, perPage: nu
 // ---- Articles ----
 
 // The daily form guide's cards (CMS src/form-guide.ts), newest day first.
+export type FormGuidePick = {
+  no: number;
+  horse: string;
+  driver: string | null;
+  silk: string | null;
+  colours: string | null;
+  win: number | null;
+  comment?: string;
+};
+export type FormGuideBest = FormGuidePick & { race: number; raceId: number; startTime: string | null };
+export type FormGuideRace = {
+  id: number;
+  no: number;
+  name: string;
+  distance: number | null;
+  start: "mobile" | "standing" | null;
+  gait: "trot" | "pace";
+  startTime: string | null;
+  starters: number;
+  names: Record<string, string>;
+  picks: FormGuidePick[];
+};
 export type FormGuideCard = {
   slug: string;
   path: string;
@@ -316,10 +338,11 @@ export type FormGuideCard = {
   country: string;
   timezone: string;
   trackCondition: string | null;
-  races: number;
   firstRace: string | null;
+  races: FormGuideRace[];
   hasTips: boolean;
-  bestBet: { race: number; horse: string } | null;
+  bestBet: FormGuideBest | null;
+  bestValue: FormGuideBest | null;
 };
 export async function listFormGuide(): Promise<FormGuideCard[]> {
   return (await strapi<FormGuideCard[]>("/form-guide", {}, { next: { revalidate: 60 } })) || [];

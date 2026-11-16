@@ -24,6 +24,6 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async formGuide(ctx: Context) {
     const { formGuideList } = await import('../../../form-guide');
     ctx.set('Cache-Control', 'public, max-age=60');
-    ctx.body = await formGuideList(strapi, 3);
+    ctx.body = await formGuideList(strapi, 2);
   },
 });
