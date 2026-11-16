@@ -7,12 +7,16 @@ import { processEmail } from './email-processor';
 // attachments, Claude formatting) is a separate step that reads this table,
 // so nothing that arrives is lost while that step is being built or is down.
 //
-// hl_email_intake.status: received → processing → drafted | skipped | failed
+// hl_email_intake.status: received → processing → drafted | skipped | failed,
+// or roundup (minor news) → rounded (in the morning roundup draft)
 
 export async function ensureEmailIntakeTable(strapi: Core.Strapi) {
   const db = strapi.db.connection;
   if (await db.schema.hasTable('hl_email_intake')) {
     // Added with the draft step (src/email-processor.ts); additive.
+    if (!(await db.schema.hasColumn('hl_email_intake', 'roundup'))) {
+      await db.schema.alterTable('hl_email_intake', (t) => t.jsonb('roundup'));
+    }
     if (!(await db.schema.hasColumn('hl_email_intake', 'attempts'))) {
       await db.schema.alterTable('hl_email_intake', (t) => {
         t.integer('attempts').notNullable().defaultTo(0);
@@ -37,6 +41,7 @@ export async function ensureEmailIntakeTable(strapi: Core.Strapi) {
     t.timestamp('processed_at', { useTz: true });
     t.integer('attempts').notNullable().defaultTo(0);
     t.timestamp('claimed_at', { useTz: true });
+    t.jsonb('roundup');
   });
 }
 

@@ -17,14 +17,14 @@ type Layout = {
   fields: Record<string, FieldMeta>;
 };
 
-export const LAYOUT_VERSION = '2026-11-10.2';
+export const LAYOUT_VERSION = '2026-11-16.1';
 
 const SEO_HELP = 'Search and social-media title/description. Leave blank to use the headline and standfirst.';
 
 export const LAYOUTS: Layout[] = [
   {
     uid: 'api::article.article',
-    list: ['title', 'primaryCategory', 'authors', 'publishDate'],
+    list: ['title', 'priority', 'primaryCategory', 'authors', 'publishDate'],
     sortBy: 'publishDate',
     sortOrder: 'DESC',
     pageSize: 20,
@@ -38,6 +38,7 @@ export const LAYOUTS: Layout[] = [
       [['featuredImage', 6], ['authors', 6]],
       [['legacyImage', 12]],
       [['primaryCategory', 6], ['categories', 6]],
+      [['priority', 6]],
       [['tags', 12]],
       [['publishDate', 6], ['modifiedDate', 6]],
       [['seo', 12]],
@@ -69,7 +70,8 @@ export const LAYOUTS: Layout[] = [
       legacyImage: { label: 'Lead photo from the archive', description: 'Set with "Make lead photo" in the Photos panel. An uploaded Lead photo above takes its place.' },
       legacyWpId: { label: 'WordPress ID', editable: false },
       legacyUrl: { label: 'Original URL', editable: false },
-      importFlags: { label: 'Migration notes', editable: false },
+      importFlags: { label: 'Import notes', description: 'Where the story came from (WordPress migration or an emailed story) and anything the editor should check.', editable: false },
+      priority: { label: 'Priority', description: 'Major, standard or minor news. Set automatically for emailed stories; editors can change it.' },
     },
   },
   {

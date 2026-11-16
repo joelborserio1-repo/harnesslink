@@ -1,5 +1,5 @@
 import type { Core } from '@strapi/strapi';
-import { processWaiting } from '../src/email-processor';
+import { buildRoundups, processWaiting } from '../src/email-processor';
 
 // Scheduled publishing on Strapi's built-in cron (Strapi's own Releases
 // scheduler is a paid feature). An editor fills in "Scheduled for" on a draft;
@@ -12,6 +12,13 @@ export default {
       await processWaiting(strapi);
     },
     options: { rule: '*/5 * * * *' },
+  },
+  // Minor emailed news → one roundup draft per region, 6am Sydney time.
+  buildEmailRoundups: {
+    task: async ({ strapi }: { strapi: Core.Strapi }) => {
+      await buildRoundups(strapi);
+    },
+    options: { rule: '0 6 * * *', tz: 'Australia/Sydney' },
   },
   publishScheduledArticles: {
     task: async ({ strapi }: { strapi: Core.Strapi }) => {

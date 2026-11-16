@@ -48,6 +48,9 @@ type Result = {
   lead_photo: number;
   photos: { photo: number; caption: string; alt: string }[];
   photo_search_terms: string[];
+  importance: 'major' | 'standard' | 'minor';
+  importance_reason: string;
+  roundup_html: string;
 };
 
 const SCHEMA = {
@@ -56,6 +59,7 @@ const SCHEMA = {
   required: [
     'is_story', 'skip_reason', 'title', 'excerpt', 'seo_title', 'seo_description', 'body_html',
     'author_name', 'outlet_name', 'outlet_url', 'category', 'lead_photo', 'photos', 'photo_search_terms',
+    'importance', 'importance_reason', 'roundup_html',
   ],
   properties: {
     is_story: { type: 'boolean' },
@@ -70,6 +74,9 @@ const SCHEMA = {
     outlet_url: { type: 'string', description: "The outlet's website if the email shows one, else empty." },
     category: { type: 'string', enum: [...CATEGORIES] },
     lead_photo: { type: 'integer', description: 'Number of the lead photo, or 0 for none.' },
+    importance: { type: 'string', enum: ['major', 'standard', 'minor'] },
+    importance_reason: { type: 'string' },
+    roundup_html: { type: 'string', description: 'The story in two or three sentences as one <p>, for a daily roundup.' },
     photo_search_terms: {
       type: 'array',
       description: 'Names to search our photo archive with if no photo is attached: the main horse first, then its driver or trainer. Full names exactly as written. Up to 4.',
@@ -329,6 +336,7 @@ async function createDraft(strapi: Core.Strapi, row: Row, mail: ParsedMail, from
       bodyFormat: 'legacy_html',
       bodyHtml: body,
       needsReview: true,
+      priority: r.importance,
       ...(category ? { primaryCategory: category.document_id, categories: [category.document_id] } : {}),
       ...(author ? { authors: [author] } : {}),
       ...(lead ? { featuredImage: lead.id } : {}),
@@ -344,6 +352,7 @@ async function createDraft(strapi: Core.Strapi, row: Row, mail: ParsedMail, from
         subject: mail.subject || null,
         outlet: outlet || null,
         author: r.author_name || null,
+        importance: `${r.importance}: ${r.importance_reason}`,
         ...(suggested
           ? {
               editorNote: `No photo was attached. The lead photo was picked from our archive by searching "${suggested.term}". Check it shows the right horse or person before publishing.`,
@@ -394,6 +403,22 @@ export async function processEmail(strapi: Core.Strapi, id: number) {
     const result = await format(mail, photos);
     if (!result.is_story) return await finish(strapi, id, 'skipped', result.skip_reason || 'Not a story');
 
+    // Minor news waits for the morning roundup instead of its own draft.
+    if (result.importance === 'minor') {
+      await db('hl_email_intake').where({ id }).update({
+        roundup: JSON.stringify({
+          title: result.title,
+          category: result.category,
+          html: result.roundup_html,
+          outlet: result.outlet_name,
+          outletUrl: result.outlet_url,
+          terms: result.photo_search_terms || [],
+          reason: result.importance_reason,
+        }),
+      });
+      return await finish(strapi, id, 'roundup', `Minor: ${result.importance_reason}`);
+    }
+
     const documentId = await createDraft(strapi, row, mail, sender.from, photos, result);
     await finish(strapi, id, 'drafted', null, documentId);
   } catch (err) {
@@ -426,4 +451,76 @@ export async function processWaiting(strapi: Core.Strapi) {
     .limit(5)
     .select('id');
   for (const r of rows) await processEmail(strapi, r.id);
+}
+
+// ---------- daily roundups ----------
+
+// Minor emailed news (status 'roundup') becomes one draft per region group,
+// built each morning (config/cron-tasks.ts): a short item per story with its
+// credit, instead of a stream of thin separate stories.
+const ROUNDUP_GROUPS: { name: string; categories: string[] }[] = [
+  { name: 'North American', categories: ['USA', 'Canada'] },
+  { name: 'Australia & New Zealand', categories: ['Australia', 'New Zealand'] },
+  { name: 'International', categories: ['Europe', 'UK / IRE', 'International'] },
+];
+
+type RoundupItem = { title: string; category: string; html: string; outlet: string; outletUrl: string; terms: string[] };
+
+const stripTags = (h: string) => h.replace(/<\/?(?!(?:strong|em|a)\b)[a-z][^>]*>/gi, '').trim();
+
+export async function buildRoundups(strapi: Core.Strapi) {
+  const db = strapi.db.connection;
+  const rows = (await db('hl_email_intake').where('status', 'roundup').orderBy('id').select('id', 'roundup')) as {
+    id: number;
+    roundup: RoundupItem | string;
+  }[];
+  if (!rows.length) return;
+  const date = new Intl.DateTimeFormat('en-AU', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Australia/Sydney' }).format(new Date());
+
+  for (const group of ROUNDUP_GROUPS) {
+    const items = rows
+      .map((r) => ({ id: r.id, ...(typeof r.roundup === 'string' ? JSON.parse(r.roundup) : r.roundup) as RoundupItem }))
+      .filter((r) => group.categories.includes(r.category));
+    if (!items.length) continue;
+
+    const body = items
+      .map((it) => {
+        const url = /^https?:\/\//i.test(it.outletUrl || '') ? it.outletUrl : '';
+        const credit = it.outlet ? `<p><em>Courtesy of ${url ? `<a href="${esc(url)}">${esc(it.outlet)}</a>` : esc(it.outlet)}</em></p>` : '';
+        const text = /^\s*<p>/i.test(it.html) ? it.html : `<p>${stripTags(it.html)}</p>`;
+        return `<h3>${esc(it.title)}</h3>${text}${credit}`;
+      })
+      .join('\n');
+
+    const title = `${group.name} Roundup: ${date}`;
+    const cats = await db('categories').whereIn('name', [...new Set(items.map((i) => i.category))]).whereNotNull('published_at').select('name', 'document_id');
+    const main = cats.find((c: any) => c.name === items[0].category) || cats[0];
+    const photo = await archivePhoto(strapi, items.flatMap((i) => i.terms || []));
+
+    const doc = await strapi.documents('api::article.article').create({
+      data: {
+        title,
+        slug: await freeSlug(strapi, slugify(title), 'articles'),
+        excerpt: `${items.length} ${items.length === 1 ? 'story' : 'stories'} from around the ${group.name === 'International' ? 'world' : 'region'}: ${items.slice(0, 3).map((i) => i.title).join('; ')}.`.slice(0, 300),
+        bodyFormat: 'legacy_html',
+        bodyHtml: body,
+        needsReview: true,
+        priority: 'standard',
+        ...(main ? { primaryCategory: main.document_id, categories: cats.map((c: any) => c.document_id) } : {}),
+        ...(photo?.fileId ? { featuredImage: photo.fileId } : {}),
+        ...(photo && !photo.fileId ? { legacyImage: { url: photo.url, width: photo.width, height: photo.height, alt: photo.alt || photo.term, caption: photo.caption } } : {}),
+        importFlags: {
+          source: 'email-roundup',
+          intakeIds: items.map((i) => i.id),
+          editorNote: `Daily roundup of ${items.length} minor emailed ${items.length === 1 ? 'story' : 'stories'}. Cut or reorder items as you like.${photo ? ` Lead photo picked from the archive ("${photo.term}"): check it.` : ' Add a lead photo.'}`,
+        },
+      } as never,
+    });
+    await db('hl_email_intake').whereIn('id', items.map((i) => i.id)).update({
+      status: 'rounded',
+      article_document_id: doc.documentId,
+      processed_at: db.fn.now(),
+    });
+    strapi.log.info(`[email-intake] ${title}: ${items.length} items → ${doc.documentId}`);
+  }
 }

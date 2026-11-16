@@ -125,6 +125,14 @@
     "syndicationUrl": {
       "type": "string",
       "unique": true
+    },
+    "priority": {
+      "type": "enumeration",
+      "enum": [
+        "major",
+        "standard",
+        "minor"
+      ]
     }
   }
 }
