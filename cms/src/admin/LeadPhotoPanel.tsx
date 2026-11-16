@@ -124,17 +124,17 @@ function LeadPhoto() {
               Save caption
             </Button>
           )}
-          <Flex gap={2}>
-            <Button variant="secondary" size="S" loading={uploading} onClick={() => fileRef.current?.click()}>
-              Upload new
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 }}>
+            <Button variant="secondary" size="S" fullWidth loading={uploading} onClick={() => fileRef.current?.click()}>
+              Upload
             </Button>
-            <Button variant="secondary" size="S" onClick={findInArchive}>
-              Find in archive
+            <Button variant="secondary" size="S" fullWidth onClick={findInArchive}>
+              Archive
             </Button>
-            <Button variant="danger-light" size="S" onClick={remove}>
+            <Button variant="danger-light" size="S" fullWidth onClick={remove}>
               Remove
             </Button>
-          </Flex>
+          </div>
         </>
       ) : (
         <>
@@ -146,14 +146,14 @@ function LeadPhoto() {
               No lead photo yet
             </Typography>
           </Box>
-          <Flex gap={2}>
-            <Button size="S" loading={uploading} onClick={() => fileRef.current?.click()}>
-              Upload photo
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+            <Button size="S" fullWidth loading={uploading} onClick={() => fileRef.current?.click()}>
+              Upload
             </Button>
-            <Button variant="secondary" size="S" onClick={findInArchive}>
-              Find in archive
+            <Button variant="secondary" size="S" fullWidth onClick={findInArchive}>
+              From archive
             </Button>
-          </Flex>
+          </div>
         </>
       )}
     </Flex>
