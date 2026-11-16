@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { cloth, defaultLayout, silkUrl, starters, type Race, type SpeedMapLayout } from "@/lib/analysis";
+import { silkDataUrl } from "@/lib/silks";
 
 // Interactive speed map. Starts from the analyst's map (or, without one, the
 // field in number order) and lets the reader rearrange it: drag a runner, or
@@ -300,7 +301,7 @@ function SpeedRow(props: {
                 onKeyDown={(ev) => props.onKey(ev, e.no)}
                 aria-label={`${e.no} ${e.horse}, ${positionName(line, c)}. Arrow keys to move.`}
               >
-                <Silk path={e.silk} alt="" size={30} />
+                <Silk path={e.silk} colours={e.colours} alt="" size={30} />
                 <Cloth no={e.no} />
                 <span className="speedmap-name">{e.horse}</span>
               </button>
@@ -323,18 +324,27 @@ export function Cloth({ no, big = false }: { no: number; big?: boolean }) {
   );
 }
 
-export function Silk({ path, alt, size = 34 }: { path: string | null; alt: string; size?: number }) {
-  const [broken, setBroken] = useState(false);
-  const src = silkUrl(path);
-  if (!src || broken) return <span className="silk silk-blank" style={{ width: size, height: Math.round(size * 1.19) }} aria-hidden />;
+// True for meetings more than a couple of days old, when TAB no longer has the images.
+export const DrawnSilks = createContext(false);
+
+export function Silk({ path, colours, alt, size = 34 }: { path: string | null; colours?: string | null; alt: string; size?: number }) {
+  const drawn = useContext(DrawnSilks);
+  // TAB's image first; when TAB has none (it drops them a few days after a
+  // meeting), a jacket drawn from the written colours (lib/silks.ts).
+  const [broken, setBroken] = useState(drawn);
+  const tab = silkUrl(path);
+  const src = !broken && tab ? tab : silkDataUrl(colours ?? null);
+  const h = Math.round(size * 1.19);
+  if (!src) return <span className="silk silk-blank" style={{ width: size, height: h }} aria-hidden />;
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       className="silk"
       src={src}
       alt={alt}
+      title={colours ? colours.toLowerCase() : undefined}
       width={size}
-      height={Math.round(size * 1.19)}
+      height={h}
       loading="lazy"
       draggable={false}
       onError={() => setBroken(true)}

@@ -1,0 +1,32 @@
+{
+  "kind": "collectionType",
+  "collectionName": "tracks",
+  "info": {
+    "singularName": "track",
+    "pluralName": "tracks",
+    "displayName": "Track",
+    "description": "Track guides shown on Harness Analyst form guides: the oval, start positions, track facts, records and weather."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": { "type": "string", "required": true },
+    "slug": { "type": "uid", "targetField": "name" },
+    "venueNames": { "type": "string", "required": true },
+    "country": { "type": "string" },
+    "region": { "type": "string" },
+    "circumference": { "type": "integer" },
+    "straight": { "type": "integer" },
+    "direction": { "type": "enumeration", "enum": ["anticlockwise", "clockwise"], "default": "anticlockwise" },
+    "sprintLane": { "type": "boolean", "default": false },
+    "fieldLimitMobile": { "type": "integer" },
+    "frontLineMobile": { "type": "integer" },
+    "latitude": { "type": "decimal" },
+    "longitude": { "type": "decimal" },
+    "starts": { "type": "component", "repeatable": true, "component": "track.start" },
+    "records": { "type": "component", "repeatable": true, "component": "track.record" },
+    "notes": { "type": "text" }
+  }
+}

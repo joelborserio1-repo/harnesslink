@@ -229,6 +229,38 @@ export interface SharedSeo extends Struct.ComponentSchema {
   };
 }
 
+export interface TrackRecord extends Struct.ComponentSchema {
+  collectionName: 'components_track_records';
+  info: {
+    description: 'A track record';
+    displayName: 'Record';
+  };
+  attributes: {
+    date: Schema.Attribute.Date;
+    distance: Schema.Attribute.Integer & Schema.Attribute.Required;
+    gait: Schema.Attribute.Enumeration<['pace', 'trot']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'pace'>;
+    horse: Schema.Attribute.String;
+    mileRate: Schema.Attribute.String;
+    start: Schema.Attribute.Enumeration<['mobile', 'standing']> &
+      Schema.Attribute.DefaultTo<'mobile'>;
+  };
+}
+
+export interface TrackStart extends Struct.ComponentSchema {
+  collectionName: 'components_track_starts';
+  info: {
+    description: 'A race distance run at this track';
+    displayName: 'Start';
+  };
+  attributes: {
+    distance: Schema.Attribute.Integer & Schema.Attribute.Required;
+    mobile: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    standing: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+  };
+}
+
 declare module '@strapi/strapi' {
   export namespace Public {
     export interface ComponentSchemas {
@@ -244,6 +276,8 @@ declare module '@strapi/strapi' {
       'event.slot-holder': EventSlotHolder;
       'shared.legacy-image': SharedLegacyImage;
       'shared.seo': SharedSeo;
+      'track.record': TrackRecord;
+      'track.start': TrackStart;
     }
   }
 }

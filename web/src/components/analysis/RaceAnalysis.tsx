@@ -12,7 +12,8 @@ import {
   type Race,
   type RaceAnalysis as Data,
 } from "@/lib/analysis";
-import SpeedMap, { Cloth, Silk } from "./SpeedMap";
+import SpeedMap, { Cloth, DrawnSilks, Silk } from "./SpeedMap";
+import TrackGuide, { type Track } from "./TrackGuide";
 
 // The analysis sheet under a Harness Analyst story: best bet and best value,
 // then every race with the analyst's selections, a speed map, and the full
@@ -60,7 +61,7 @@ function withLive(r: Race, live: Live | null): Race {
 const longDate = (iso: string) =>
   new Intl.DateTimeFormat("en-NZ", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`));
 
-export default function RaceAnalysis({ data }: { data: Data }) {
+export default function RaceAnalysis({ data, track }: { data: Data; track?: Track | null }) {
   const { meeting } = data;
   const live = useLive(meeting.id);
   const races = useMemo(() => meeting.races.map((r) => withLive(r, live)), [meeting.races, live]);
@@ -86,7 +87,10 @@ export default function RaceAnalysis({ data }: { data: Data }) {
     { won: 0, placed: 0, tipped: 0 }
   );
 
+  const drawn = Date.parse(`${meeting.date}T00:00:00Z`) < Date.now() - 2 * 86_400_000;
+
   return (
+    <DrawnSilks.Provider value={drawn}>
     <section className="ra" aria-label={`${meeting.venue} race analysis`}>
       <header className="ra-head">
         <div>
@@ -129,6 +133,13 @@ export default function RaceAnalysis({ data }: { data: Data }) {
         </div>
       )}
 
+      {track && (
+        <details className="ra-trackwrap" open>
+          <summary>Track guide: {track.name}</summary>
+          <TrackGuide track={track} races={races} weather={live?.weather ?? null} />
+        </details>
+      )}
+
       <nav className="ra-nav" aria-label="Races">
         {races.map((r) => (
           <a key={r.id} href={`#race-${r.no}`}>
@@ -148,6 +159,7 @@ export default function RaceAnalysis({ data }: { data: Data }) {
         until the race starts. Gamble responsibly.
       </p>
     </section>
+    </DrawnSilks.Provider>
   );
 }
 
@@ -156,7 +168,7 @@ function BestCard({ label, race, entry, comment }: { label: string; race: Race; 
     <a className="ra-bestcard" href={`#race-${race.no}`}>
       <span className="ra-bestlabel">{label}</span>
       <span className="ra-bestbody">
-        <Silk path={entry.silk} alt={`${entry.horse} silks`} size={46} />
+        <Silk path={entry.silk} colours={entry.colours} alt={`${entry.horse} silks`} size={46} />
         <span>
           <span className="ra-bestrace">Race {race.no}</span>
           <span className="ra-besthorse">
@@ -244,7 +256,7 @@ function RaceBlock({ race, data, tz }: { race: Race; data: Data; tz: string }) {
               return (
                 <li key={p.no} className={e.scratched ? "is-scratched" : ""}>
                   <span className="ra-pickrank">{i + 1}</span>
-                  <Silk path={e.silk} alt={`${e.horse} silks`} size={38} />
+                  <Silk path={e.silk} colours={e.colours} alt={`${e.horse} silks`} size={38} />
                   <div className="ra-pickbody">
                     <p className="ra-pickname">
                       <Cloth no={e.no} /> <strong>{e.horse}</strong>
@@ -316,7 +328,7 @@ function FieldRow({ e, pickRank, resulted, showForm }: { e: Entry; pickRank: num
           <Cloth no={e.no} />
         </td>
         <td className="ra-silkcol">
-          <Silk path={e.silk} alt="" size={28} />
+          <Silk path={e.silk} colours={e.colours} alt="" size={28} />
         </td>
         <td>
           <span className="ra-horse">{e.horse}</span>

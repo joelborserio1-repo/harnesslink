@@ -268,7 +268,7 @@ export default async function ArticlePage({ params }: Params) {
             </div>
 
             {/* Harness Analyst form guide: the full sheet width, for the fields and speed maps. */}
-            {article.race_analysis && <RaceAnalysis data={article.race_analysis} />}
+            {article.race_analysis && <RaceAnalysis data={article.race_analysis} track={article.track} />}
 
             <div className="mx-auto max-w-[720px]">
               <AdSlot format="banner" zone="article-bottom" className="mt-8" />

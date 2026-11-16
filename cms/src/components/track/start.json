@@ -1,0 +1,10 @@
+{
+  "collectionName": "components_track_starts",
+  "info": { "displayName": "Start", "description": "A race distance run at this track" },
+  "options": {},
+  "attributes": {
+    "distance": { "type": "integer", "required": true },
+    "mobile": { "type": "boolean", "default": true },
+    "standing": { "type": "boolean", "default": false }
+  }
+}

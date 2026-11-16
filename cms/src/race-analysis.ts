@@ -168,19 +168,115 @@ export async function pullMeeting(meetingId: number): Promise<Meeting> {
   };
 }
 
+// ---------- tracks and weather ----------
+
+// The track guide for a TAB venue name ("Menangle", "Cambridge"…): Tracks
+// list the venue names they go by.
+export async function trackFor(strapi: Core.Strapi, venue: string) {
+  const v = venue.trim().toLowerCase();
+  const all: any[] = await strapi.documents('api::track.track').findMany({ populate: { starts: true, records: true }, limit: 500 } as any);
+  return all.find((t) => String(t.venueNames || '').split(',').some((n: string) => n.trim().toLowerCase() === v)) || null;
+}
+
+// Open-Meteo (free, no key): conditions now and today's forecast at the track.
+const weatherCache = new Map<string, { at: number; body: any }>();
+async function weatherAt(lat: number, lng: number) {
+  const key = `${lat.toFixed(3)},${lng.toFixed(3)}`;
+  const hit = weatherCache.get(key);
+  if (hit && Date.now() - hit.at < 15 * 60_000) return hit.body;
+  const q = new URLSearchParams({
+    latitude: String(lat),
+    longitude: String(lng),
+    current: 'temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m',
+    daily: 'temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,weather_code',
+    timezone: 'auto',
+    forecast_days: '1',
+  });
+  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${q}`, { signal: AbortSignal.timeout(8_000) });
+  if (!res.ok) throw new Error(`weather ${res.status}`);
+  const d: any = await res.json();
+  const body = {
+    at: d.current?.time || null,
+    temp: d.current?.temperature_2m ?? null,
+    feels: d.current?.apparent_temperature ?? null,
+    code: d.current?.weather_code ?? null,
+    rain: d.current?.precipitation ?? null,
+    wind: d.current?.wind_speed_10m ?? null,
+    gusts: d.current?.wind_gusts_10m ?? null,
+    windFrom: d.current?.wind_direction_10m ?? null,
+    max: d.daily?.temperature_2m_max?.[0] ?? null,
+    min: d.daily?.temperature_2m_min?.[0] ?? null,
+    rainChance: d.daily?.precipitation_probability_max?.[0] ?? null,
+    rainToday: d.daily?.precipitation_sum?.[0] ?? null,
+  };
+  weatherCache.set(key, { at: Date.now(), body });
+  return body;
+}
+
+// Track guides to start from. Menangle's figures are from the Harnesslink
+// track-guide mockup (Nov 2026); editors check and complete them under Tracks.
+export async function seedTracks(strapi: Core.Strapi) {
+  const uid = 'api::track.track';
+  const existing = await strapi.db.connection('tracks').where('slug', 'menangle-park-paceway').first('id');
+  if (existing) return;
+  const rec = (gait: string, distance: number, start: string, mileRate: string, horse: string, date: string) => ({ gait, distance, start, mileRate, horse, date });
+  await strapi.documents(uid).create({
+    data: {
+      name: 'Menangle Park Paceway',
+      slug: 'menangle-park-paceway',
+      venueNames: 'Menangle, Menangle Park, Tabcorp Park Menangle',
+      country: 'AU',
+      region: 'NSW',
+      circumference: 1400,
+      straight: 350,
+      direction: 'anticlockwise',
+      sprintLane: false,
+      fieldLimitMobile: 12,
+      frontLineMobile: 10,
+      latitude: -34.113,
+      longitude: 150.743,
+      starts: [
+        { distance: 1609, mobile: true, standing: true },
+        { distance: 2300, mobile: true, standing: true },
+      ],
+      records: [
+        rec('pace', 1609, 'mobile', '1:46.9', 'My Field Marshal NZ', '2018-02-24'),
+        rec('pace', 2300, 'mobile', '1:50.5', 'Don Hugo', '2024-12-14'),
+        rec('pace', 1609, 'standing', '1:55.4', 'Our Chain Of Command NZ', '2012-06-24'),
+        rec('pace', 2300, 'standing', '1:55.8', 'Terrorway NZ', '2013-01-19'),
+        rec('trot', 1609, 'mobile', '1:51.5', 'Maori Time', '2018-02-24'),
+        rec('trot', 2300, 'mobile', '1:55.3', 'The Locomotive', '2024-12-14'),
+        rec('trot', 1609, 'standing', '1:55.9', 'Chief Runningcloud', '2026-10-13'),
+        rec('trot', 2300, 'standing', '1:57.2', 'Hot To Trot NZ', '2025-05-06'),
+      ],
+      notes: 'Figures from the Harnesslink track-guide mockup, November 2026. Check before relying on them.',
+    } as never,
+  });
+  strapi.log.info('[tracks] seeded Menangle Park Paceway');
+}
+
 // Prices, scratchings and results only: what changes after the editor pulled.
 const liveCache = new Map<number, { at: number; body: any }>();
 const inflight = new Map<number, Promise<any>>();
-async function live(meetingId: number) {
+async function live(strapi: Core.Strapi, meetingId: number) {
   const hit = liveCache.get(meetingId);
   if (hit && Date.now() - hit.at < 120_000) return hit.body;
   if (inflight.has(meetingId)) return inflight.get(meetingId);
   const p = (async () => {
     try {
       const m = await pullMeeting(meetingId);
+      let weather = null;
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: m.timezone }).format(new Date());
+      if (m.date >= today) {
+        try {
+          const t = await trackFor(strapi, m.venue);
+          if (t?.latitude && t?.longitude) weather = await weatherAt(Number(t.latitude), Number(t.longitude));
+        } catch {}
+      }
       const body = {
         at: m.pulledAt,
         trackCondition: m.trackCondition,
+        weather,
         races: Object.fromEntries(
           m.races.map((r) => [
             r.id,
@@ -360,7 +456,7 @@ export async function liveForMeeting(strapi: Core.Strapi, ctx: any) {
   if (!known) return ctx.notFound();
   try {
     ctx.set('Cache-Control', 'public, max-age=60');
-    ctx.body = await live(id);
+    ctx.body = await live(strapi, id);
   } catch (e: any) {
     ctx.status = 502;
     ctx.body = { error: { message: e?.message || 'Racing API error' } };

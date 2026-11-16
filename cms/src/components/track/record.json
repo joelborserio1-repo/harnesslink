@@ -1,0 +1,13 @@
+{
+  "collectionName": "components_track_records",
+  "info": { "displayName": "Record", "description": "A track record" },
+  "options": {},
+  "attributes": {
+    "gait": { "type": "enumeration", "enum": ["pace", "trot"], "default": "pace", "required": true },
+    "distance": { "type": "integer", "required": true },
+    "start": { "type": "enumeration", "enum": ["mobile", "standing"], "default": "mobile" },
+    "mileRate": { "type": "string" },
+    "horse": { "type": "string" },
+    "date": { "type": "date" }
+  }
+}

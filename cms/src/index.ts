@@ -10,7 +10,7 @@ import { registerSocialRoutes } from './social';
 import { backfillUploads, ensurePhotoTable, registerPhotoRoutes, registerUploadSync } from './photos';
 import { ensureEmailIntakeTable } from './email-intake';
 import { ensureStoryStats, registerStoryStatsRoutes } from './story-stats';
-import { registerRaceAnalysisRoutes } from './race-analysis';
+import { registerRaceAnalysisRoutes, seedTracks } from './race-analysis';
 
 // What the public website may read without a token (Users & Permissions
 // "Public" role). Ads, subscribers, redirects and the 404 log are only reached
@@ -22,6 +22,7 @@ const PUBLIC_READ = [
   'api::tag.tag',
   'api::page.page',
   'api::country.country',
+  'api::track.track',
   'api::event-page.event-page',
   'api::insider-edition.insider-edition',
 ];
@@ -230,5 +231,6 @@ export default {
     await applyPluginSettings(strapi);
     await seedMenus(strapi);
     await setupReaders(strapi);
+    await seedTracks(strapi);
   },
 };

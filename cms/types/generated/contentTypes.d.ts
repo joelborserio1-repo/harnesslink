@@ -573,12 +573,16 @@ export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
       'manyToOne',
       'api::category.category'
     >;
+    priority: Schema.Attribute.Enumeration<['major', 'standard', 'minor']>;
     publishDate: Schema.Attribute.DateTime;
     publishedAt: Schema.Attribute.DateTime;
+    raceAnalysis: Schema.Attribute.JSON;
     scheduledFor: Schema.Attribute.DateTime;
     seo: Schema.Attribute.Component<'shared.seo', false>;
     slug: Schema.Attribute.UID<'title'> & Schema.Attribute.Required;
     subtitle: Schema.Attribute.Text;
+    syndicationSource: Schema.Attribute.String;
+    syndicationUrl: Schema.Attribute.String & Schema.Attribute.Unique;
     tags: Schema.Attribute.Relation<'manyToMany', 'api::tag.tag'>;
     title: Schema.Attribute.String & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
@@ -1214,6 +1218,48 @@ export interface ApiTagTag extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+  };
+}
+
+export interface ApiTrackTrack extends Struct.CollectionTypeSchema {
+  collectionName: 'tracks';
+  info: {
+    description: 'Track guides shown on Harness Analyst form guides: the oval, start positions, track facts, records and weather.';
+    displayName: 'Track';
+    pluralName: 'tracks';
+    singularName: 'track';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    circumference: Schema.Attribute.Integer;
+    country: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    direction: Schema.Attribute.Enumeration<['anticlockwise', 'clockwise']> &
+      Schema.Attribute.DefaultTo<'anticlockwise'>;
+    fieldLimitMobile: Schema.Attribute.Integer;
+    frontLineMobile: Schema.Attribute.Integer;
+    latitude: Schema.Attribute.Decimal;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::track.track'> &
+      Schema.Attribute.Private;
+    longitude: Schema.Attribute.Decimal;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    notes: Schema.Attribute.Text;
+    publishedAt: Schema.Attribute.DateTime;
+    records: Schema.Attribute.Component<'track.record', true>;
+    region: Schema.Attribute.String;
+    slug: Schema.Attribute.UID<'name'>;
+    sprintLane: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    starts: Schema.Attribute.Component<'track.start', true>;
+    straight: Schema.Attribute.Integer;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    venueNames: Schema.Attribute.String & Schema.Attribute.Required;
   };
 }
 
@@ -2063,6 +2109,7 @@ declare module '@strapi/strapi' {
       'api::story-revision.story-revision': ApiStoryRevisionStoryRevision;
       'api::subscriber.subscriber': ApiSubscriberSubscriber;
       'api::tag.tag': ApiTagTag;
+      'api::track.track': ApiTrackTrack;
       'plugin::comments.comment': PluginCommentsComment;
       'plugin::comments.comment-report': PluginCommentsCommentReport;
       'plugin::content-releases.release': PluginContentReleasesRelease;

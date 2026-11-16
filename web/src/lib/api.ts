@@ -3,6 +3,7 @@
 // involved.
 import { canResize, resizeBodyImages, resizedSrcset } from "@/lib/img";
 import type { RaceAnalysis } from "@/lib/analysis";
+import type { Track } from "@/components/analysis/TrackGuide";
 import { blocksToHtml } from "@/lib/blocks";
 import { previewHeaders } from "@/lib/preview";
 
@@ -70,6 +71,7 @@ export type ArticleFull = ArticleSummary & {
   previous: { title: string; url: string } | null;
   next: { title: string; url: string } | null;
   race_analysis: RaceAnalysis | null; // Harness Analyst form guide (lib/analysis.ts)
+  track: Track | null; // the meeting's track guide, when the newsroom has one
 };
 
 export type Category = { name: string; slug: string; kind: string; url: string };
@@ -393,7 +395,19 @@ export async function getArticle(slug: string, { draft = false } = {}): Promise<
     previous,
     next,
     race_analysis: a.raceAnalysis?.meeting?.races?.length ? a.raceAnalysis : null,
+    track: a.raceAnalysis?.meeting?.venue ? await trackFor(a.raceAnalysis.meeting.venue) : null,
   };
+}
+
+// Track guide for a TAB venue name: a Track lists the names it goes by.
+async function trackFor(venue: string): Promise<Track | null> {
+  const data = await strapi<List<Track & { venueNames?: string }>>("/tracks", {
+    filters: { venueNames: { $containsi: venue } },
+    populate: { starts: true, records: true },
+    pagination: { pageSize: 10 },
+  });
+  const v = venue.trim().toLowerCase();
+  return (data?.data || []).find((t) => String(t.venueNames || "").split(",").some((n) => n.trim().toLowerCase() === v)) || null;
 }
 
 // The story published just before / after (the live site's Previous / Next).
