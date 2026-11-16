@@ -58,7 +58,7 @@ export default function RegistrationWall({ slug }: { slug: string }) {
   };
 
   return (
-    <div className="fixed inset-x-0 bottom-0 top-[25%] z-50 flex items-end justify-center overflow-y-auto bg-gradient-to-b from-transparent via-white/85 to-white">
+    <div data-hl-wall className="fixed inset-x-0 bottom-0 top-[25%] z-50 flex items-end justify-center overflow-y-auto bg-gradient-to-b from-transparent via-white/85 to-white">
       <div className="sheet mb-6 w-[min(520px,94vw)] border-t-[3px] border-t-navy p-6 text-center sm:mb-10 sm:p-8">
         <p className="kicker kicker-gold">Keep reading — free</p>
         <h2 className="font-headline mt-2 text-2xl font-bold text-navy sm:text-3xl">

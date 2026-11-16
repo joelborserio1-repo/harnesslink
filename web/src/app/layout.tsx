@@ -4,6 +4,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Suspense } from "react";
 import MatomoTracker from "@/components/MatomoTracker";
+import InsiderPopup from "@/components/InsiderPopup";
 import { DEFAULT_ROBOTS, DEFAULT_SHARE_IMAGE, HOME_DESCRIPTION, SITE_NAME, SITE_URL, TITLE_TEMPLATE } from "@/lib/seo";
 
 // Defaults for every page; pages override what they know (src/lib/seo.ts).
@@ -33,6 +34,7 @@ export default function RootLayout({
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />
+        <InsiderPopup />
         {process.env.MATOMO_URL && process.env.MATOMO_SITE_ID && (
           <Suspense fallback={null}>
             <MatomoTracker url={process.env.MATOMO_URL} siteId={process.env.MATOMO_SITE_ID} />
