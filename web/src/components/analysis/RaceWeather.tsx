@@ -167,7 +167,7 @@ export default function RaceWeather({ weather, firstRace, condition }: { weather
       <div className="rw-now">
         <SkyIcon code={w.code} />
         <div>
-          <p className="rw-label">{w.past ? "Weather on the night" : "Race-night forecast"}{firstRace ? ` · first race ${firstRace}` : ""}</p>
+          <p className="rw-label">{w.past ? "Weather at the races" : "Race-day forecast"}{firstRace ? ` · ${firstRace}` : ""}</p>
           <p className="rw-temp">
             {r0(w.temp)}°<span>{SKY_NAME[skyOf(w.code)]}</span>
           </p>

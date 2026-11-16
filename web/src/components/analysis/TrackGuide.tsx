@@ -59,7 +59,7 @@ function course(track: Track) {
 function projector(track: Track, iso: boolean) {
   const c = course(track);
   const ang = iso ? (-11 * Math.PI) / 180 : 0;
-  const squash = iso ? 0.42 : 1;
+  const squash = iso ? 0.5 : 1;
   const raw = (p: Pt) => {
     const x = p.x * Math.cos(ang) - p.y * Math.sin(ang);
     const y = p.x * Math.sin(ang) + p.y * Math.cos(ang);
@@ -71,14 +71,14 @@ function projector(track: Track, iso: boolean) {
   const maxX = Math.max(...pts.map((p) => p.x));
   const minY = Math.min(...pts.map((p) => p.y));
   const maxY = Math.max(...pts.map((p) => p.y));
-  const k = (W - 120) / (maxX - minX);
+  const k = (W - 80) / (maxX - minX);
   const top = iso ? 120 : 90;
-  const H = Math.round((maxY - minY) * k + top + (iso ? 70 : 90));
+  const H = Math.round((maxY - minY) * k + top + (iso ? 40 : 90));
   const P = (p: Pt) => {
     const r = raw(p);
-    return { x: 60 + (r.x - minX) * k, y: top + (r.y - minY) * k };
+    return { x: 40 + (r.x - minX) * k, y: top + (r.y - minY) * k };
   };
-  return { ...c, P, k, H, iso, depth: iso ? 14 : 0 };
+  return { ...c, P, k, H, iso, depth: iso ? 18 : 0 };
 }
 
 const poly = (pts: Pt[]) => `M${pts.map((p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join("L")}Z`;
