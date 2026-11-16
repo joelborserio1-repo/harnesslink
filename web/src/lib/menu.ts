@@ -93,7 +93,6 @@ const heading = (title: string, items: MenuItem[], flag: string | null = null): 
 });
 
 const DEFAULT_MAIN: MenuItem[] = [
-  link("Home", "/"),
   heading("News", COUNTRIES.map((c) => link(c.code, countryHref(c.slug), c.flag))),
   heading("Racing", [
     link("International Race Calendar", "/international-race-calendar/"),
