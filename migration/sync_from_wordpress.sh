@@ -93,6 +93,16 @@ if [ "${1:-}" = "nightly" ]; then
   wp_export EXPORT_IDS=1 "$TMP/ids.json"
   log "nightly: checking for deleted posts"
   import "$TMP/ids.json" --reconcile
+  # …and for published posts that never arrived (belt and braces: anything the
+  # changed-since export missed), brought across by ID.
+  docker compose -f "$REPO/docker-compose.yml" exec -T db psql -U harnesslink -d harnesslink_cms -Atc \
+    "select distinct legacy_wp_id from articles where legacy_wp_id is not null and published_at is not null" | sort > "$TMP/have.txt"
+  python3 -c 'import json,sys; print("\n".join(str(i) for i in json.load(open(sys.argv[1]))))' "$TMP/ids.json" | sort > "$TMP/want.txt"
+  MISSING=$(comm -23 "$TMP/want.txt" "$TMP/have.txt" | paste -sd, -)
+  if [ -n "$MISSING" ]; then
+    log "nightly: published in WordPress but not here: $MISSING"
+    wp_export EXPORT_POST_IDS="$MISSING" "$TMP/missing.json" && import "$TMP/missing.json"
+  fi
   log "nightly: checking for deleted photos"
   EXPORTER=export_photos.php wp_export EXPORT_IDS=1 "$TMP/photo-ids.json"
   docker compose -f "$REPO/docker-compose.yml" exec -T cms sh -c "umask 077; cat > /tmp/hl-photos.json" < "$TMP/photo-ids.json"

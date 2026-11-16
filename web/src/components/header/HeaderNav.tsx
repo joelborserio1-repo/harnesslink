@@ -8,7 +8,7 @@ import { Chevron, useDropdown } from "@/components/NavDropdown";
 // The header bar's menu: plain links, and dropdowns that open on hover, click
 // or keyboard (useDropdown). Computers only; phones use MobileNav.
 
-const ITEM = "font-ui flex h-16 items-center gap-1.5 whitespace-nowrap px-3 text-[16px] font-semibold text-white hover:text-white/75 xl:px-4";
+const ITEM = "font-ui flex h-16 items-center gap-1.5 whitespace-nowrap px-3 text-[15px] font-semibold uppercase tracking-[0.04em] text-white hover:text-white/75 xl:px-4";
 const SUB = "font-ui flex items-center gap-2.5 whitespace-nowrap px-5 py-2.5 text-[15px] font-medium text-white hover:bg-white/10";
 
 function Dropdown({ item }: { item: MenuItem }) {
@@ -74,7 +74,7 @@ export function MobileNav({ menu, signedIn }: { menu: MenuItem[]; signedIn: bool
                       type="button"
                       aria-expanded={group === i}
                       onClick={() => setGroup(group === i ? null : i)}
-                      className="font-ui flex w-full items-center justify-between py-3.5 text-[17px] font-semibold text-white"
+                      className="font-ui flex w-full items-center justify-between py-3.5 text-[16px] font-semibold uppercase tracking-[0.04em] text-white"
                     >
                       {item.title} <Chevron className={`transition-transform ${group === i ? "rotate-180" : ""}`} />
                     </button>
@@ -92,7 +92,7 @@ export function MobileNav({ menu, signedIn }: { menu: MenuItem[]; signedIn: bool
                     )}
                   </>
                 ) : (
-                  <MenuLink item={item} onClick={close} className="font-ui block py-3.5 text-[17px] font-semibold text-white" />
+                  <MenuLink item={item} onClick={close} className="font-ui block py-3.5 text-[16px] font-semibold uppercase tracking-[0.04em] text-white" />
                 )}
               </li>
             ))}

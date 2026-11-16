@@ -36,8 +36,8 @@ $meta_keys = [
 ];
 
 // Keeping staging in step (migration/sync_from_wordpress.sh):
-//   EXPORT_SINCE="2026-11-05 03:00:00" (UTC) exports every post modified since
-//   then, in ANY status. Published ones come out in full; ones that have been
+//   EXPORT_SINCE="2026-11-05 03:00:00" (UTC) exports every post modified, or
+//   (scheduled posts) gone live, since then, in ANY status. Published ones come out in full; ones that have been
 //   unpublished, trashed or scheduled come out as a stub ({id, post_status, …})
 //   so the importer can take them down.
 //   EXPORT_IDS=1 prints just the IDs of every published post (nightly check for
@@ -69,7 +69,13 @@ $query = new WP_Query($only_ids ? [
   'posts_per_page' => -1,
   'orderby'        => 'modified',
   'order'          => 'ASC',
-  'date_query'     => [['column' => 'post_modified_gmt', 'after' => $since, 'inclusive' => true]],
+  // Modified since then, OR went live since then: a scheduled post goes live
+  // without its modified date changing, so it would otherwise be missed.
+  'date_query'     => [
+    'relation' => 'OR',
+    ['column' => 'post_modified_gmt', 'after' => $since, 'inclusive' => true],
+    ['column' => 'post_date_gmt', 'after' => $since, 'before' => gmdate('Y-m-d H:i:s'), 'inclusive' => true],
+  ],
   'ignore_sticky_posts' => true,
   'no_found_rows'  => true,
 ] : [
