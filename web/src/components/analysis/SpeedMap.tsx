@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { cloth, defaultLayout, silkUrl, starters, type Race, type SpeedMapLayout } from "@/lib/analysis";
+import { defaultLayout, silkUrl, starters, type Race, type SpeedMapLayout } from "@/lib/analysis";
 import { silkDataUrl } from "@/lib/silks";
 
 // Interactive speed map. Starts from the analyst's map (or, without one, the
@@ -248,9 +248,9 @@ export default function SpeedMap({ race, layout, storageKey, analystMap }: { rac
           return (
             <li key={o.no}>
               <span className="speedmap-rank">{i + 1}</span>
-              <Cloth no={o.no} />
+              <Silk path={e.silk} colours={e.colours} alt="" size={22} />
               <span>
-                <strong>{e.horse}</strong>
+                <strong>{e.horse}</strong> <span className="speedmap-pos" style={{ display: "inline" }}>({e.no})</span>
                 <span className="speedmap-pos">{o.pos}</span>
               </span>
             </li>
@@ -302,8 +302,10 @@ function SpeedRow(props: {
                 aria-label={`${e.no} ${e.horse}, ${positionName(line, c)}. Arrow keys to move.`}
               >
                 <Silk path={e.silk} colours={e.colours} alt="" size={30} />
-                <Cloth no={e.no} />
-                <span className="speedmap-name">{e.horse}</span>
+                <span className="speedmap-name">
+                  <span>{e.horse}</span>
+                  <small>No. {e.no}</small>
+                </span>
               </button>
             ) : (
               <span className="speedmap-empty">{picked != null ? "Move here" : ""}</span>
@@ -312,15 +314,6 @@ function SpeedRow(props: {
         );
       })}
     </>
-  );
-}
-
-export function Cloth({ no, big = false }: { no: number; big?: boolean }) {
-  const c = cloth(no);
-  return (
-    <span className={`cloth${big ? " cloth-big" : ""}`} style={{ background: c.bg, color: c.fg }} aria-label={`Number ${no}`}>
-      <span>{no}</span>
-    </span>
   );
 }
 

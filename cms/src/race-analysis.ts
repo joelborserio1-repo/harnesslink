@@ -78,12 +78,13 @@ export type Meeting = {
 
 // Editor's layer, keyed by race id so it survives a re-pull.
 export type Pick = { no: number; comment: string };
-export type RaceNotes = { picks: Pick[]; note?: string; map?: { rail: number[]; outside: number[]; three?: number[] } | null };
+export type RaceNotes = { picks: Pick[]; note?: string; map?: { rail: number[]; outside: number[]; three?: number[] } | null; aiDrafted?: boolean };
 export type RaceAnalysis = {
   meeting: Meeting;
   notes: Record<string, RaceNotes>;
   bestBet?: { race: number; no: number } | null;
   bestValue?: { race: number; no: number } | null;
+  aiDraft?: { status: 'running' | 'done' | 'failed'; startedAt?: string; at?: string; error?: string; model?: string; by?: string | null } | null;
 };
 
 const price = (e: any, type: string) => {
@@ -431,6 +432,22 @@ export function registerRaceAnalysisRoutes(strapi: Core.Strapi) {
           if (JSON.stringify(ra).length > 1_500_000) return ctx.badRequest('Analysis too large');
           await strapi.documents(UID).update({ documentId: ctx.params.documentId, data: { raceAnalysis: ra } as never });
           ctx.body = { ok: true };
+        },
+      },
+      // Claude drafts tips, best bet/value and speed maps (src/race-tips.ts).
+      {
+        method: 'POST',
+        path: '/hl-analysis/stories/:documentId/draft-tips',
+        config,
+        handler: async (ctx: any) => {
+          if (!can(ctx, 'update')) return ctx.forbidden();
+          try {
+            const { draftTips } = await import('./race-tips');
+            ctx.status = 202;
+            ctx.body = await draftTips(strapi, ctx.params.documentId, { overwrite: !!ctx.request.body?.overwrite, userEmail: ctx.state.user?.email });
+          } catch (e) {
+            fail(ctx, e);
+          }
         },
       },
       // New analysis story for a meeting: a draft with the fields attached.

@@ -13,8 +13,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 type Entry = { no: number; horse: string; driver: string | null; trainer: string | null; silk: string | null; win: number | null; scratched: boolean; emergency: boolean; form: string | null; placing: string | null };
 type Race = { id: number; no: number; name: string; distance: number | null; start: string | null; startTime: string | null; entries: Entry[] };
 type Meeting = { id: number; date: string; venue: string; country: string; timezone: string; races: Race[]; pulledAt: string };
-type Notes = { picks: { no: number; comment: string }[]; note?: string; map?: { rail: number[]; outside: number[]; three?: number[] } | null };
-type Analysis = { meeting: Meeting; notes: Record<string, Notes>; bestBet?: { race: number; no: number } | null; bestValue?: { race: number; no: number } | null };
+type Notes = { picks: { no: number; comment: string }[]; note?: string; map?: { rail: number[]; outside: number[]; three?: number[] } | null; aiDrafted?: boolean };
+type Analysis = { meeting: Meeting; notes: Record<string, Notes>; bestBet?: { race: number; no: number } | null; bestValue?: { race: number; no: number } | null; aiDraft?: { status: string; at?: string; error?: string } | null };
 type MeetingRow = { id: number; date: string; venue: string; country: string; races: number; trackCondition: string | null; story: { documentId: string; title: string; published: boolean } | null };
 
 function Labelled({ text, children }: { text: string; children: React.ReactNode }) {
@@ -195,7 +195,7 @@ const parseList = (s: string) =>
     .filter((n) => n > 0);
 
 function Editor({ documentId }: { documentId: string }) {
-  const { get, put } = useFetchClient();
+  const { get, put, post } = useFetchClient();
   const navigate = useNavigate();
   const { toggleNotification } = useNotification();
   const [story, setStory] = useState<{ title: string; slug: string; published: boolean } | null>(null);
@@ -206,15 +206,52 @@ function Editor({ documentId }: { documentId: string }) {
   const [paste, setPaste] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const [drafting, setDrafting] = useState(false);
+  const [overwrite, setOverwrite] = useState(false);
+  const load = () =>
     get<any>(`/hl-analysis/stories/${documentId}`)
       .then(({ data }) => {
         setStory({ title: data.title, slug: data.slug, published: data.published });
         if (data.raceAnalysis?.meeting) setA({ notes: {}, ...data.raceAnalysis });
         else setError('This story has no meeting attached. Start one from the Race analysis list.');
+        return data.raceAnalysis?.aiDraft?.status as string | undefined;
       })
-      .catch(() => setError('Could not load the story'));
+      .catch(() => {
+        setError('Could not load the story');
+        return undefined;
+      });
+  useEffect(() => {
+    load().then((st) => st === 'running' && setDrafting(true));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [get, documentId]);
+
+  // While Claude drafts, check back every 5 seconds.
+  useEffect(() => {
+    if (!drafting) return;
+    const t = setInterval(async () => {
+      const st = await load();
+      if (st && st !== 'running') {
+        setDrafting(false);
+        toggleNotification(
+          st === 'done'
+            ? { type: 'success', message: 'Claude has drafted the tips. Read every one and edit before publishing.' }
+            : { type: 'danger', message: 'Claude could not draft the tips. Try again, or write them yourself.' }
+        );
+      }
+    }, 5000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drafting]);
+
+  const draftWithClaude = async () => {
+    try {
+      await post(`/hl-analysis/stories/${documentId}/draft-tips`, { overwrite });
+      setDrafting(true);
+      toggleNotification({ type: 'info', message: 'Claude is reading the form. This takes a minute or two.' });
+    } catch (e: any) {
+      toggleNotification({ type: 'danger', message: e?.response?.data?.error?.message || 'Could not start' });
+    }
+  };
 
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => {
@@ -348,6 +385,45 @@ function Editor({ documentId }: { documentId: string }) {
         </Box>
         <Box style={{ ...panel, flex: '1 1 420px' }} padding={5}>
           <Typography variant="delta" tag="h2">
+            Draft tips with Claude
+          </Typography>
+          <Box paddingTop={1} paddingBottom={3}>
+            <Typography variant="pi" textColor="neutral600">
+              Claude reads every race&rsquo;s form, TAB&rsquo;s form comments, prices, barriers and drivers, and drafts three selections per race in the Harness Analyst&rsquo;s voice, plus a best bet, best value and speed maps. Races you&rsquo;ve already tipped are left alone. Read and edit every tip before publishing.
+            </Typography>
+          </Box>
+          {a.aiDraft?.status === 'done' && !drafting && (
+            <Box paddingBottom={2}>
+              <Typography variant="pi" textColor="success600">
+                Drafted {a.aiDraft.at ? new Date(a.aiDraft.at).toLocaleString('en-NZ', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : ''}. Races marked &ldquo;Claude draft&rdquo; below need checking.
+              </Typography>
+            </Box>
+          )}
+          {a.aiDraft?.status === 'failed' && !drafting && (
+            <Box paddingBottom={2}>
+              <Typography variant="pi" textColor="danger600">
+                Last attempt failed: {a.aiDraft.error}
+              </Typography>
+            </Box>
+          )}
+          <Flex gap={3} alignItems="center" wrap="wrap">
+            <Button loading={drafting} disabled={dirty} onClick={draftWithClaude}>
+              {drafting ? 'Claude is drafting…' : 'Draft tips with Claude'}
+            </Button>
+            <label style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <input type="checkbox" checked={overwrite} onChange={(e) => setOverwrite(e.target.checked)} /> Replace tips already written
+            </label>
+          </Flex>
+          {dirty && (
+            <Box paddingTop={2}>
+              <Typography variant="pi" textColor="neutral600">
+                Save your changes first.
+              </Typography>
+            </Box>
+          )}
+        </Box>
+        <Box style={{ ...panel, flex: '1 1 420px' }} padding={5}>
+          <Typography variant="delta" tag="h2">
             Paste tips
           </Typography>
           <Box paddingTop={1} paddingBottom={2}>
@@ -431,6 +507,7 @@ function RaceEditor({ race, tz, notes, onChange }: { race: Race; tz: string; not
     <Box style={panel} padding={5} marginBottom={5}>
       <Flex justifyContent="space-between" alignItems="baseline" wrap="wrap" gap={2}>
         <Typography variant="beta" tag="h2">
+          {notes.aiDrafted && <span style={{ fontSize: 11, fontWeight: 700, color: '#b35c00', background: '#fff4e5', padding: '2px 6px', marginRight: 8, verticalAlign: 'middle' }}>CLAUDE DRAFT · CHECK</span>}
           Race {race.no} <span style={{ fontWeight: 400, fontSize: 15, color: '#666687' }}>{time} · {race.name} · {race.distance}m</span>
         </Typography>
         <Button variant="tertiary" size="S" onClick={suggest}>
@@ -507,7 +584,7 @@ function RaceEditor({ race, tz, notes, onChange }: { race: Race; tz: string; not
                     value={p.comment}
                     onChange={(ev: React.ChangeEvent<HTMLTextAreaElement>) => {
                       const v = ev.target.value;
-                      onChange((n) => ({ ...n, picks: n.picks.map((x) => (x.no === p.no ? { ...x, comment: v } : x)) }));
+                      onChange((n) => ({ ...n, aiDrafted: false, picks: n.picks.map((x) => (x.no === p.no ? { ...x, comment: v } : x)) }));
                     }}
                   />
                 </Box>

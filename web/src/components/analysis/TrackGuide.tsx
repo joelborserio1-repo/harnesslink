@@ -126,7 +126,7 @@ export default function TrackGuide({ track, races }: { track: Track; races: Race
     <section className="tg" aria-label={`${track.name} track guide`}>
       <div className="tg-head">
         <div>
-          <p className="tg-kicker">Harnesslink track guide{track.region ? ` · ${track.region}` : ""}</p>
+          <p className="tg-kicker">Track guide{track.region ? ` · ${track.region}` : ""}</p>
           <h3>{track.name}</h3>
           <p className="tg-sub">Where tonight&rsquo;s races start</p>
         </div>

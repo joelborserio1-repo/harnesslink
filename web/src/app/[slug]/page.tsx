@@ -265,12 +265,9 @@ export default async function ArticlePage({ params }: Params) {
               {article.embed_html && (
                 <div className="article-embed mt-7" dangerouslySetInnerHTML={{ __html: article.embed_html }} />
               )}
-            </div>
 
-            {/* Harness Analyst form guide: the full sheet width, for the fields and speed maps. */}
-            {article.race_analysis && <RaceAnalysis data={article.race_analysis} track={article.track} />}
-
-            <div className="mx-auto max-w-[720px]">
+              {/* Harness Analyst form guide, part of the story (components/analysis). */}
+              {article.race_analysis && <RaceAnalysis data={article.race_analysis} track={article.track} />}
               <AdSlot format="banner" zone="article-bottom" className="mt-8" />
 
               {/* Filed under — plain text links, as on the live site. */}
