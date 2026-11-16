@@ -106,6 +106,8 @@ services:
       EMAIL_INTAKE_STAFF: ${EMAIL_INTAKE_STAFF:-harnesslink.com}
       # Claude, for formatting emailed stories. Unset = emails wait.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # Story performance recaps (src/story-stats.ts): comma-separated addresses. Unset = no recap emails.
+      STATS_RECAP_TO: ${STATS_RECAP_TO:-}
       # Home-screen dashboard (src/dashboard.ts). Each widget shows "not connected" until its key is set.
       MATOMO_URL: ${MATOMO_URL:-}
       MATOMO_SITE_ID: ${MATOMO_SITE_ID:-1}
