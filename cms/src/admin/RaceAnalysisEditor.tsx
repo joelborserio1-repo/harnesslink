@@ -7,7 +7,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 //   /race-analysis               meetings from the racing API (TAB data):
 //                                start an analysis story or open one
 //   /race-analysis/:documentId   the analyst's tips, comments, best bet and
-//                                value, and speed maps for that story
+//                                value for that story
 // The story itself (headline, intro, photo, publishing) is edited as usual.
 
 type Entry = { no: number; horse: string; driver: string | null; trainer: string | null; silk: string | null; win: number | null; scratched: boolean; emergency: boolean; form: string | null; placing: string | null };
@@ -79,7 +79,7 @@ function Meetings() {
           </Typography>
           <Box paddingTop={1}>
             <Typography textColor="neutral600">
-              Pick a meeting to start a Harness Analyst story. Fields, form, silks and TAB prices come in automatically; you add the tips, comments and speed maps.
+              Pick a meeting to start a Harness Analyst story. Fields, form, silks and TAB prices come in automatically; you add the tips and comments.
             </Typography>
           </Box>
         </Box>
@@ -389,7 +389,7 @@ function Editor({ documentId }: { documentId: string }) {
           </Typography>
           <Box paddingTop={1} paddingBottom={3}>
             <Typography variant="pi" textColor="neutral600">
-              Claude reads every race&rsquo;s form, TAB&rsquo;s form comments, prices, barriers and drivers, and drafts three selections per race in the Harness Analyst&rsquo;s voice, plus a best bet, best value and speed maps. Races you&rsquo;ve already tipped are left alone. Read and edit every tip before publishing.
+              Claude reads every race&rsquo;s form, TAB&rsquo;s form comments, prices, barriers and drivers, and drafts three selections per race in the Harness Analyst&rsquo;s voice, plus a best bet and best value. Races you&rsquo;ve already tipped are left alone. Read and edit every tip before publishing.
             </Typography>
           </Box>
           {a.aiDraft?.status === 'done' && !drafting && (
@@ -592,19 +592,6 @@ function RaceEditor({ race, tz, notes, onChange }: { race: Race; tz: string; not
             );
           })}
 
-          <Box paddingTop={2}>
-            <Typography variant="sigma" textColor="neutral600">
-              Speed map (numbers, leader first)
-            </Typography>
-            <Flex direction="column" alignItems="stretch" gap={2} paddingTop={2}>
-              <Labelled text="Rail"><TextInput aria-label="Rail" placeholder="e.g. 1, 3, 2, 7" value={rail} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRail(e.target.value)} onBlur={saveMap} /></Labelled>
-              <Labelled text="Outside (death seat first)"><TextInput aria-label="Outside (death seat first)" placeholder="e.g. 5, 6, 8" value={outside} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOutside(e.target.value)} onBlur={saveMap} /></Labelled>
-              <Labelled text="Three wide (optional)"><TextInput aria-label="Three wide (optional)" value={three} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setThree(e.target.value)} onBlur={saveMap} /></Labelled>
-              <Typography variant="pi" textColor={mapProblem ? 'danger600' : 'neutral600'}>
-                {mapProblem || (notes.map ? 'Readers see this map first and can rearrange it.' : 'Leave empty and readers get a blank map to build themselves.')}
-              </Typography>
-            </Flex>
-          </Box>
           <TextInput
             aria-label="Race note (optional)"
             placeholder="Race note (optional)"

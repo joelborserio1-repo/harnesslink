@@ -12,13 +12,13 @@ import {
   type Race,
   type RaceAnalysis as Data,
 } from "@/lib/analysis";
-import SpeedMap, { DrawnSilks, Silk } from "./SpeedMap";
+import { DrawnSilks, Silk } from "./SpeedMap";
 import TrackGuide, { type Track } from "./TrackGuide";
 import RaceWeather from "./RaceWeather";
 
 // The Harness Analyst form guide, read as part of the story: the meeting at a
 // glance, best bet and best value, the tipsheet, then race by race the
-// analyst's selections, with the speed map and the full field underneath.
+// analyst's selections, with the full field underneath.
 // Horses are shown by their silks; the number sits in brackets after the name,
 // as in the analyst's copy. Prices, scratchings and results refresh from the
 // CMS every two minutes. All of it is server-rendered, so search engines read it.
@@ -277,7 +277,7 @@ function RaceBlock({ race, data, tz, hasTips }: { race: Race; data: Data; tz: st
                     {race.resulted && <Outcome placing={e.placing} />}
                   </p>
                   {p.comment && <p className="ra-pickcomment">{p.comment}</p>}
-                  <p className="ra-pickmeta">{[e.driver && `Driver ${e.driver}`, e.trainer && `trainer ${e.trainer}`].filter(Boolean).join(", ")}</p>
+                  <p className="ra-pickmeta">{[e.driver && `Driver ${e.driver}`, e.trainer && `Trainer ${e.trainer}`].filter(Boolean).join(", ")}</p>
                 </div>
               </li>
             );
@@ -300,18 +300,11 @@ function RaceBlock({ race, data, tz, hasTips }: { race: Race; data: Data; tz: st
         </p>
       )}
 
-      <details className="ra-fold" open={!!notes.map}>
-        <summary>
-          <span>{notes.map ? "Speed map" : "Speed map: build your own"}</span>
-          <small>Drag the runners to where you expect them to settle</small>
-        </summary>
-        <SpeedMap race={race} layout={notes.map} analystMap={!!notes.map} storageKey={`hl-speedmap:${data.meeting.id}:${race.id}`} />
-      </details>
 
       <details className="ra-fold" open={!hasTips}>
         <summary>
           <span>Full field &amp; form</span>
-          <small>{race.entries.filter((e) => !e.scratched).length} starters, with drivers, trainers, recent form and prices</small>
+          <small>{race.entries.filter((e) => !e.scratched).length} starters, with Drivers, Trainers, recent form and prices</small>
         </summary>
         <div className="ra-fieldbar">
           <button type="button" onClick={() => setShowForm((v) => !v)} aria-pressed={showForm}>
@@ -323,7 +316,7 @@ function RaceBlock({ race, data, tz, hasTips }: { race: Race; data: Data; tz: st
             <thead>
               <tr>
                 <th>Horse</th>
-                <th className="ra-hide-sm">Driver / trainer</th>
+                <th className="ra-hide-sm">Driver / Trainer</th>
                 <th>Form</th>
                 <th className="ra-num">Win</th>
                 <th className="ra-num ra-hide-sm">Place</th>
@@ -373,7 +366,7 @@ function FieldRow({ e, pickRank, resulted, showForm }: { e: Entry; pickRank: num
         <td className="ra-hide-sm">
           {e.driver || "–"}
           {e.junior && <span className="ra-muted"> (j)</span>}
-          <span className="ra-sub">{e.trainer}</span>
+          <span className="ra-sub">{e.trainer && `Trainer ${e.trainer}`}</span>
         </td>
         <td>
           <FormFigures form={e.form} />

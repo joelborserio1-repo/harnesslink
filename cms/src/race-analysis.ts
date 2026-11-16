@@ -4,7 +4,7 @@ import { freeSlug, slugify } from './email-processor';
 // Race analysis ("Harness Analyst" previews): a story with a meeting's fields
 // attached, pulled from the HarnessLink racing API (admin.harnesslink.com,
 // which collects TAB's fields, prices, form, silks and results). The editor's
-// selections, comments and speed maps sit alongside in the story's
+// selections and comments sit alongside in the story's
 // `raceAnalysis` field; the site renders it under the story text
 // (web/src/components/analysis/).
 //
@@ -436,7 +436,7 @@ export function registerRaceAnalysisRoutes(strapi: Core.Strapi) {
           ctx.body = { ok: true };
         },
       },
-      // Claude drafts tips, best bet/value and speed maps (src/race-tips.ts).
+      // Claude drafts tips and best bet/value (src/race-tips.ts).
       {
         method: 'POST',
         path: '/hl-analysis/stories/:documentId/draft-tips',
@@ -471,19 +471,19 @@ export function registerRaceAnalysisRoutes(strapi: Core.Strapi) {
             const firstTime = firstRace
               ? new Intl.DateTimeFormat('en-NZ', { hour: 'numeric', minute: '2-digit', timeZone: meeting.timezone }).format(new Date(firstRace)).replace(' ', '')
               : null;
-            const intro = `<p>Harness racing heads to <strong>${meeting.venue}</strong> with ${meeting.races.length} races on the card${firstTime ? `, starting at <strong>${firstTime}</strong>` : ''}. Our analyst's best bets, value runners and speed maps for every race are below, with the full fields, form and the latest TAB prices.</p>`;
+            const intro = `<p>Harness racing heads to <strong>${meeting.venue}</strong> with ${meeting.races.length} races on the card${firstTime ? `, starting at <strong>${firstTime}</strong>` : ''}. Our analyst's best bet, value runner and selections for every race are below, with the full fields, form and the latest TAB prices.</p>`;
             const doc = await strapi.documents(UID).create({
               data: {
                 title,
                 slug: await freeSlug(strapi, slugify(`harness-analyst-${meeting.venue}-${meeting.date}`), 'articles'),
-                excerpt: `Best bets, value runners and speed maps for every race at ${meeting.venue}, ${fmtDay(meeting.date)}.`,
+                excerpt: `Best bet, value runner and selections for every race at ${meeting.venue}, ${fmtDay(meeting.date)}.`,
                 bodyFormat: 'legacy_html',
                 bodyHtml: intro,
                 needsReview: true,
                 raceAnalysis: { meeting, notes: {}, bestBet: null, bestValue: null },
                 ...(category ? { primaryCategory: category.document_id, categories: [category.document_id] } : {}),
                 ...(author ? { authors: [author.document_id] } : {}),
-                seo: { metaTitle: `${meeting.venue} harness tips & speed maps, ${fmtDay(meeting.date)}`.slice(0, 70) },
+                seo: { metaTitle: `${meeting.venue} harness tips, ${fmtDay(meeting.date)}`.slice(0, 70) },
                 importFlags: { source: 'race-analysis', meetingId },
               } as never,
             });
