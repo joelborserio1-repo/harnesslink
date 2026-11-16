@@ -318,7 +318,8 @@ async function createDraft(strapi: Core.Strapi, row: Row, mail: ParsedMail, from
     return `<figure class="image"><img src="${esc(absoluteUrl(f.url))}" alt="${esc(f.alt)}"${size}>${f.caption ? `<figcaption><strong>${esc(f.caption)}</strong></figcaption>` : ''}</figure>`;
   });
   const outlet = r.outlet_name.trim();
-  if (outlet) {
+  // Our own stories (staff sending them in) get no "Courtesy of" line.
+  if (outlet && !/^harness\s*link\b/i.test(outlet)) {
     const url = /^https?:\/\//i.test(r.outlet_url) ? r.outlet_url : '';
     body += `\n<p><em>Courtesy of ${url ? `<a href="${esc(url)}">${esc(outlet)}</a>` : esc(outlet)}</em></p>`;
   }
