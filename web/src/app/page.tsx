@@ -56,9 +56,8 @@ export default async function HomePage() {
 
       <AdSlot format="billboard" zone="home-billboard" className="mt-6" />
 
-      <h1 className="mt-6 border-y border-line bg-white py-4 text-center font-headline text-[28px] font-bold text-navy sm:text-[34px]">
-        International Harness Racing Updates
-      </h1>
+      {/* The page's one heading, for search engines and screen readers only. */}
+      <h1 className="sr-only">International Harness Racing Updates</h1>
 
       {/* Row 2 — main column + rail. */}
       <div className="mt-6 grid gap-7 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
