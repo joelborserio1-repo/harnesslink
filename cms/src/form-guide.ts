@@ -86,7 +86,8 @@ export async function formGuideList(strapi: Core.Strapi, days = 2) {
     .whereRaw(`race_analysis->'meeting'->>'date' >= ?`, [since])
     .select('slug', 'title', 'race_analysis');
   const cards = rows.map((r: any) => {
-    const ra = r.race_analysis || {};
+    // The raw query hands jsonb back as text here.
+    const ra = (typeof r.race_analysis === 'string' ? JSON.parse(r.race_analysis) : r.race_analysis) || {};
     const m = ra.meeting || {};
     const notes = ra.notes || {};
     const pick = (race: any, no: number, comment?: string): Pick | null => {
