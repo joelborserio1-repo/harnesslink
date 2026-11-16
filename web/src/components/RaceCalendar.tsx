@@ -494,7 +494,7 @@ export default function RaceCalendar({ scope, searchParams }: { scope: Scope; se
           </p>
         </div>
 
-        <aside className={display === "list" ? "flex flex-col gap-7 xl:sticky xl:top-4" : ""}>
+        <aside className={display === "list" ? "flex flex-col gap-7 xl:sticky xl:top-20" : ""}>
           <section className="sheet p-5">
             <h2 className="rule-head font-headline text-[19px] font-bold text-navy">Upcoming Group 1 races</h2>
             {groupOnes.length === 0 ? (

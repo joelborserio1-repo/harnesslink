@@ -41,10 +41,3 @@ export function Chevron({ dir = "down", className = "" }: { dir?: "down" | "righ
     </svg>
   );
 }
-
-// The live site's menu type: Heebo 17px medium, uppercase, roomy padding.
-export const NAV_ITEM =
-  "font-ui flex items-center gap-2 whitespace-nowrap px-3 py-2.5 text-[14px] font-medium uppercase text-white hover:text-white/80 sm:px-5 sm:py-[13px] sm:text-[17px]";
-// Dropdown items: Heebo 18px medium italic on navy, as on the live site.
-export const MENU_ITEM =
-  "font-ui flex items-center gap-3 whitespace-nowrap px-5 py-[13px] text-[18px] font-medium italic text-white hover:bg-white/10";

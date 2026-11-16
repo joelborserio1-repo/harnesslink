@@ -118,3 +118,41 @@ const DEFAULT_FOOTER: MenuItem[] = [
   link("Contact", "/contact-us/"),
   link("Directory", "/directory/"),
 ];
+
+// The header bar shows the "Racing" menu (still edited in Strapi as one menu:
+// a country with its Fields, Results & Replays and Race Calendar links) as
+// three menus side by side, Fields, Results and Calendar, each listing the
+// countries. Anything that doesn't fit those three stays under Calendar.
+export function headerMenu(menu: MenuItem[]): MenuItem[] {
+  const out: MenuItem[] = [];
+  for (const item of menu) {
+    if (item.title.toLowerCase() !== "racing" || !item.items.length) {
+      out.push(item);
+      continue;
+    }
+    const fields: MenuItem[] = [];
+    const results: MenuItem[] = [];
+    const calendar: MenuItem[] = [];
+    for (const child of item.items) {
+      if (!child.items.length) {
+        calendar.push(child);
+        continue;
+      }
+      for (const g of child.items) {
+        const t = g.title.toLowerCase();
+        const as = (title: string): MenuItem => ({ ...g, title, flag: child.flag, items: [] });
+        if (t.startsWith("fields")) fields.push(as(child.title));
+        else if (t.startsWith("results")) results.push(as(child.title));
+        else if (t.includes("calendar")) calendar.push(as(child.title));
+      }
+    }
+    if (fields.length) out.push({ title: "Fields", href: null, external: false, flag: null, items: fields });
+    if (results.length) out.push({ title: "Results", href: null, external: false, flag: null, items: results });
+    if (calendar.length) out.push({ title: "Calendar", href: null, external: false, flag: null, items: calendar });
+  }
+  // Form Guide sits straight after News, as the day's racing starts there.
+  const fg = out.findIndex((i) => i.href === "/form-guide/");
+  const news = out.findIndex((i) => i.title.toLowerCase() === "news");
+  if (fg > news + 1 && news >= 0) out.splice(news + 1, 0, ...out.splice(fg, 1));
+  return out;
+}

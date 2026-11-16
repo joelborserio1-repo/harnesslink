@@ -63,7 +63,7 @@ export default async function EditionPage({ params }: Params) {
           </nav>
         </article>
 
-        <aside className="space-y-7 lg:sticky lg:top-4">
+        <aside className="space-y-7 lg:sticky lg:top-20">
           <section className="bg-navy p-6 text-white">
             <p className="kicker !text-amber">Free every Thursday</p>
             <h2 className="font-headline mt-2 text-[24px] font-bold">Get The Insider</h2>

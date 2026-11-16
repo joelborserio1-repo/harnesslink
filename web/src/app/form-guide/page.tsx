@@ -46,7 +46,7 @@ export default async function FormGuidePage() {
             starts. Times are local to each track. Gamble responsibly.
           </p>
         </div>
-        <aside className="flex flex-col gap-7 lg:sticky lg:top-4">
+        <aside className="flex flex-col gap-7 lg:sticky lg:top-20">
           <AdSlot format="mpu" zone="archive-rail" />
         </aside>
       </div>
