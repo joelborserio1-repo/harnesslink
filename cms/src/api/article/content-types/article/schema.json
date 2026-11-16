@@ -50,6 +50,9 @@
       "type": "customField",
       "customField": "plugin::oembed.oembed"
     },
+    "raceAnalysis": {
+      "type": "json"
+    },
     "featuredImage": {
       "type": "media",
       "multiple": false,

@@ -2,6 +2,7 @@ import type { Core } from '@strapi/strapi';
 import type { Context } from 'koa';
 import { isBot } from '../../ad/stats';
 import { recordRead } from '../../../story-stats';
+import { liveForMeeting } from '../../../race-analysis';
 
 // Story-page beacon (web/src/components/article/ViewBeacon.tsx): the
 // lifetime view_count, plus the daily reads by source in src/story-stats.ts.
@@ -16,5 +17,8 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     } catch (err) {
       strapi.log.warn(`[story-stats] ${slug}: ${err}`);
     }
+  },
+  async raceLive(ctx: Context) {
+    await liveForMeeting(strapi, ctx);
   },
 });

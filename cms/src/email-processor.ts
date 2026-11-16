@@ -241,10 +241,10 @@ async function format(mail: ParsedMail, photos: Attachment[]): Promise<Result> {
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-const slugify = (s: string) =>
+export const slugify = (s: string) =>
   s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80).replace(/-+$/, '');
 
-async function freeSlug(strapi: Core.Strapi, base: string, table: string, column = 'slug') {
+export async function freeSlug(strapi: Core.Strapi, base: string, table: string, column = 'slug') {
   const db = strapi.db.connection;
   const root = base || 'story';
   for (let n = 1; n < 100; n++) {

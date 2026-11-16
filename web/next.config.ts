@@ -47,6 +47,8 @@ const nextConfig: NextConfig = {
       { source: "/ad/:id/impression", destination: `${STRAPI_URL}/api/ads/:id/impression` },
       // Free registration-wall / newsletter signup.
       { source: "/api/subscribe", destination: `${STRAPI_URL}/api/subscribers/signup` },
+      // Race analysis: latest prices and results (cms/src/race-analysis.ts).
+      { source: "/api/race-analysis/live/:id", destination: `${STRAPI_URL}/api/race-analysis/live/:id` },
       // Article view beacon — browser POSTs here; proxied to the CMS counter.
       { source: "/track/view/:slug", destination: `${STRAPI_URL}/api/articles/:slug/view` },
     ];

@@ -2,6 +2,7 @@
 // (STRAPI_URL). Fetches run in React Server Components, so no browser CORS is
 // involved.
 import { canResize, resizeBodyImages, resizedSrcset } from "@/lib/img";
+import type { RaceAnalysis } from "@/lib/analysis";
 import { blocksToHtml } from "@/lib/blocks";
 import { previewHeaders } from "@/lib/preview";
 
@@ -68,6 +69,7 @@ export type ArticleFull = ArticleSummary & {
   related: ArticleSummary[];
   previous: { title: string; url: string } | null;
   next: { title: string; url: string } | null;
+  race_analysis: RaceAnalysis | null; // Harness Analyst form guide (lib/analysis.ts)
 };
 
 export type Category = { name: string; slug: string; kind: string; url: string };
@@ -185,6 +187,7 @@ type SArticle = {
   seo?: SSeo;
   embed?: string | { oembed?: { html?: string } } | null;
   syndicationUrl?: string | null;
+  raceAnalysis?: RaceAnalysis | null;
 };
 
 // The oEmbed field stores the provider's response as JSON; its `html` is the
@@ -389,6 +392,7 @@ export async function getArticle(slug: string, { draft = false } = {}): Promise<
     related: related.articles,
     previous,
     next,
+    race_analysis: a.raceAnalysis?.meeting?.races?.length ? a.raceAnalysis : null,
   };
 }
 

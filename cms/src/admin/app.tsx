@@ -1,5 +1,5 @@
 import type { StrapiApp } from '@strapi/strapi/admin';
-import { ChartPie, Clock, TrendUp, Discuss, Feather, Monitor, PresentationChart, Calendar, Images, Plus } from '@strapi/icons';
+import { ChartPie, Clock, TrendUp, Lightning, Discuss, Feather, Monitor, PresentationChart, Calendar, Images, Plus } from '@strapi/icons';
 import { lightTheme } from '@strapi/design-system';
 import mark from './extensions/hl-mark.svg';
 import RevisionsPanel from './RevisionsPanel';
@@ -9,6 +9,7 @@ import PhotosPanel from './PhotosPanel';
 import LeadPhotoPanel from './LeadPhotoPanel';
 import AdSizePanel from './AdSizePanel';
 import ReadersPanel from './ReadersPanel';
+import RaceAnalysisPanel from './RaceAnalysisPanel';
 import { configureEditor } from './ckeditor';
 
 // HarnessLink newsroom dashboard on the CMS home screen (widgets in ./widgets, data from
@@ -70,6 +71,15 @@ export default {
       Component: () => import('./PhotoArchive'),
       permissions: [],
       position: 3,
+    });
+    // Harness Analyst form guides: meetings from the racing API (TAB), tips and speed maps (src/race-analysis.ts).
+    app.addMenuLink({
+      to: 'race-analysis',
+      icon: Lightning,
+      intlLabel: { id: 'hl.analysis.menu', defaultMessage: 'Race analysis' },
+      Component: () => import('./RaceAnalysisEditor'),
+      permissions: [{ action: 'plugin::content-manager.explorer.update', subject: 'api::article.article' }],
+      position: 4,
     });
     // Readers by source, most read, better/worse than usual (src/story-stats.ts).
     app.addMenuLink({
@@ -140,6 +150,6 @@ export default {
     // "Revisions" (src/revisions.ts) and
     // "Share to social" via Postiz (src/social.ts); on ads, "Size" (pick the display size for the artwork) and "Performance"
     // (src/api/ad/stats.ts).
-    (app.getPlugin('content-manager') as any).apis.addEditViewSidePanel([LeadPhotoPanel, PhotosPanel, ReadersPanel, RevisionsPanel, SocialPanel, AdSizePanel, AdPerformancePanel]);
+    (app.getPlugin('content-manager') as any).apis.addEditViewSidePanel([LeadPhotoPanel, RaceAnalysisPanel, PhotosPanel, ReadersPanel, RevisionsPanel, SocialPanel, AdSizePanel, AdPerformancePanel]);
   },
 };

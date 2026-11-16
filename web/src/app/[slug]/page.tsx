@@ -10,6 +10,7 @@ import Breadcrumbs, { type Crumb } from "@/components/article/Breadcrumbs";
 import AuthorBox from "@/components/article/AuthorBox";
 import ArticleSidebar from "@/components/article/ArticleSidebar";
 import ViewBeacon from "@/components/article/ViewBeacon";
+import RaceAnalysis from "@/components/analysis/RaceAnalysis";
 import RegistrationWall from "@/components/article/RegistrationWall";
 import Comments from "@/components/article/Comments";
 import AdSlot from "@/components/AdSlot";
@@ -264,7 +265,12 @@ export default async function ArticlePage({ params }: Params) {
               {article.embed_html && (
                 <div className="article-embed mt-7" dangerouslySetInnerHTML={{ __html: article.embed_html }} />
               )}
+            </div>
 
+            {/* Harness Analyst form guide: the full sheet width, for the fields and speed maps. */}
+            {article.race_analysis && <RaceAnalysis data={article.race_analysis} />}
+
+            <div className="mx-auto max-w-[720px]">
               <AdSlot format="banner" zone="article-bottom" className="mt-8" />
 
               {/* Filed under — plain text links, as on the live site. */}
