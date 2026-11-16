@@ -153,6 +153,12 @@ function normRace(r: any): Race {
 
 export async function pullMeeting(meetingId: number): Promise<Meeting> {
   const m = await api(`/meetings/${meetingId}`);
+  if (!m.track_condition) {
+    try {
+      const list: any[] = await api('/meetings?when=all&limit=300');
+      m.track_condition = list.find((x) => Number(x.id) === Number(meetingId))?.track_condition || null;
+    } catch {}
+  }
   const races: Race[] = [];
   for (const r of m.races || []) races.push(normRace(await api(`/races/${r.id}`)));
   races.sort((a, b) => a.no - b.no);

@@ -47,13 +47,6 @@ const SKY_NAME: Record<Sky, string> = {
 const compass = (deg: number | null) => (deg == null ? "" : ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"][Math.round(deg / 22.5) % 16]);
 const r0 = (n: number | null) => (n == null ? "–" : String(Math.round(n)));
 
-// Track condition from the racing feed, or a guess from the rain when there isn't one.
-function going(w: NonNullable<Weather>, condition: string | null) {
-  if (condition) return condition;
-  const mm = (w.rainDay || 0) + (w.rainMeeting || 0);
-  return mm > 8 ? "Likely slow or heavy" : mm > 2 ? "Possibly easy or good" : null;
-}
-
 export function SkyIcon({ code, size = 56 }: { code: number | null; size?: number }) {
   const sky = skyOf(code);
   const sun = (
@@ -160,7 +153,7 @@ const Icon = {
 export default function RaceWeather({ weather, firstRace, condition }: { weather: Weather; firstRace: string | null; condition: string | null }) {
   if (!weather) return null;
   const w = weather;
-  const g = going(w, condition);
+  const g = condition; // TAB's rating only; never guessed from the rain
   const sunset = w.sunset ? w.sunset.slice(11, 16) : null;
   return (
     <section className="rw" aria-label="Race-night weather">
