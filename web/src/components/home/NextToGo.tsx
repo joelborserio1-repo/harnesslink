@@ -126,7 +126,7 @@ export default function NextToGo({ board }: { board: RaceBoard }) {
             ))}
       </div>
 
-      <Link href={tab === "ntg" ? "/racing/" : "/racing/nz/results/"} className="block border-t border-line py-3 text-center text-xs font-bold uppercase tracking-wider text-blue hover:bg-[#f7f9fd]">
+      <Link href={tab === "ntg" ? "/racing/" : "https://infohorse.hrnz.co.nz/datahrs/results/results.htm"} target={tab === "ntg" ? undefined : "_blank"} rel={tab === "ntg" ? undefined : "noopener"} className="block border-t border-line py-3 text-center text-xs font-bold uppercase tracking-wider text-blue hover:bg-[#f7f9fd]">
         {tab === "ntg" ? "All fields" : "All results & replays"} →
       </Link>
       <p className="border-t border-line py-2.5 text-center text-[11px] text-muted">

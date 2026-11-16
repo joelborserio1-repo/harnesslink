@@ -17,7 +17,7 @@ export const RACING: RacingCountry[] = [
     name: "Australia",
     flag: "au",
     fields: "/racing/au/fields/",
-    results: "/racing/au/results/",
+    results: "https://www.harness.org.au/racing/results/?event=resultsIndex&search_type=daily", // as WordPress, until full results/replays
     calendar: "/feature-race-calendar-au/",
   },
   {
@@ -25,7 +25,7 @@ export const RACING: RacingCountry[] = [
     name: "New Zealand",
     flag: "nz",
     fields: "/racing/nz/fields/",
-    results: "/racing/nz/results/",
+    results: "https://infohorse.hrnz.co.nz/datahrs/results/results.htm", // as WordPress, until full results/replays
     calendar: "/feature-race-calendar-nz/",
   },
   {

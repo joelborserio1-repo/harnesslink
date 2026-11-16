@@ -38,12 +38,11 @@ function relatedHref(r: NonNullable<NavItem["related"]>): string | null {
 }
 
 // Menu items saved in Strapi before our own racing pages existed still point at
-// HRA / HRNZ. Send those to our pages instead.
+// HRA / HRNZ. Fields go to our pages; Results & Replays stay on HRA / HRNZ (as
+// on the WordPress site) until our racing feed carries full results and replays.
 const OWN_RACING: [RegExp, string][] = [
   [/^https?:\/\/(www\.)?harness\.org\.au\/racing\/fields/i, "/racing/au/fields/"],
-  [/^https?:\/\/(www\.)?harness\.org\.au\/racing\/results/i, "/racing/au/results/"],
   [/^https?:\/\/infohorse\.hrnz\.co\.nz\/datahrs\/fields/i, "/racing/nz/fields/"],
-  [/^https?:\/\/infohorse\.hrnz\.co\.nz\/datahrs\/results/i, "/racing/nz/results/"],
 ];
 
 function toItem(n: NavItem): MenuItem {
