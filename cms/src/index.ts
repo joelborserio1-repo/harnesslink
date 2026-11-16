@@ -9,6 +9,7 @@ import { ensureAdStats, registerAdReportRoutes } from './api/ad/stats';
 import { registerSocialRoutes } from './social';
 import { backfillUploads, ensurePhotoTable, registerPhotoRoutes, registerUploadSync } from './photos';
 import { ensureEmailIntakeTable } from './email-intake';
+import { ensureStoryStats, registerStoryStatsRoutes } from './story-stats';
 
 // What the public website may read without a token (Users & Permissions
 // "Public" role). Ads, subscribers, redirects and the 404 log are only reached
@@ -209,12 +210,14 @@ export default {
     registerRevisionRoutes(strapi);
     registerSocialRoutes(strapi);
     registerAdReportRoutes(strapi);
+    registerStoryStatsRoutes(strapi);
     registerPhotoRoutes(strapi);
   },
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
     await ensureIndexes(strapi);
     await ensureAdStats(strapi);
+    await ensureStoryStats(strapi);
     await ensurePhotoTable(strapi);
     await ensureEmailIntakeTable(strapi);
     registerUploadSync(strapi);

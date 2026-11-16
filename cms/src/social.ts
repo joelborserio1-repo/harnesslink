@@ -39,6 +39,15 @@ async function postiz(path: string, init: RequestInit = {}) {
   return body;
 }
 
+// The story link as posted to one network, tagged so its reads are counted
+// against that network (src/story-stats.ts) even when the app hides the
+// referrer. The page's canonical tag still names the plain URL.
+function taggedLink(network: string, link: string) {
+  const n = network.toLowerCase();
+  const source = n.startsWith('instagram') ? 'instagram' : n.startsWith('facebook') ? 'facebook' : n === 'x' ? 'x' : n.startsWith('threads') ? 'threads' : n.split('-')[0] || 'social';
+  return `${link}?utm_source=${encodeURIComponent(source)}&utm_medium=social`;
+}
+
 // Settings Postiz insists on per network; everything else uses its defaults.
 function settingsFor(network: string, link: string) {
   if (network === 'x') return { who_can_reply_post: 'everyone' };
@@ -156,10 +165,11 @@ export function registerSocialRoutes(strapi: Core.Strapi) {
                 tags: [],
                 posts: picked.map((c: any) => {
                   const network = c.identifier || c.providerIdentifier;
+                  const tagged = taggedLink(network, link);
                   return {
                     integration: { id: c.id },
-                    value: [{ content: text.trim(), image }],
-                    settings: settingsFor(network, link),
+                    value: [{ content: text.trim().split(link).join(tagged), image }],
+                    settings: settingsFor(network, tagged),
                   };
                 }),
               }),

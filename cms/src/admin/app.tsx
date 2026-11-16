@@ -1,5 +1,5 @@
 import type { StrapiApp } from '@strapi/strapi/admin';
-import { ChartPie, Clock, Discuss, Feather, Monitor, PresentationChart, Calendar, Images, Plus } from '@strapi/icons';
+import { ChartPie, Clock, TrendUp, Discuss, Feather, Monitor, PresentationChart, Calendar, Images, Plus } from '@strapi/icons';
 import { lightTheme } from '@strapi/design-system';
 import mark from './extensions/hl-mark.svg';
 import RevisionsPanel from './RevisionsPanel';
@@ -8,6 +8,7 @@ import AdPerformancePanel from './AdPerformancePanel';
 import PhotosPanel from './PhotosPanel';
 import LeadPhotoPanel from './LeadPhotoPanel';
 import AdSizePanel from './AdSizePanel';
+import ReadersPanel from './ReadersPanel';
 import { configureEditor } from './ckeditor';
 
 // HarnessLink newsroom dashboard on the CMS home screen (widgets in ./widgets, data from
@@ -70,6 +71,15 @@ export default {
       permissions: [],
       position: 3,
     });
+    // Readers by source, most read, better/worse than usual (src/story-stats.ts).
+    app.addMenuLink({
+      to: 'story-performance',
+      icon: TrendUp,
+      intlLabel: { id: 'hl.stats.menu', defaultMessage: 'Story performance' },
+      Component: () => import('./StoryPerformance'),
+      permissions: [{ action: 'plugin::content-manager.explorer.read', subject: 'api::article.article' }],
+      position: 4,
+    });
     app.widgets.register([
       {
         id: 'hl-newsroom',
@@ -130,6 +140,6 @@ export default {
     // "Revisions" (src/revisions.ts) and
     // "Share to social" via Postiz (src/social.ts); on ads, "Size" (pick the display size for the artwork) and "Performance"
     // (src/api/ad/stats.ts).
-    (app.getPlugin('content-manager') as any).apis.addEditViewSidePanel([LeadPhotoPanel, PhotosPanel, RevisionsPanel, SocialPanel, AdSizePanel, AdPerformancePanel]);
+    (app.getPlugin('content-manager') as any).apis.addEditViewSidePanel([LeadPhotoPanel, PhotosPanel, ReadersPanel, RevisionsPanel, SocialPanel, AdSizePanel, AdPerformancePanel]);
   },
 };

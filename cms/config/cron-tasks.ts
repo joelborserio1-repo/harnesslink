@@ -1,5 +1,6 @@
 import type { Core } from '@strapi/strapi';
 import { buildRoundups, processWaiting } from '../src/email-processor';
+import { sendRecap } from '../src/story-stats';
 
 // Scheduled publishing on Strapi's built-in cron (Strapi's own Releases
 // scheduler is a paid feature). An editor fills in "Scheduled for" on a draft;
@@ -19,6 +20,20 @@ export default {
       await buildRoundups(strapi);
     },
     options: { rule: '0 6 * * *', tz: 'Australia/Sydney' },
+  },
+  // Story performance recaps to STATS_RECAP_TO (src/story-stats.ts): yesterday
+  // at 7am NZ every day, and the past week on Monday mornings.
+  dailyStoryRecap: {
+    task: async ({ strapi }: { strapi: Core.Strapi }) => {
+      await sendRecap(strapi, 'day');
+    },
+    options: { rule: '0 7 * * *', tz: 'Pacific/Auckland' },
+  },
+  weeklyStoryRecap: {
+    task: async ({ strapi }: { strapi: Core.Strapi }) => {
+      await sendRecap(strapi, 'week');
+    },
+    options: { rule: '15 7 * * 1', tz: 'Pacific/Auckland' },
   },
   publishScheduledArticles: {
     task: async ({ strapi }: { strapi: Core.Strapi }) => {
