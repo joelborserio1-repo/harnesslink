@@ -178,36 +178,67 @@ export async function trackFor(strapi: Core.Strapi, venue: string) {
   return all.find((t) => String(t.venueNames || '').split(',').some((n: string) => n.trim().toLowerCase() === v)) || null;
 }
 
-// Open-Meteo (free, no key): conditions now and today's forecast at the track.
+// Open-Meteo (free, no key): the weather at the track on race night, hour by
+// hour, read at the first race. Works for past meetings (its archive of
+// recent days) and coming ones (forecast up to 16 days). The place comes from
+// the Track's coordinates, or Open-Meteo's place search on the venue name.
+const geoCache = new Map<string, { lat: number; lng: number; place: string } | null>();
+async function placeOf(venue: string, country: string) {
+  const key = `${venue}|${country}`;
+  if (geoCache.has(key)) return geoCache.get(key)!;
+  const q = new URLSearchParams({ name: venue, count: '5', language: 'en', format: 'json', countryCode: country });
+  const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?${q}`, { signal: AbortSignal.timeout(8_000) });
+  const d: any = res.ok ? await res.json() : null;
+  const hit = (d?.results || [])[0];
+  const out = hit ? { lat: Number(hit.latitude), lng: Number(hit.longitude), place: [hit.name, hit.admin1].filter(Boolean).join(', ') } : null;
+  geoCache.set(key, out);
+  return out;
+}
+
 const weatherCache = new Map<string, { at: number; body: any }>();
-async function weatherAt(lat: number, lng: number) {
-  const key = `${lat.toFixed(3)},${lng.toFixed(3)}`;
+async function raceNightWeather(lat: number, lng: number, date: string, firstRace: string | null, tz: string, place: string) {
+  const key = `${lat.toFixed(3)},${lng.toFixed(3)},${date}`;
   const hit = weatherCache.get(key);
-  if (hit && Date.now() - hit.at < 15 * 60_000) return hit.body;
+  const past = date < new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(new Date());
+  if (hit && Date.now() - hit.at < (past ? 24 * 3_600_000 : 15 * 60_000)) return hit.body;
   const q = new URLSearchParams({
     latitude: String(lat),
     longitude: String(lng),
-    current: 'temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m',
-    daily: 'temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,weather_code',
-    timezone: 'auto',
-    forecast_days: '1',
+    hourly: 'temperature_2m,apparent_temperature,precipitation,precipitation_probability,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,relative_humidity_2m',
+    daily: 'temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,weather_code,sunset',
+    timezone: tz,
+    start_date: date,
+    end_date: date,
   });
   const res = await fetch(`https://api.open-meteo.com/v1/forecast?${q}`, { signal: AbortSignal.timeout(8_000) });
   if (!res.ok) throw new Error(`weather ${res.status}`);
   const d: any = await res.json();
+  const hours: string[] = d.hourly?.time || [];
+  const localHour = firstRace
+    ? Number(new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hourCycle: 'h23', timeZone: tz }).format(new Date(firstRace)))
+    : 18;
+  const i = Math.max(0, hours.findIndex((t) => Number(t.slice(11, 13)) === localHour));
+  const h = (k: string) => d.hourly?.[k]?.[i] ?? null;
+  // Rain over the race meeting: first race hour to four hours on.
+  const rainMeeting = (d.hourly?.precipitation || []).slice(i, i + 5).reduce((t: number, v: number) => t + (v || 0), 0);
   const body = {
-    at: d.current?.time || null,
-    temp: d.current?.temperature_2m ?? null,
-    feels: d.current?.apparent_temperature ?? null,
-    code: d.current?.weather_code ?? null,
-    rain: d.current?.precipitation ?? null,
-    wind: d.current?.wind_speed_10m ?? null,
-    gusts: d.current?.wind_gusts_10m ?? null,
-    windFrom: d.current?.wind_direction_10m ?? null,
+    place,
+    past,
+    hour: hours[i] || null,
+    temp: h('temperature_2m'),
+    feels: h('apparent_temperature'),
+    code: h('weather_code'),
+    humidity: h('relative_humidity_2m'),
+    rainChance: h('precipitation_probability') ?? d.daily?.precipitation_probability_max?.[0] ?? null,
+    wind: h('wind_speed_10m'),
+    gusts: h('wind_gusts_10m'),
+    windFrom: h('wind_direction_10m'),
     max: d.daily?.temperature_2m_max?.[0] ?? null,
     min: d.daily?.temperature_2m_min?.[0] ?? null,
-    rainChance: d.daily?.precipitation_probability_max?.[0] ?? null,
-    rainToday: d.daily?.precipitation_sum?.[0] ?? null,
+    dayCode: d.daily?.weather_code?.[0] ?? null,
+    rainDay: d.daily?.precipitation_sum?.[0] ?? null,
+    rainMeeting: Math.round(rainMeeting * 10) / 10,
+    sunset: d.daily?.sunset?.[0] ?? null,
   };
   weatherCache.set(key, { at: Date.now(), body });
   return body;
@@ -266,12 +297,13 @@ async function live(strapi: Core.Strapi, meetingId: number) {
     try {
       const m = await pullMeeting(meetingId);
       let weather = null;
-      const today = new Intl.DateTimeFormat('en-CA', { timeZone: m.timezone }).format(new Date());
-      if (m.date >= today) {
-        try {
-          const t = await trackFor(strapi, m.venue);
-          if (t?.latitude && t?.longitude) weather = await weatherAt(Number(t.latitude), Number(t.longitude));
-        } catch {}
+      try {
+        const t = await trackFor(strapi, m.venue);
+        const spot = t?.latitude && t?.longitude ? { lat: Number(t.latitude), lng: Number(t.longitude), place: t.name } : await placeOf(m.venue, m.country);
+        const first = m.races.find((r) => r.startTime)?.startTime || null;
+        if (spot) weather = await raceNightWeather(spot.lat, spot.lng, m.date, first, m.timezone, spot.place);
+      } catch (e) {
+        strapi.log.warn(`[race-analysis] weather for ${m.venue}: ${(e as Error).message}`);
       }
       const body = {
         at: m.pulledAt,

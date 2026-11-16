@@ -68,7 +68,7 @@ export type LiveEntry = { win: number | null; place: number | null; toteWin: num
 export type Live = {
   at: string;
   trackCondition: string | null;
-  weather?: import("@/components/analysis/TrackGuide").Weather;
+  weather?: import("@/components/analysis/RaceWeather").Weather;
   races: Record<string, { status: string | null; resulted: boolean; dividends: string | null; entries: Record<string, LiveEntry> }>;
 };
 

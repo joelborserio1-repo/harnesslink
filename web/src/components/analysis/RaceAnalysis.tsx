@@ -14,6 +14,7 @@ import {
 } from "@/lib/analysis";
 import SpeedMap, { Cloth, DrawnSilks, Silk } from "./SpeedMap";
 import TrackGuide, { type Track } from "./TrackGuide";
+import RaceWeather from "./RaceWeather";
 
 // The analysis sheet under a Harness Analyst story: best bet and best value,
 // then every race with the analyst's selections, a speed map, and the full
@@ -88,14 +89,19 @@ export default function RaceAnalysis({ data, track }: { data: Data; track?: Trac
   );
 
   const drawn = Date.parse(`${meeting.date}T00:00:00Z`) < Date.now() - 2 * 86_400_000;
+  const hasTips = races.some((r) => (data.notes[r.id]?.picks || []).length > 0);
+  const condition = live?.trackCondition || meeting.trackCondition || null;
+  const shortDate = new Intl.DateTimeFormat("en-NZ", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${meeting.date}T12:00:00Z`));
 
   return (
     <DrawnSilks.Provider value={drawn}>
     <section className="ra" aria-label={`${meeting.venue} race analysis`}>
       <header className="ra-head">
         <div>
-          <p className="ra-kicker">Harnesslink form guide</p>
-          <h2 className="ra-venue">{meeting.venue}</h2>
+          <p className="ra-kicker">{hasTips ? "Harness Analyst" : "Harnesslink form guide"}</p>
+          <h2 className="ra-venue">
+            {meeting.venue} {hasTips ? "selections" : "form guide"}
+          </h2>
           <p className="ra-date">{longDate(meeting.date)}</p>
         </div>
         <dl className="ra-facts">
@@ -109,34 +115,41 @@ export default function RaceAnalysis({ data, track }: { data: Data; track?: Trac
               <dd>{raceTime(first, meeting.timezone)}</dd>
             </div>
           )}
-          {(live?.trackCondition || meeting.trackCondition) && (
+          {condition && (
             <div>
               <dt>Track</dt>
-              <dd>{live?.trackCondition || meeting.trackCondition}</dd>
+              <dd>{condition}</dd>
             </div>
           )}
           {tally.tipped > 0 && resulted.length > 0 && (
             <div>
-              <dt>Top picks</dt>
+              <dt>Top tips</dt>
               <dd>
-                {tally.won} won, {tally.placed} placed
+                {tally.won} won · {tally.placed} placed
               </dd>
             </div>
           )}
         </dl>
       </header>
 
+      <RaceWeather weather={live?.weather ?? null} firstRace={first ? raceTime(first, meeting.timezone) : null} condition={condition} />
+
       {(best || value) && (
-        <div className="ra-best">
-          {best && <BestCard label="Best bet" {...best} />}
-          {value && <BestCard label="Best value" {...value} />}
+        <div className="ra-bestwrap">
+          <h3 className="ra-sectiontitle">Harness analyst best tips</h3>
+          <div className="ra-best">
+            {best && <BestCard label="Best bet" {...best} />}
+            {value && <BestCard label="Best value" {...value} />}
+          </div>
         </div>
       )}
+
+      {hasTips && <Tipsheet races={races} data={data} tz={meeting.timezone} title={`${meeting.venue} selections ${shortDate}`} />}
 
       {track && (
         <details className="ra-trackwrap" open>
           <summary>Track guide: {track.name}</summary>
-          <TrackGuide track={track} races={races} weather={live?.weather ?? null} />
+          <TrackGuide track={track} races={races} />
         </details>
       )}
 
@@ -150,16 +163,87 @@ export default function RaceAnalysis({ data, track }: { data: Data; track?: Trac
       </nav>
 
       {races.map((r) => (
-        <RaceBlock key={r.id} race={r} data={data} tz={meeting.timezone} />
+        <RaceBlock key={r.id} race={r} data={data} tz={meeting.timezone} hasTips={hasTips} />
       ))}
 
       <p className="ra-source">
-        Fields, form, silks and prices from TAB via the HarnessLink racing service
+        {hasTips ? "Selections by our Harness Analyst. " : ""}Fields, form, silks, prices and results from TAB via the HarnessLink racing service
         {live ? `, updated ${new Date(live.at).toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit" })}` : ""}. Fixed odds are TAB&rsquo;s and change
         until the race starts. Gamble responsibly.
       </p>
     </section>
     </DrawnSilks.Provider>
+  );
+}
+
+// Every race's selections on one screen, like the tipsheet of old, with how they went.
+function Tipsheet({ races, data, tz, title }: { races: Race[]; data: Data; tz: string; title: string }) {
+  return (
+    <div className="ra-sheet">
+      <h3 className="ra-sectiontitle">{title}</h3>
+      <div className="ra-tablewrap">
+        <table className="ra-sheettable">
+          <thead>
+            <tr>
+              <th>Race</th>
+              <th>1st selection</th>
+              <th className="ra-hide-sm">2nd</th>
+              <th className="ra-hide-sm">3rd</th>
+              <th className="ra-num">Winner</th>
+            </tr>
+          </thead>
+          <tbody>
+            {races.map((r) => {
+              const picks = (data.notes[r.id]?.picks || []).map((p) => r.entries.find((e) => e.no === p.no)).filter(Boolean) as Entry[];
+              const winner = r.entries.find((e) => e.placing === "1");
+              const isBest = data.bestBet?.race === r.no;
+              const isValue = data.bestValue?.race === r.no;
+              return (
+                <tr key={r.id}>
+                  <td>
+                    <a href={`#race-${r.no}`} className="ra-sheetrace">
+                      <strong>R{r.no}</strong> <span>{raceTime(r, tz)}</span>
+                    </a>
+                  </td>
+                  {[0, 1, 2].map((i) => {
+                    const e = picks[i];
+                    const tag = e && ((isBest && data.bestBet?.no === e.no && "Best bet") || (isValue && data.bestValue?.no === e.no && "Best value"));
+                    return (
+                      <td key={i} className={i ? "ra-hide-sm" : ""}>
+                        {e ? (
+                          <span className="ra-sheetpick">
+                            <Cloth no={e.no} />
+                            <span>
+                              <strong>{e.horse}</strong>
+                              <small>
+                                {money(e.win)}
+                                {tag && <b> · {tag}</b>}
+                                {r.resulted && Number(e.placing) > 0 && Number(e.placing) <= 3 ? <b className={e.placing === "1" ? "is-won" : "is-placed"}> · {e.placing === "1" ? "Won" : ordinal(e.placing)}</b> : null}
+                              </small>
+                            </span>
+                          </span>
+                        ) : (
+                          <span className="ra-muted">–</span>
+                        )}
+                      </td>
+                    );
+                  })}
+                  <td className="ra-num">
+                    {winner ? (
+                      <span className="ra-sheetwin">
+                        <Cloth no={winner.no} /> {winner.horse}
+                      </span>
+                    ) : (
+                      <span className="ra-muted">–</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 
@@ -206,7 +290,7 @@ function FormFigures({ form }: { form: string | null }) {
   );
 }
 
-function RaceBlock({ race, data, tz }: { race: Race; data: Data; tz: string }) {
+function RaceBlock({ race, data, tz, hasTips }: { race: Race; data: Data; tz: string; hasTips: boolean }) {
   const notes = data.notes[race.id] || { picks: [] };
   const byNo = new Map(race.entries.map((e) => [e.no, e]));
   const picks = (notes.picks || []).map((p) => ({ ...p, entry: byNo.get(p.no) })).filter((p) => p.entry);
@@ -285,6 +369,8 @@ function RaceBlock({ race, data, tz }: { race: Race; data: Data; tz: string }) {
         <SpeedMap race={race} layout={notes.map} analystMap={!!notes.map} storageKey={`hl-speedmap:${data.meeting.id}:${race.id}`} />
       </details>
 
+      <details className="ra-fieldwrap" open={!hasTips}>
+        <summary>Full field &amp; form{race.entries.length ? ` (${race.entries.filter((e) => !e.scratched).length} starters)` : ""}</summary>
       <div className="ra-fieldhead">
         <h4>Field</h4>
         <button type="button" onClick={() => setShowForm((v) => !v)} aria-pressed={showForm}>
@@ -315,6 +401,7 @@ function RaceBlock({ race, data, tz }: { race: Race; data: Data; tz: string }) {
           </tbody>
         </table>
       </div>
+      </details>
     </article>
   );
 }
