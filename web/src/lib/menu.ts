@@ -110,7 +110,6 @@ const DEFAULT_MAIN: MenuItem[] = [
     ),
   ]),
   link("Form Guide", "/form-guide/"),
-  link("The Insider", "/the-insider/"),
   link("Directory", "/directory/"),
   link("Login", "/login/"),
 ];
