@@ -36,7 +36,7 @@ export type Weather = {
 
 const START_COLOURS = ["#1f5fd1", "#d0491c", "#2e9a48", "#6b2fa0", "#b58a1a"];
 const W = 760;
-const H = 330;
+const H = 420;
 
 function sky(code: number | null) {
   if (code == null) return "";
@@ -57,9 +57,9 @@ function geometry(track: Track) {
   const C = track.circumference || 1000;
   const S = Math.min(track.straight || C * 0.22, C * 0.45);
   const R = (C - 2 * S) / (2 * Math.PI);
-  const k = Math.min((W - 150) / (S + 2 * R), (H - 120) / (2 * R));
+  const k = Math.min((W - 150) / (S + 2 * R), (H - 210) / (2 * R));
   const cx = W / 2;
-  const cy = H / 2 + 6;
+  const cy = H / 2;
   const flip = track.direction === "clockwise" ? -1 : 1;
   const at = (s: number) => {
     const m = ((s % C) + C) % C;
@@ -163,7 +163,7 @@ export default function TrackGuide({ track, races, weather }: { track: Track; ra
           {(() => {
             const a = outer(finish, -band);
             const b = outer(finish, band);
-            const lbl = outer(finish, band + 44);
+            const lbl = outer(finish, band + 30);
             return (
               <g>
                 <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#111" strokeWidth={5} strokeDasharray="4 4" />
@@ -182,8 +182,8 @@ export default function TrackGuide({ track, races, weather }: { track: Track; ra
             const a = outer(p, -band);
             const b = outer(p, band);
             const side = p.ny >= 0 ? 1 : -1;
-            const lx = p.x + p.nx * (band + 40) ;
-            const ly = p.y + p.ny * (band + 40) + (p.along === 0 ? 0 : side * (i % 2 ? 26 : 0));
+            const lx = Math.min(W - 62, Math.max(62, p.x + p.nx * (band + 46)));
+            const ly = Math.min(H - 20, Math.max(20, p.y + p.ny * (band + 46) + (p.along === 0 ? 0 : side * (i % 2 ? 38 : 0))));
             const ax = p.along * g.flip;
             return (
               <g key={d}>
