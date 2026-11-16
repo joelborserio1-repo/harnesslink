@@ -190,13 +190,15 @@ export async function trackFor(strapi: Core.Strapi, venue: string) {
 // recent days) and coming ones (forecast up to 16 days). The place comes from
 // the Track's coordinates, or Open-Meteo's place search on the venue name.
 const geoCache = new Map<string, { lat: number; lng: number; place: string } | null>();
-async function placeOf(venue: string, country: string) {
-  const key = `${venue}|${country}`;
+async function placeOf(venue: string, country: string, tz: string) {
+  const key = `${venue}|${country}|${tz}`;
   if (geoCache.has(key)) return geoCache.get(key)!;
-  const q = new URLSearchParams({ name: venue, count: '5', language: 'en', format: 'json', countryCode: country });
+  const q = new URLSearchParams({ name: venue, count: '10', language: 'en', format: 'json', countryCode: country });
   const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?${q}`, { signal: AbortSignal.timeout(8_000) });
   const d: any = res.ok ? await res.json() : null;
-  const hit = (d?.results || [])[0];
+  // Several towns share a name (Redcliffe QLD and WA): take the one in the meeting's time zone.
+  const results: any[] = d?.results || [];
+  const hit = results.find((r) => r.timezone === tz) || results[0];
   const out = hit ? { lat: Number(hit.latitude), lng: Number(hit.longitude), place: [hit.name, hit.admin1].filter(Boolean).join(', ') } : null;
   geoCache.set(key, out);
   return out;
@@ -306,7 +308,7 @@ async function live(strapi: Core.Strapi, meetingId: number) {
       let weather = null;
       try {
         const t = await trackFor(strapi, m.venue);
-        const spot = t?.latitude && t?.longitude ? { lat: Number(t.latitude), lng: Number(t.longitude), place: t.name } : await placeOf(m.venue, m.country);
+        const spot = t?.latitude && t?.longitude ? { lat: Number(t.latitude), lng: Number(t.longitude), place: t.name } : await placeOf(m.venue, m.country, m.timezone);
         const first = m.races.find((r) => r.startTime)?.startTime || null;
         if (spot) weather = await raceNightWeather(spot.lat, spot.lng, m.date, first, m.timezone, spot.place);
       } catch (e) {
