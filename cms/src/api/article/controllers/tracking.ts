@@ -21,4 +21,9 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async raceLive(ctx: Context) {
     await liveForMeeting(strapi, ctx);
   },
+  async formGuide(ctx: Context) {
+    const { formGuideList } = await import('../../../form-guide');
+    ctx.set('Cache-Control', 'public, max-age=60');
+    ctx.body = await formGuideList(strapi, 3);
+  },
 });

@@ -131,7 +131,7 @@ function clean(m: Meeting, r: Result) {
 
 const running = new Set<string>();
 
-export async function draftTips(strapi: Core.Strapi, documentId: string, opts: { overwrite: boolean; userEmail?: string }) {
+export async function draftTips(strapi: Core.Strapi, documentId: string, opts: { overwrite: boolean; userEmail?: string; wait?: boolean }) {
   if (!process.env.ANTHROPIC_API_KEY) throw Object.assign(new Error('Claude is not set up (ANTHROPIC_API_KEY)'), { status: 503 });
   if (running.has(documentId)) return { started: false, reason: 'already running' };
   const UID = 'api::article.article';
@@ -148,7 +148,7 @@ export async function draftTips(strapi: Core.Strapi, documentId: string, opts: {
 
   running.add(documentId);
   await setStatus({ status: 'running', startedAt: new Date().toISOString(), by: opts.userEmail || null });
-  setImmediate(async () => {
+  const work = async () => {
     try {
       const { trackFor } = await import('./race-analysis');
       const track = await trackFor(strapi, ra.meeting.venue).catch(() => null);
@@ -176,6 +176,10 @@ export async function draftTips(strapi: Core.Strapi, documentId: string, opts: {
     } finally {
       running.delete(documentId);
     }
-  });
+  };
+  // `wait` (the daily form guide): finish before returning, so the caller can
+  // publish; the editor's button returns at once and polls.
+  if (opts.wait) await work();
+  else setImmediate(work);
   return { started: true };
 }

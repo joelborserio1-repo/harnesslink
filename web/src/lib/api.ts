@@ -266,7 +266,7 @@ function summary(a: SArticle): ArticleSummary {
   return {
     id: a.id,
     slug: a.slug,
-    url: `/${a.slug}/`,
+    url: articlePath(a.slug),
     title: a.title,
     subtitle: a.subtitle ?? null,
     excerpt: a.excerpt ?? null,
@@ -280,11 +280,21 @@ function summary(a: SArticle): ArticleSummary {
 
 const NEWEST: Query = { sort: ["publishDate:desc", "publishedAt:desc"] };
 
+// The daily form guide's cards live at /form-guide/<venue>-<date>/ (stored as
+// slug "form-guide-<venue>-<date>"), not at the root like every other story.
+export const FORM_GUIDE_PREFIX = "form-guide-";
+export const isFormGuide = (slug: string) => slug.startsWith(FORM_GUIDE_PREFIX);
+export const articlePath = (slug: string) =>
+  isFormGuide(slug) ? `/form-guide/${slug.slice(FORM_GUIDE_PREFIX.length)}/` : `/${slug}/`;
+// Five to ten cards a day would bury the news, so story lists leave them out;
+// they are listed on /form-guide/.
+const NOT_FORM_GUIDE = { $not: { slug: { $startsWith: FORM_GUIDE_PREFIX } } };
+
 async function articleList(filters: Query | undefined, page: number, perPage: number) {
   const data = await strapi<List<SArticle>>("/articles", {
     ...SUMMARY_QUERY,
     ...NEWEST,
-    ...(filters ? { filters } : {}),
+    filters: filters ? { $and: [filters, NOT_FORM_GUIDE] } : NOT_FORM_GUIDE,
     pagination: { page, pageSize: perPage },
   });
   return {
@@ -294,6 +304,26 @@ async function articleList(filters: Query | undefined, page: number, perPage: nu
 }
 
 // ---- Articles ----
+
+// The daily form guide's cards (CMS src/form-guide.ts), newest day first.
+export type FormGuideCard = {
+  slug: string;
+  path: string;
+  title: string;
+  meetingId: number;
+  date: string;
+  venue: string;
+  country: string;
+  timezone: string;
+  trackCondition: string | null;
+  races: number;
+  firstRace: string | null;
+  hasTips: boolean;
+  bestBet: { race: number; horse: string } | null;
+};
+export async function listFormGuide(): Promise<FormGuideCard[]> {
+  return (await strapi<FormGuideCard[]>("/form-guide", {}, { next: { revalidate: 60 } })) || [];
+}
 
 export async function listArticles(page = 1, perPage = 12) {
   const { articles, total } = await articleList(undefined, page, perPage);
@@ -360,7 +390,7 @@ export async function getArticle(slug: string, { draft = false } = {}): Promise<
   const seo = a.seo || {};
   // Republished partner stories (HRV syndication) point search engines at the
   // original, so the partner keeps the ranking and we carry no duplicate.
-  const canonical = seo.canonicalUrl || a.syndicationUrl || `${SITE}/${a.slug}/`;
+  const canonical = seo.canonicalUrl || a.syndicationUrl || `${SITE}${articlePath(a.slug)}`;
   const bodyHtml = a.bodyFormat === "blocks" ? blocksToHtml(a.body, MEDIA_BASE) : withMediaBase(a.bodyHtml ?? null);
 
   return {
@@ -414,12 +444,12 @@ async function trackFor(venue: string): Promise<Track | null> {
 async function neighbour(slug: string, published: string, direction: "older" | "newer") {
   const data = await strapi<List<SArticle>>("/articles", {
     fields: ["title", "slug"],
-    filters: { slug: { $ne: slug }, publishDate: direction === "older" ? { $lt: published } : { $gt: published } },
+    filters: { $and: [{ slug: { $ne: slug }, publishDate: direction === "older" ? { $lt: published } : { $gt: published } }, NOT_FORM_GUIDE] },
     sort: [direction === "older" ? "publishDate:desc" : "publishDate:asc"],
     pagination: { pageSize: 1 },
   });
   const n = data?.data?.[0];
-  return n ? { title: n.title, url: `/${n.slug}/` } : null;
+  return n ? { title: n.title, url: articlePath(n.slug) } : null;
 }
 
 // ---- Sections, writers, tags ----
@@ -474,7 +504,7 @@ function hitToSummary(h: MeiliHit): ArticleSummary {
   return {
     id: h.id,
     slug: h.slug,
-    url: `/${h.slug}/`,
+    url: articlePath(h.slug),
     title: h.title,
     subtitle: h.subtitle || null,
     excerpt: h.excerpt || null,

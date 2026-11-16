@@ -14,6 +14,23 @@ function withRobots(res: NextResponse): NextResponse {
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // The daily form guide's cards are stored as "form-guide-<venue>-<date>"
+  // stories but live at /form-guide/<venue>-<date>/ (web/src/lib/api.ts
+  // articlePath): serve that path from the story page, and send the root
+  // address on to it.
+  const card = pathname.match(/^\/form-guide\/([a-z0-9][a-z0-9-]*)\/?$/);
+  let rewriteTo: URL | null = null;
+  if (card) {
+    rewriteTo = req.nextUrl.clone();
+    rewriteTo.pathname = `/form-guide-${card[1]}/`;
+  }
+  const flat = pathname.match(/^\/form-guide-([a-z0-9][a-z0-9-]*)\/?$/);
+  if (flat) {
+    const to = req.nextUrl.clone();
+    to.pathname = `/form-guide/${flat[1]}/`;
+    return withRobots(NextResponse.redirect(to, 301));
+  }
+
   // Enforce legacy → new 301s from the CMS's Redirect collection.
   // Fails open: if the API is unreachable, the request proceeds.
   try {
@@ -51,7 +68,7 @@ export async function proxy(req: NextRequest) {
   // ?geo= previews show ads but don't count towards advertisers' reports.
   if (req.nextUrl.searchParams.get("geo")) headers.set("x-hl-geo-preview", "1");
   else headers.delete("x-hl-geo-preview");
-  const res = withRobots(NextResponse.next({ request: { headers } }));
+  const res = withRobots(rewriteTo ? NextResponse.rewrite(rewriteTo, { request: { headers } }) : NextResponse.next({ request: { headers } }));
   renewal?.(res);
   return res;
 }

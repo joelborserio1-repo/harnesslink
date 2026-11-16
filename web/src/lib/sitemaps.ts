@@ -3,7 +3,7 @@
 // article sitemap, a Google News sitemap of the last 48 hours, and an archive
 // sitemap of section, country, page, writer and tag URLs, event pages (The
 // Eureka) and The Insider's past editions (/edition/<slug>/, as on WordPress).
-import { sitemapArchives, sitemapArticles, listArticles, listEventPageSlugs, listInsiderEditions } from "@/lib/api";
+import { articlePath, isFormGuide, sitemapArchives, sitemapArticles, listArticles, listEventPageSlugs, listInsiderEditions } from "@/lib/api";
 
 export const PER_PAGE = 10_000;
 const NEWS_WINDOW_MS = 48 * 60 * 60 * 1000;
@@ -13,7 +13,7 @@ const SITE = (process.env.SITE_URL || "https://harnesslink.com").replace(/\/$/, 
 
 const esc = (s: unknown) =>
   String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-const loc = (slug: string) => `${SITE}/${slug}/`;
+const loc = (slug: string) => `${SITE}${articlePath(slug)}`;
 const iso = (d: string | null) => (d ? new Date(d).toISOString() : null);
 
 export function xmlResponse(body: string) {
@@ -50,7 +50,9 @@ ${urls.join("\n")}
 
 export async function newsXml() {
   const since = new Date(Date.now() - NEWS_WINDOW_MS).toISOString();
-  const { articles } = await sitemapArticles(1, NEWS_MAX, since);
+  const { articles: all } = await sitemapArticles(1, NEWS_MAX, since);
+  // Form guide cards are race-day reference pages, not news.
+  const articles = all.filter((a) => !isFormGuide(a.slug));
   const urls = articles.map(
     (a) => `<url><loc>${loc(a.slug)}</loc>
 <news:news>
@@ -80,6 +82,7 @@ export async function archivesXml() {
     ...a.writers.map((s) => `/writers/${s}/`),
     ...a.tags.map((s) => `/tag/${s}/`),
     "/directory/",
+    "/form-guide/",
   ];
   const urls = [...new Set(paths)].map((p) => `<url><loc>${SITE}${p}</loc><changefreq>daily</changefreq></url>`);
   return `<?xml version="1.0" encoding="UTF-8"?>

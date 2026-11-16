@@ -14,7 +14,7 @@ import { freeSlug, slugify } from './email-processor';
 
 const API = () => (process.env.HARNESSLINK_API_URL || 'https://admin.harnesslink.com/api').replace(/\/$/, '');
 
-async function api(path: string) {
+export async function api(path: string) {
   const key = process.env.HARNESSLINK_API_KEY;
   if (!key) throw Object.assign(new Error('The racing API key (HARNESSLINK_API_KEY) is not set'), { status: 503 });
   const res = await fetch(`${API()}/v1/racing${path}`, {
@@ -462,32 +462,7 @@ export function registerRaceAnalysisRoutes(strapi: Core.Strapi) {
           const meetingId = Number(ctx.request.body?.meetingId);
           if (!meetingId) return ctx.badRequest('meetingId is required');
           try {
-            const meeting = await pullMeeting(meetingId);
-            const db = strapi.db.connection;
-            const title = `Harness Analyst: ${meeting.venue} preview, ${fmtDay(meeting.date)}`;
-            const category = await db('categories').where('name', COUNTRY_CATEGORY[meeting.country] || 'International').whereNotNull('published_at').first('document_id');
-            const author = await db('authors').whereRaw(`lower(name) = 'harness analyst'`).first('document_id');
-            const firstRace = meeting.races.find((r) => r.startTime)?.startTime;
-            const firstTime = firstRace
-              ? new Intl.DateTimeFormat('en-NZ', { hour: 'numeric', minute: '2-digit', timeZone: meeting.timezone }).format(new Date(firstRace)).replace(' ', '')
-              : null;
-            const intro = `<p>Harness racing heads to <strong>${meeting.venue}</strong> with ${meeting.races.length} races on the card${firstTime ? `, starting at <strong>${firstTime}</strong>` : ''}. Our analyst's best bet, value runner and selections for every race are below, with the full fields, form and the latest TAB prices.</p>`;
-            const doc = await strapi.documents(UID).create({
-              data: {
-                title,
-                slug: await freeSlug(strapi, slugify(`harness-analyst-${meeting.venue}-${meeting.date}`), 'articles'),
-                excerpt: `Best bet, value runner and selections for every race at ${meeting.venue}, ${fmtDay(meeting.date)}.`,
-                bodyFormat: 'legacy_html',
-                bodyHtml: intro,
-                needsReview: true,
-                raceAnalysis: { meeting, notes: {}, bestBet: null, bestValue: null },
-                ...(category ? { primaryCategory: category.document_id, categories: [category.document_id] } : {}),
-                ...(author ? { authors: [author.document_id] } : {}),
-                seo: { metaTitle: `${meeting.venue} harness tips, ${fmtDay(meeting.date)}`.slice(0, 70) },
-                importFlags: { source: 'race-analysis', meetingId },
-              } as never,
-            });
-            ctx.body = { documentId: doc.documentId };
+            ctx.body = { documentId: (await createAnalysisStory(strapi, meetingId)).documentId };
           } catch (e) {
             fail(ctx, e);
           }
@@ -497,6 +472,50 @@ export function registerRaceAnalysisRoutes(strapi: Core.Strapi) {
   } as any);
 
   const db = () => strapi.db.connection;
+}
+
+const timeAt = (iso: string | null | undefined, tz: string) =>
+  iso ? new Intl.DateTimeFormat('en-NZ', { hour: 'numeric', minute: '2-digit', timeZone: tz }).format(new Date(iso)).replace(' ', '') : null;
+const weekday = (iso: string) => new Intl.DateTimeFormat('en-NZ', { weekday: 'long', timeZone: 'UTC' }).format(new Date(`${iso}T12:00:00Z`));
+
+// A new analysis story for a meeting, as a draft with the fields attached.
+// `formGuide`: the daily form guide's card (src/form-guide.ts), served at
+// /form-guide/<venue>-<day>-<month>-<year>/ rather than at the root.
+export async function createAnalysisStory(strapi: Core.Strapi, meetingId: number, opts: { formGuide?: boolean; withTips?: boolean } = {}) {
+  const UID = 'api::article.article';
+  const meeting = await pullMeeting(meetingId);
+  const db = strapi.db.connection;
+  const day = fmtDay(meeting.date);
+  const category = await db('categories').where('name', COUNTRY_CATEGORY[meeting.country] || 'International').whereNotNull('published_at').first('document_id');
+  const author = await db('authors').whereRaw(`lower(name) = 'harness analyst'`).first('document_id');
+  const firstTime = timeAt(meeting.races.find((r) => r.startTime)?.startTime, meeting.timezone);
+  const card = `<strong>${meeting.venue}</strong> with ${meeting.races.length} races on the card${firstTime ? `, starting at <strong>${firstTime}</strong>` : ''}`;
+  const fg = !!opts.formGuide;
+  const title = fg ? `${meeting.venue} form guide and tips, ${weekday(meeting.date)} ${day}` : `Harness Analyst: ${meeting.venue} preview, ${day}`;
+  const intro = fg
+    ? `<p>Harness racing heads to ${card}. Below are the full fields, form and the latest TAB prices for every race${
+        opts.withTips === false ? ", with our Harness Analyst's selections added once they are checked" : ", with our Harness Analyst's best bet, value runner and selections"
+      }. Prices, scratchings and results update on this page through the day.</p>`
+    : `<p>Harness racing heads to ${card}. Our analyst's best bet, value runner and selections for every race are below, with the full fields, form and the latest TAB prices.</p>`;
+  const base = fg ? `form-guide-${meeting.venue}-${day}-${meeting.date.slice(0, 4)}` : `harness-analyst-${meeting.venue}-${meeting.date}`;
+  const doc = await strapi.documents(UID).create({
+    data: {
+      title,
+      slug: await freeSlug(strapi, slugify(base), 'articles'),
+      excerpt: fg
+        ? `Fields, form, TAB prices, tips and results for every race at ${meeting.venue}, ${weekday(meeting.date)} ${day}.`
+        : `Best bet, value runner and selections for every race at ${meeting.venue}, ${day}.`,
+      bodyFormat: 'legacy_html',
+      bodyHtml: intro,
+      needsReview: true,
+      raceAnalysis: { meeting, notes: {}, bestBet: null, bestValue: null },
+      ...(category ? { primaryCategory: category.document_id, categories: [category.document_id] } : {}),
+      ...(author ? { authors: [author.document_id] } : {}),
+      seo: { metaTitle: `${meeting.venue} harness form guide & tips, ${day} ${meeting.date.slice(0, 4)}`.slice(0, 70) },
+      importFlags: { source: fg ? 'form-guide' : 'race-analysis', meetingId },
+    } as never,
+  });
+  return { documentId: doc.documentId as string, meeting };
 }
 
 // Public (src/api/article/routes/01-tracking.ts): fresh prices, scratchings

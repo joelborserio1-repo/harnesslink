@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { draftMode } from "next/headers";
-import { getArticle, getEventOdds, getEventPage, getPage, listArticles, type ArticleFull, type EventPage } from "@/lib/api";
+import { isFormGuide, getArticle, getEventOdds, getEventPage, getPage, listArticles, type ArticleFull, type EventPage } from "@/lib/api";
 import EventView from "@/components/event/EventView";
 import StaticPageView from "@/components/StaticPageView";
 import { formatDate, formatTime } from "@/lib/format";
@@ -166,7 +166,11 @@ export default async function ArticlePage({ params }: Params) {
 
   const crumbs: Crumb[] = [
     { name: "Home", url: "/" },
-    ...(article.category ? [{ name: article.category.name, url: article.category.url }] : []),
+    ...(isFormGuide(article.slug)
+      ? [{ name: "Form guide", url: "/form-guide/" }]
+      : article.category
+        ? [{ name: article.category.name, url: article.category.url }]
+        : []),
     { name: article.title, url: article.url },
   ];
 

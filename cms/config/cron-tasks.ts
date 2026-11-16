@@ -35,6 +35,15 @@ export default {
     },
     options: { rule: '15 7 * * 1', tz: 'Pacific/Auckland' },
   },
+  // The daily form guide (src/form-guide.ts): a card for every AU/NZ meeting
+  // at 7am NZ, and again at 11am for meetings the TAB adds later in the morning.
+  dailyFormGuide: {
+    task: async ({ strapi }: { strapi: Core.Strapi }) => {
+      const { buildDailyFormGuide } = await import('../src/form-guide');
+      await buildDailyFormGuide(strapi);
+    },
+    options: { rule: '0 7,11 * * *', tz: 'Pacific/Auckland' },
+  },
   publishScheduledArticles: {
     task: async ({ strapi }: { strapi: Core.Strapi }) => {
       const uid = 'api::article.article';
