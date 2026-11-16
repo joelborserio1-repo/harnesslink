@@ -123,6 +123,7 @@ const DEFAULT_FOOTER: MenuItem[] = [
 // a country with its Fields, Results & Replays and Race Calendar links) as
 // three menus side by side, Fields, Results and Calendar, each listing the
 // countries. Anything that doesn't fit those three stays under Calendar.
+const COUNTRY_NAMES: Record<string, string> = { AUS: "Australia", NZ: "New Zealand", USA: "United States", CA: "Canada" };
 export function headerMenu(menu: MenuItem[]): MenuItem[] {
   const out: MenuItem[] = [];
   for (const item of menu) {
@@ -140,7 +141,7 @@ export function headerMenu(menu: MenuItem[]): MenuItem[] {
       }
       for (const g of child.items) {
         const t = g.title.toLowerCase();
-        const as = (title: string): MenuItem => ({ ...g, title, flag: child.flag, items: [] });
+        const as = (title: string): MenuItem => ({ ...g, title: COUNTRY_NAMES[title] || title, flag: child.flag, items: [] });
         if (t.startsWith("fields")) fields.push(as(child.title));
         else if (t.startsWith("results")) results.push(as(child.title));
         else if (t.includes("calendar")) calendar.push(as(child.title));
