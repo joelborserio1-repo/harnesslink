@@ -46,6 +46,12 @@ export default function SpeedMap({ race, layout, storageKey, analystMap }: { rac
   const [drag, setDrag] = useState<{ no: number; x: number; y: number; dx: number; dy: number } | null>(null);
   const [mine, setMine] = useState(false);
   const boardRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  // Open at the lead end, so the leaders are in view on narrow screens.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollLeft = leadLeft ? 0 : el.scrollWidth;
+  }, [leadLeft]);
 
   // The reader's own layout, if they made one (only while the field is the same).
   useEffect(() => {
@@ -215,8 +221,8 @@ export default function SpeedMap({ race, layout, storageKey, analystMap }: { rac
         </div>
       </div>
 
-      <div className="speedmap-scroll">
-        <div className="speedmap-track" ref={boardRef} style={{ gridTemplateColumns: `76px repeat(${cols}, minmax(112px, 1fr))` }} onPointerMove={onPointerMove}>
+      <div className="speedmap-scroll" ref={scrollRef}>
+        <div className="speedmap-track" ref={boardRef} style={{ gridTemplateColumns: `64px repeat(${cols}, minmax(104px, 1fr))` }} onPointerMove={onPointerMove}>
           <div />
           {shown.map((c) => (
             <div key={c} className="speedmap-col">
