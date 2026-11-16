@@ -45,6 +45,7 @@ function Share({ documentId }: { documentId: string }) {
   const [at, setAt] = useState(localInput(new Date(Date.now() + 60 * 60_000)));
   const [busy, setBusy] = useState<string | null>(null);
   const [sent, setSent] = useState<string | null>(null);
+  const [writing, setWriting] = useState(false);
 
   useEffect(() => {
     get<Info>(`/hl-social/${documentId}`)
@@ -78,6 +79,20 @@ function Share({ documentId }: { documentId: string }) {
   const toggle = (id: string) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   const ready = picked.length > 0 && text.trim().length > 0;
 
+  // Claude writes the post from the story; the link goes on the end.
+  const writeWithAi = async () => {
+    setWriting(true);
+    try {
+      const network = info.channels.find((c) => picked.includes(c.id))?.network?.split('-')[0] || 'x';
+      const { data } = await post<{ caption: string }>(`/hl-social/${documentId}/caption`, { network });
+      setText(`${data.caption}\n\n${info.link}`);
+    } catch (e: any) {
+      toggleNotification({ type: 'danger', message: e?.response?.data?.error?.message || 'Could not write a caption just now.' });
+    } finally {
+      setWriting(false);
+    }
+  };
+
   const send = async (mode: 'draft' | 'schedule' | 'now') => {
     if (mode === 'now' && !window.confirm(`Post this to ${picked.length} account(s) right now?`)) return;
     setBusy(mode);
@@ -104,9 +119,18 @@ function Share({ documentId }: { documentId: string }) {
   return (
     <Flex direction="column" alignItems="stretch" gap={3} width="100%">
       <Textarea aria-label="Post text" value={text} onChange={(e: any) => setText(e.target.value)} />
-      <Typography variant="pi" textColor={text.length > 280 ? 'danger600' : 'neutral600'}>
-        {text.length} characters{text.length > 280 ? ' — too long for X' : ''}
-      </Typography>
+      <Button variant="tertiary" loading={writing} onClick={writeWithAi}>
+        {writing ? 'Writing…' : 'Write with AI'}
+      </Button>
+      {(() => {
+        // X counts every link as 23 characters.
+        const n = text.replace(/https?:\/\/\S+/g, 'x'.repeat(23)).length;
+        return (
+          <Typography variant="pi" textColor={n > 280 ? 'danger600' : 'neutral600'}>
+            {n} of 280 characters on X{n > 280 ? ', too long' : ''}
+          </Typography>
+        );
+      })()}
 
       <Box>
         {info.channels.map((c) => (

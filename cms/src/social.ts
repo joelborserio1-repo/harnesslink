@@ -1,3 +1,4 @@
+import Anthropic from '@anthropic-ai/sdk';
 import type { Core } from '@strapi/strapi';
 
 // "Share to social" — sends a story to Postiz (our self-hosted social
@@ -63,6 +64,42 @@ function leadImage(doc: any): string | null {
   return u.startsWith('http') ? u : `${cms()}${u}`;
 }
 
+// "Write with AI": Claude reads the story and writes the post. X counts every
+// link as 23 characters, so the text is kept well inside 280 with the link.
+const CAPTION_STYLE = `You write social media posts for Harnesslink (harnesslink.com), a harness racing news site with a knowledgeable audience of owners, trainers, drivers, breeders and punters.
+
+Write ONE post that makes people want to click through to the story:
+- Lead with the hook: the result, the stakes, the surprise or the human angle. Name the horse and the key person (driver, trainer or owner).
+- Use only facts in the story. Never invent results, odds, quotes or records.
+- Plain, confident, racing-savvy voice. No clickbait phrases ("you won't believe", "find out"), no exclamation-mark spam (at most one), no emojis except at most one relevant one.
+- One or two hashtags at the end, relevant ones only (e.g. #HarnessRacing, the race name like #TABEureka, the region like #NZHarness).
+- For X: at most 220 characters of text (the link is added separately). For Facebook and Instagram: two or three short sentences.
+- Do not include the link; we add it.`;
+
+async function writeCaption(doc: any, network: string) {
+  const text = String(doc.bodyHtml || '')
+    .replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 6000);
+  const client = new Anthropic();
+  const res: any = await client.messages.create({
+    model: 'claude-opus-5-5',
+    max_tokens: 600,
+    system: CAPTION_STYLE,
+    output_config: {
+      effort: 'low',
+      format: { type: 'json_schema', schema: { type: 'object', additionalProperties: false, required: ['caption'], properties: { caption: { type: 'string' } } } },
+    },
+    messages: [{ role: 'user', content: `Network: ${network}\nHeadline: ${doc.title}\nSummary: ${doc.excerpt || ''}\n\n<story>\n${text}\n</story>` }],
+  } as any);
+  if (res.stop_reason === 'refusal') throw new Error('Claude declined to write this post');
+  const out = JSON.parse(res.content.map((b: any) => (b.type === 'text' ? b.text : '')).join(''));
+  return String(out.caption || '').trim();
+}
+
 export function registerSocialRoutes(strapi: Core.Strapi) {
   const checker = (ctx: any) =>
     strapi.plugin('content-manager').service('permission-checker').create({ userAbility: ctx.state.userAbility, model: ARTICLE });
@@ -75,6 +112,25 @@ export function registerSocialRoutes(strapi: Core.Strapi) {
     type: 'admin',
     prefix: '',
     routes: [
+      {
+        method: 'POST',
+        path: '/hl-social/:documentId/caption',
+        config: { policies },
+        handler: async (ctx: any) => {
+          if (!process.env.ANTHROPIC_API_KEY) return ctx.badRequest('Claude is not set up (ANTHROPIC_API_KEY)');
+          const doc: any = await strapi.documents(ARTICLE).findOne({ documentId: ctx.params.documentId, status: 'draft', fields: ['title', 'excerpt', 'bodyHtml', 'slug'] as any });
+          if (!doc) return ctx.notFound();
+          if (checker(ctx).cannot.read(doc)) return ctx.forbidden();
+          const network = /^(x|facebook|instagram|threads|linkedin)$/.test(String(ctx.request.body?.network)) ? String(ctx.request.body.network) : 'x';
+          try {
+            ctx.body = { caption: await writeCaption(doc, network) };
+          } catch (e: any) {
+            strapi.log.warn(`[social] caption for ${doc.documentId}: ${e?.message || e}`);
+            ctx.status = 502;
+            ctx.body = { error: { message: 'Could not write a caption just now. Try again.' } };
+          }
+        },
+      },
       {
         method: 'GET',
         path: '/hl-social/:documentId',
