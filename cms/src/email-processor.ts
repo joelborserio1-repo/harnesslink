@@ -141,47 +141,105 @@ function senderCheck(mail: ParsedMail): { ok: true; from: string; staff: boolean
 
 // ---------- attachments ----------
 
-// Text of a .docx (a zip holding word/document.xml), read with the zip's own
-// directory and zlib, so no extra library is needed.
-function docxText(buf: Buffer): string | null {
+// Files in a zip, read with the zip's own directory and zlib, so no extra
+// library is needed. Stops at MAX_UNZIPPED bytes in all (a zip bomb guard).
+const MAX_UNZIPPED = 80 * 1024 * 1024;
+function zipEntries(buf: Buffer, wanted?: (name: string) => boolean): { name: string; data: Buffer }[] {
+  const out: { name: string; data: Buffer }[] = [];
   try {
     let eocd = -1;
     for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65557); i--) {
       if (buf.readUInt32LE(i) === 0x06054b50) { eocd = i; break; }
     }
-    if (eocd < 0) return null;
+    if (eocd < 0) return out;
     const count = buf.readUInt16LE(eocd + 10);
     let p = buf.readUInt32LE(eocd + 16);
+    let total = 0;
     for (let n = 0; n < count; n++) {
-      if (buf.readUInt32LE(p) !== 0x02014b50) return null;
+      if (buf.readUInt32LE(p) !== 0x02014b50) break;
       const method = buf.readUInt16LE(p + 10);
       const size = buf.readUInt32LE(p + 20);
+      const fullSize = buf.readUInt32LE(p + 24);
       const nameLen = buf.readUInt16LE(p + 28);
       const extra = buf.readUInt16LE(p + 30);
       const comment = buf.readUInt16LE(p + 32);
       const local = buf.readUInt32LE(p + 42);
       const name = buf.subarray(p + 46, p + 46 + nameLen).toString();
-      if (name === 'word/document.xml') {
-        const start = local + 30 + buf.readUInt16LE(local + 26) + buf.readUInt16LE(local + 28);
-        const data = buf.subarray(start, start + size);
-        const xml = (method === 8 ? inflateRawSync(data) : data).toString('utf8');
-        return xml
-          .split(/<\/w:p>/)
-          .map((para) =>
-            [...para.matchAll(/<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>|<w:tab\/>|<w:br\/>/g)]
-              .map((m) => (m[1] ?? (m[0].startsWith('<w:tab') ? '\t' : '\n')))
-              .join('')
-          )
-          .map((s) => s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").trim())
-          .filter(Boolean)
-          .join('\n\n');
-      }
       p += 46 + nameLen + extra + comment;
+      if (name.endsWith('/') || (wanted && !wanted(name)) || (method !== 0 && method !== 8)) continue;
+      total += fullSize;
+      if (total > MAX_UNZIPPED) break;
+      const start = local + 30 + buf.readUInt16LE(local + 26) + buf.readUInt16LE(local + 28);
+      const data = buf.subarray(start, start + size);
+      out.push({ name, data: method === 8 ? inflateRawSync(data) : Buffer.from(data) });
     }
-    return null;
   } catch {
-    return null;
+    // a damaged zip: keep what was read
   }
+  return out;
+}
+
+// Text of a .docx (a zip holding word/document.xml).
+function docxText(buf: Buffer): string | null {
+  const doc = zipEntries(buf, (n) => n === 'word/document.xml')[0];
+  if (!doc) return null;
+  return doc.data
+    .toString('utf8')
+    .split(/<\/w:p>/)
+    .map((para) =>
+      [...para.matchAll(/<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>|<w:tab\/>|<w:br\/>/g)]
+        .map((m) => (m[1] ?? (m[0].startsWith('<w:tab') ? '\t' : '\n')))
+        .join('')
+    )
+    .map((s) => s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").trim())
+    .filter(Boolean)
+    .join('\n\n');
+}
+
+// A zipped attachment (a Google Drive or OneDrive download, or "send as zip")
+// is unpacked: the Word documents, PDFs and photos inside are treated as if
+// they had been attached on their own.
+const ZIP_TYPES: Record<string, string> = {
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  pdf: 'application/pdf',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+};
+const zipExt = (name: string) => (name.match(/\.([a-z0-9]+)$/i)?.[1] || '').toLowerCase();
+const isZip = (a: Attachment) =>
+  ['application/zip', 'application/x-zip-compressed'].includes(a.contentType) || /\.zip$/i.test(a.filename || '');
+
+function unzipAttachments(mail: ParsedMail) {
+  const expanded: Attachment[] = [];
+  for (const a of mail.attachments) {
+    if (!isZip(a)) {
+      expanded.push(a);
+      continue;
+    }
+    const files = zipEntries(a.content, (n) => {
+      const base = n.split('/').pop() || '';
+      return !n.startsWith('__MACOSX/') && !base.startsWith('.') && !!ZIP_TYPES[zipExt(base)];
+    });
+    for (const f of files) {
+      const filename = f.name.split('/').pop() || f.name;
+      expanded.push({
+        ...a,
+        filename,
+        contentType: ZIP_TYPES[zipExt(filename)],
+        content: f.data,
+        size: f.data.length,
+        contentDisposition: 'attachment',
+        related: false,
+        cid: undefined,
+        contentId: undefined,
+        checksum: '',
+      } as Attachment);
+    }
+  }
+  mail.attachments = expanded;
 }
 
 const isPdf = (a: Attachment) => a.contentType === 'application/pdf' || /\.pdf$/i.test(a.filename || '');
@@ -397,6 +455,7 @@ export async function processEmail(strapi: Core.Strapi, id: number) {
 
   try {
     const mail = await simpleParser(row.raw);
+    unzipAttachments(mail);
     const sender = senderCheck(mail);
     if (!sender.ok) return await finish(strapi, id, 'skipped', sender.note);
 
