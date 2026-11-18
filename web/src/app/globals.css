@@ -567,7 +567,7 @@ body {
 .rc-head { display: grid; grid-template-columns: minmax(0, 1fr) 112px; }
 .rc-facts-wrap { min-width: 0; }
 .rc-facts { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); }
-.rc-facts .rc-cell:last-child:nth-child(2) { grid-column: span 2; }
+@media (min-width: 601px) { .rc-facts .rc-cell:last-child:nth-child(2) { grid-column: span 2; } }
 .rc-cell { padding: 10px 14px; border-right: 1px solid #c9ced6; border-bottom: 1px solid #c9ced6; min-width: 0; }
 .rc-label { display: block; font-size: 11px; line-height: 1.2; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #5b6472; margin-bottom: 3px; }
 .rc-value { display: block; font-size: 16px; line-height: 1.35; }
