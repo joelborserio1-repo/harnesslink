@@ -9,15 +9,16 @@ type FieldMeta = { label: string; description?: string; editable?: boolean };
 type Row = Array<[name: string, size: number]>;
 type Layout = {
   uid: string;
-  list: string[];
-  sortBy: string;
-  sortOrder: 'ASC' | 'DESC';
+  component?: boolean; // a component (story.runner-card), not a content type
+  list?: string[];
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
   pageSize?: number;
   edit: Row[];
   fields: Record<string, FieldMeta>;
 };
 
-export const LAYOUT_VERSION = '2026-11-16.2';
+export const LAYOUT_VERSION = '2026-11-18.1';
 
 const SEO_HELP = 'Search and social-media title/description. Leave blank to use the headline and standfirst.';
 
@@ -34,6 +35,7 @@ export const LAYOUTS: Layout[] = [
       [['slug', 12]],
       [['bodyHtml', 12]],
       [['embed', 12]],
+      [['runnerGuide', 12]],
       [['excerpt', 12]],
       [['featuredImage', 6], ['authors', 6]],
       [['legacyImage', 12]],
@@ -60,6 +62,7 @@ export const LAYOUTS: Layout[] = [
       tags: { label: 'Tags', description: 'Horses, drivers, trainers, tracks and races mentioned.' },
       publishDate: { label: 'Publish date', description: 'Shown on the story. Filled in automatically when published.' },
       scheduledFor: { label: 'Schedule for (old)', description: 'Use "Add a publish date" in the right-hand panel instead.' },
+      runnerGuide: { label: 'Runner guide (optional)', description: 'Cards for the runners in one race (For, Against, our comment), shown under the story. Add the venue and race number and save: numbers, drivers, trainers, odds and silks fill in from the racing data.' },
       embed: { label: 'Video or social embed', description: 'Paste a YouTube, Vimeo, X, Instagram or Facebook link — the player shows under the story.' },
       modifiedDate: { label: 'Last updated' },
       seo: { label: 'Search & social', description: SEO_HELP },
@@ -296,6 +299,61 @@ export const LAYOUTS: Layout[] = [
       hits: { label: 'Times requested', editable: false },
       lastSeenAt: { label: 'Last requested', editable: false },
       lastReferer: { label: 'Linked from', editable: false },
+    },
+  },
+  {
+    uid: 'story.runner-guide',
+    component: true,
+    edit: [
+      [['heading', 12]],
+      [['venue', 4], ['raceDate', 4], ['raceNumber', 4]],
+      [['addWholeField', 6], ['draftWithClaude', 6]],
+      [['cards', 12]],
+      [['footnote', 12]],
+      [['status', 12]],
+      [['raceId', 4]],
+    ],
+    fields: {
+      heading: { label: 'Heading', description: 'Optional, e.g. "The case for and against every runner".' },
+      venue: { label: 'Venue', description: 'As TAB names it, e.g. Menangle, Addington, Melton.' },
+      raceDate: { label: 'Race date', description: 'Leave empty for the next meeting at the venue.' },
+      raceNumber: { label: 'Race number' },
+      addWholeField: { label: 'Add every runner', description: 'Turn on and save: a card is added for each runner in the field. Turns itself off.' },
+      draftWithClaude: { label: 'Draft with Claude', description: 'Turn on and save: Claude writes For, Against and Comment for cards that have none, from the form. Takes a minute or two; reload to see them. Check before publishing.' },
+      cards: { label: 'Runners', description: 'One card per runner, in the order shown. Type a horse name or saddlecloth number and save to fill the rest.' },
+      footnote: { label: 'Footnote', description: 'Shown under the cards, e.g. odds time and any slot holder disclosure.' },
+      status: { label: 'Racing data', description: 'What the last save found. Filled automatically.', editable: false },
+      raceId: { label: 'Race ID (racing data)', editable: false },
+    },
+  },
+  {
+    uid: 'story.runner-card',
+    component: true,
+    edit: [
+      [['horse', 6], ['saddlecloth', 3], ['barrier', 3]],
+      [['ageSex', 4], ['odds', 4], ['slotHolder', 4]],
+      [['driver', 6], ['trainer', 6]],
+      [['forCase', 12]],
+      [['againstCase', 12]],
+      [['comment', 12]],
+      [['silksImage', 6], ['colours', 6]],
+      [['silk', 12]],
+    ],
+    fields: {
+      horse: { label: 'Horse' },
+      saddlecloth: { label: 'No.', description: 'Saddlecloth number. Filled from the field.' },
+      barrier: { label: 'Barrier' },
+      ageSex: { label: 'Age / sex', description: 'e.g. 3yo filly. Not in the racing data, so type it if wanted.' },
+      odds: { label: 'Odds', description: 'TAB fixed win odds when first filled. Clear it and save to refresh.' },
+      slotHolder: { label: 'Slot holder', description: 'Slot races only (e.g. the TAB Eureka). Leave empty otherwise.' },
+      driver: { label: 'Driver' },
+      trainer: { label: 'Trainer' },
+      forCase: { label: 'For', description: 'Why it can win. Short points separated by semicolons.' },
+      againstCase: { label: 'Against', description: 'Why it might not.' },
+      comment: { label: 'HL comment', description: 'Our view. A blank line starts a new paragraph.' },
+      silksImage: { label: 'Silks image (optional)', description: 'Only to replace the TAB silks, e.g. a slot holder\'s official silks.' },
+      colours: { label: 'Colours (racing data)', editable: false },
+      silk: { label: 'TAB silks (racing data)', editable: false },
     },
   },
 ];

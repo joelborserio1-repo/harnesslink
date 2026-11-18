@@ -72,7 +72,66 @@ export type ArticleFull = ArticleSummary & {
   next: { title: string; url: string } | null;
   race_analysis: RaceAnalysis | null; // Harness Analyst form guide (lib/analysis.ts)
   track: Track | null; // the meeting's track guide, when the newsroom has one
+  runner_guide: RunnerGuide | null; // runner cards (components/article/RunnerGuide.tsx)
 };
+
+export type RunnerCard = {
+  horse: string;
+  no: number | null;
+  barrier: string | null;
+  ageSex: string | null;
+  odds: string | null;
+  driver: string | null;
+  trainer: string | null;
+  slotHolder: string | null;
+  silksImage: string | null; // uploaded silks, in place of TAB's
+  silk: string | null; // TAB silks path
+  colours: string | null;
+  forCase: string | null;
+  againstCase: string | null;
+  comment: string | null;
+};
+export type RunnerGuide = { heading: string | null; footnote: string | null; cards: RunnerCard[] };
+
+type SRunnerCard = {
+  horse?: string | null;
+  saddlecloth?: number | null;
+  barrier?: string | null;
+  ageSex?: string | null;
+  odds?: string | null;
+  driver?: string | null;
+  trainer?: string | null;
+  slotHolder?: string | null;
+  silksImage?: { url: string } | null;
+  silk?: string | null;
+  colours?: string | null;
+  forCase?: string | null;
+  againstCase?: string | null;
+  comment?: string | null;
+};
+type SRunnerGuide = { heading?: string | null; footnote?: string | null; cards?: SRunnerCard[] };
+
+function runnerGuideFrom(g: SRunnerGuide | null | undefined): RunnerGuide | null {
+  const cards = (g?.cards || [])
+    .filter((c) => c.horse?.trim())
+    .map((c) => ({
+      horse: c.horse!.trim(),
+      no: c.saddlecloth ?? null,
+      barrier: c.barrier || null,
+      ageSex: c.ageSex || null,
+      odds: c.odds || null,
+      driver: c.driver || null,
+      trainer: c.trainer || null,
+      slotHolder: c.slotHolder || null,
+      silksImage: c.silksImage?.url ? media(c.silksImage.url) : null,
+      silk: c.silk || null,
+      colours: c.colours || null,
+      forCase: c.forCase || null,
+      againstCase: c.againstCase || null,
+      comment: c.comment || null,
+    }));
+  return cards.length ? { heading: g?.heading || null, footnote: g?.footnote || null, cards } : null;
+}
 
 export type Category = { name: string; slug: string; kind: string; url: string };
 
@@ -190,6 +249,7 @@ type SArticle = {
   embed?: string | { oembed?: { html?: string } } | null;
   syndicationUrl?: string | null;
   raceAnalysis?: RaceAnalysis | null;
+  runnerGuide?: SRunnerGuide | null;
 };
 
 // The oEmbed field stores the provider's response as JSON; its `html` is the
@@ -390,6 +450,7 @@ export async function getArticle(slug: string, { draft = false } = {}): Promise<
       authors: { fields: ["name", "slug", "bio", "roleTitle"] },
       tags: { fields: ["name", "slug"] },
       seo: "*",
+      runnerGuide: { populate: { cards: { populate: { silksImage: { fields: ["url"] } } } } },
     },
     pagination: { pageSize: 1 },
   }, draftInit(draft));
@@ -449,6 +510,7 @@ export async function getArticle(slug: string, { draft = false } = {}): Promise<
     next,
     race_analysis: a.raceAnalysis?.meeting?.races?.length ? a.raceAnalysis : null,
     track: a.raceAnalysis?.meeting?.venue ? await trackFor(a.raceAnalysis.meeting.venue) : null,
+    runner_guide: runnerGuideFrom(a.runnerGuide),
   };
 }
 

@@ -11,6 +11,7 @@ import AuthorBox from "@/components/article/AuthorBox";
 import ArticleSidebar from "@/components/article/ArticleSidebar";
 import ViewBeacon from "@/components/article/ViewBeacon";
 import RaceAnalysis from "@/components/analysis/RaceAnalysis";
+import RunnerGuide from "@/components/article/RunnerGuide";
 import RegistrationWall from "@/components/article/RegistrationWall";
 import Comments from "@/components/article/Comments";
 import AdSlot from "@/components/AdSlot";
@@ -269,6 +270,9 @@ export default async function ArticlePage({ params }: Params) {
               {article.embed_html && (
                 <div className="article-embed mt-7" dangerouslySetInnerHTML={{ __html: article.embed_html }} />
               )}
+
+              {/* Runner cards (For / Against / comment), edited under the story's Runner guide. */}
+              {article.runner_guide && <RunnerGuide guide={article.runner_guide} />}
 
               {/* Harness Analyst form guide, part of the story (components/analysis). */}
               {article.race_analysis && <RaceAnalysis data={article.race_analysis} track={article.track} />}

@@ -1,0 +1,25 @@
+{
+  "collectionName": "components_story_runner_cards",
+  "info": {
+    "displayName": "Runner card",
+    "icon": "user",
+    "description": "One runner: the facts box, the case for and against, and our comment"
+  },
+  "options": {},
+  "attributes": {
+    "horse": { "type": "string" },
+    "saddlecloth": { "type": "integer", "min": 1, "max": 30 },
+    "barrier": { "type": "string" },
+    "ageSex": { "type": "string" },
+    "odds": { "type": "string" },
+    "driver": { "type": "string" },
+    "trainer": { "type": "string" },
+    "slotHolder": { "type": "string" },
+    "silksImage": { "type": "media", "multiple": false, "allowedTypes": ["images"] },
+    "forCase": { "type": "text" },
+    "againstCase": { "type": "text" },
+    "comment": { "type": "text" },
+    "silk": { "type": "string" },
+    "colours": { "type": "string" }
+  }
+}

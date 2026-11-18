@@ -53,6 +53,11 @@
     "raceAnalysis": {
       "type": "json"
     },
+    "runnerGuide": {
+      "type": "component",
+      "repeatable": false,
+      "component": "story.runner-guide"
+    },
     "featuredImage": {
       "type": "media",
       "multiple": false,

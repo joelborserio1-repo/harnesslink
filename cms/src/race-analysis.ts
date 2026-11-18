@@ -128,7 +128,7 @@ function normEntry(e: any): Entry {
   };
 }
 
-function normRace(r: any): Race {
+export function normRace(r: any): Race {
   const name = String(r.name || '').trim();
   const st = String(r.start_type || '').toLowerCase();
   const start = st.startsWith('m') ? 'mobile' : st.startsWith('s') ? 'standing' : /\bMs$/i.test(name) ? 'mobile' : /\bSs$/i.test(name) ? 'standing' : null;

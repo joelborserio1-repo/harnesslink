@@ -1,5 +1,6 @@
 import type { Core } from '@strapi/strapi';
 import { LAYOUTS, LAYOUT_VERSION } from './admin-layouts';
+import { draftRunnerGuide, drafterSaving, fillRunnerGuide } from './runner-guide';
 import { seedMenus } from './menus';
 import { applyPluginSettings } from './plugin-settings';
 import { setupReaders } from './readers-setup';
@@ -101,7 +102,7 @@ async function applyEditorLayouts(strapi: Core.Strapi) {
 
   const cm = strapi.store({ type: 'plugin', name: 'content_manager' });
   for (const layout of LAYOUTS) {
-    const key = `configuration_content_types::${layout.uid}`;
+    const key = layout.component ? `configuration_components::${layout.uid}` : `configuration_content_types::${layout.uid}`;
     const config = (await cm.get({ key })) as {
       settings: Record<string, unknown>;
       metadatas: Record<string, { edit: Record<string, unknown>; list: Record<string, unknown> }>;
@@ -118,13 +119,17 @@ async function applyEditorLayouts(strapi: Core.Strapi) {
     const editable = new Set(config.layouts.edit.flat().map((f) => f.name));
     for (const name of editable) if (!placed.has(name)) rows.push([{ name, size: 6 }]);
 
-    config.settings = {
-      ...config.settings,
-      defaultSortBy: layout.sortBy,
-      defaultSortOrder: layout.sortOrder,
-      ...(layout.pageSize ? { pageSize: layout.pageSize } : {}),
-    };
-    config.layouts = { ...config.layouts, list: layout.list.filter((f) => known.has(f) || f === 'id'), edit: rows };
+    if (layout.component) {
+      config.layouts = { ...config.layouts, edit: rows };
+    } else {
+      config.settings = {
+        ...config.settings,
+        defaultSortBy: layout.sortBy,
+        defaultSortOrder: layout.sortOrder,
+        ...(layout.pageSize ? { pageSize: layout.pageSize } : {}),
+      };
+      config.layouts = { ...config.layouts, list: (layout.list || []).filter((f) => known.has(f) || f === 'id'), edit: rows };
+    }
     for (const [name, meta] of Object.entries(layout.fields)) {
       if (!config.metadatas[name]) continue;
       config.metadatas[name].edit = {
@@ -133,7 +138,7 @@ async function applyEditorLayouts(strapi: Core.Strapi) {
         ...(meta.description !== undefined ? { description: meta.description } : {}),
         ...(meta.editable === false ? { editable: false } : {}),
       };
-      config.metadatas[name].list = { ...config.metadatas[name].list, label: meta.label };
+      if (config.metadatas[name].list) config.metadatas[name].list = { ...config.metadatas[name].list, label: meta.label };
     }
     await cm.set({ key, value: config });
   }
@@ -182,6 +187,9 @@ function newsroomDefaults(strapi: Core.Strapi) {
       if (!data.excerpt && typeof data.bodyHtml === 'string' && data.bodyHtml.trim()) {
         data.excerpt = excerptFrom(data.bodyHtml);
       }
+      if (data.runnerGuide && typeof data.runnerGuide === 'object' && !(params.documentId && drafterSaving.has(params.documentId))) {
+        await fillRunnerGuide(data.runnerGuide);
+      }
       if (ctx.action === 'create' && relationEmpty(data.authors)) {
         const email = strapi.requestContext.get()?.state?.user?.email;
         if (email) {
@@ -200,7 +208,13 @@ function newsroomDefaults(strapi: Core.Strapi) {
         await docs.update({ documentId: params.documentId, data: { publishDate: new Date().toISOString() } as never });
       }
     }
-    return next();
+    const result: any = await next();
+    const guide = params.data?.runnerGuide;
+    const id = params.documentId || result?.documentId;
+    if ((ctx.action === 'create' || ctx.action === 'update') && guide?.draftWithClaude && id && !drafterSaving.has(id)) {
+      draftRunnerGuide(strapi, id);
+    }
+    return result;
   });
 }
 
