@@ -31,92 +31,69 @@ function Cloth({ no }: { no: number | null }) {
   );
 }
 
-function Fact({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`rc-cell ${className}`}>
-      <span className="rc-label">{label}</span>
-      <span className="rc-value">{children}</span>
-    </div>
-  );
-}
-
 function Card({ c }: { c: RunnerCard }) {
-  const second = [
-    c.driver && ["Driver", c.driver],
-    c.trainer && ["Trainer", c.trainer],
-    c.slotHolder ? ["Slot", c.slotHolder] : c.barrier ? ["Barrier", c.barrier] : null,
-  ].filter(Boolean) as [string, string][];
+  const label = [c.no && `No. ${c.no}`, c.barrier && `Barrier ${c.barrier}`, c.slotHolder && `Slot: ${c.slotHolder}`].filter(Boolean).join(" \u00b7 ");
+  const meta = [c.ageSex, c.driver && `Driver ${c.driver}`, c.trainer && `Trainer ${c.trainer}`].filter(Boolean) as string[];
   const paras = (c.comment || "").split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
   return (
     <article className="rc" id={c.no ? `runner-${c.no}` : undefined}>
-      <div className="rc-head">
-        <div className="rc-facts-wrap">
-          <div className="rc-facts">
-            <Fact label="Horse" className="rc-cell-horse">
-              <span className="rc-horse">
-                <Cloth no={c.no} />
-                {c.horse}
-              </span>
-            </Fact>
-            <Fact label="Age / Sex">{c.ageSex || "–"}</Fact>
-            <Fact label="Odds">
-              <span className="rc-odds">{c.odds || "–"}</span>
-            </Fact>
+      <div className="rc-silks">
+        {c.silksImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="rc-silks-upload" src={c.silksImage} alt={`${c.horse} silks`} width={64} height={64} loading="lazy" />
+        ) : (
+          <Silk path={c.silk} colours={c.colours} alt={`${c.horse} silks`} size={52} />
+        )}
+      </div>
+      <div className="rc-body">
+        <div className="rc-top">
+          <div className="rc-title">
+            {label && <span className="rc-label">{label}</span>}
+            <h3 className="rc-horse">
+              <Cloth no={c.no} />
+              {c.horse}
+            </h3>
+            {meta.length > 0 && <p className="rc-meta">{meta.join(" \u00b7 ")}</p>}
           </div>
-          {second.length > 0 && (
-            <div className="rc-facts">
-              {second.map(([k, v]) => (
-                <Fact key={k} label={k}>
-                  {v}
-                </Fact>
-              ))}
+          {c.odds && (
+            <div className="rc-odds">
+              <span className="rc-odds-label">Odds</span>
+              {c.odds}
             </div>
           )}
         </div>
-        <div className="rc-silks">
-          {c.silksImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className="rc-silks-upload" src={c.silksImage} alt={`${c.horse} silks`} width={96} height={96} loading="lazy" />
-          ) : (
-            <Silk path={c.silk} colours={c.colours} alt={`${c.horse} silks`} size={58} />
-          )}
-        </div>
-      </div>
-      {(c.forCase || c.againstCase) && (
-        <table className="rc-case">
-          <tbody>
+        {(c.forCase || c.againstCase) && (
+          <dl className="rc-case">
             {c.forCase && (
-              <tr className="rc-for">
-                <th scope="row">For</th>
-                <td>{c.forCase}</td>
-              </tr>
+              <div className="rc-for">
+                <dt>For</dt>
+                <dd>{c.forCase}</dd>
+              </div>
             )}
             {c.againstCase && (
-              <tr className="rc-against">
-                <th scope="row">Against</th>
-                <td>{c.againstCase}</td>
-              </tr>
+              <div className="rc-against">
+                <dt>Against</dt>
+                <dd>{c.againstCase}</dd>
+              </div>
             )}
-          </tbody>
-        </table>
-      )}
-      {paras.length > 0 && (
-        <div className="rc-comment">
-          {paras.map((p, i) => (
-            <p key={i}>
-              {i === 0 && <strong>HL comment &ndash; </strong>}
-              {p}
-            </p>
-          ))}
-        </div>
-      )}
+          </dl>
+        )}
+        {paras.length > 0 && (
+          <div className="rc-comment">
+            <span className="rc-label">HL comment</span>
+            {paras.map((p, i) => (
+              <p key={i}>{p}</p>
+            ))}
+          </div>
+        )}
+      </div>
     </article>
   );
 }
 
 export default function RunnerGuide({ guide }: { guide: Guide }) {
   return (
-    <section className="runner-guide mt-9" aria-label={guide.heading || "Runner guide"}>
+    <section className="runner-guide" aria-label={guide.heading || "Runner guide"}>
       {guide.heading && <h2 className="rc-heading">{guide.heading}</h2>}
       {guide.cards.map((c, i) => (
         <Card key={`${c.no}-${c.horse}-${i}`} c={c} />

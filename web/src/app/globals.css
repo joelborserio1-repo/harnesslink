@@ -561,38 +561,37 @@ body {
   .fg-bestcell-bet::before { content: "Best bet"; display: block; font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--color-accent); margin: 2px 0 4px; }
 }
 
-/* Runner cards under a story (components/article/RunnerGuide.tsx). Flat, square, ruled. */
-.rc-heading { font-family: var(--font-headline, inherit); font-size: 24px; font-weight: 700; line-height: 1.2; margin: 0 0 16px; }
-.rc { border: 1px solid #c9ced6; border-top: 3px solid var(--color-navy, #0b1f3a); background: #fff; margin: 0 0 28px; }
-.rc-head { display: grid; grid-template-columns: minmax(0, 1fr) 112px; }
-.rc-facts-wrap { min-width: 0; }
-.rc-facts { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); }
-@media (min-width: 601px) { .rc-facts .rc-cell:last-child:nth-child(2) { grid-column: span 2; } }
-.rc-cell { padding: 10px 14px; border-right: 1px solid #c9ced6; border-bottom: 1px solid #c9ced6; min-width: 0; }
-.rc-label { display: block; font-size: 11px; line-height: 1.2; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #5b6472; margin-bottom: 3px; }
-.rc-value { display: block; font-size: 16px; line-height: 1.35; }
-.rc-horse { display: flex; align-items: center; gap: 9px; font-size: 20px; font-weight: 700; line-height: 1.2; }
-.rc-odds { font-size: 20px; font-weight: 700; }
-.rc-no { display: inline-grid; place-items: center; flex: 0 0 auto; width: 28px; height: 28px; font-size: 15px; font-weight: 700; line-height: 1; box-shadow: inset 0 0 0 1px rgba(0,0,0,.25); }
-.rc-silks { display: flex; align-items: center; justify-content: center; overflow: hidden; border-bottom: 1px solid #c9ced6; background: #fff; }
-.rc-silks img { display: block; max-width: 96px; max-height: 96px; object-fit: contain; }
-.rc-silks .rc-silks-upload { transform: scale(1.3); }
-.rc-case { width: 100%; border-collapse: collapse; margin: 0; font-size: 16px; line-height: 1.45; }
-.rc-case th, .rc-case td { border: 0; border-bottom: 1px solid #c9ced6; padding: 10px 14px; text-align: left; vertical-align: top; }
-.rc-case th { width: 104px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding-top: 13px; }
-.rc-for th { color: #0a7a35; }
-.rc-against th { color: #b3261e; }
-.rc-comment { padding: 14px; font-size: 16px; line-height: 1.6; }
-.rc-comment p { margin: 0 0 .8em; }
-.rc-comment p:last-child { margin-bottom: 0; }
-.rc-comment strong { color: var(--color-navy, #0b1f3a); }
-.rc-footnote { font-size: 14px; color: #5b6472; line-height: 1.5; }
+/* Runner cards under a story (components/article/RunnerGuide.tsx). Same
+   language as the Harness Analyst picks: navy top rule, serif names, hairlines,
+   tracked-caps labels, no boxes. */
+.runner-guide { margin-top: 36px; border-top: 3px solid var(--color-navy); padding-top: 14px; }
+.rc-heading { font-family: var(--font-serif); font-size: 30px; font-weight: 700; line-height: 1.15; color: var(--color-navy-deep); margin: 4px 0 6px; }
+.rc { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 0 18px; padding: 22px 0; border-bottom: 1px solid var(--color-line); scroll-margin-top: 90px; }
+.rc-silks { padding-top: 4px; }
+.rc-silks .rc-silks-upload { display: block; width: 64px; height: 64px; object-fit: contain; transform: scale(1.3); }
+.rc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.rc-title { min-width: 0; }
+.rc-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--color-accent); }
+.rc-horse { display: flex; align-items: center; gap: 10px; margin: 3px 0 0; font-family: var(--font-serif); font-size: 26px; font-weight: 700; line-height: 1.15; color: var(--color-navy-deep); }
+.rc-no { display: inline-grid; place-items: center; flex: 0 0 auto; width: 24px; height: 24px; font-family: var(--font-sans); font-size: 14px; font-weight: 700; line-height: 1; box-shadow: inset 0 0 0 1px rgba(0,0,0,.2); }
+.rc-meta { margin: 4px 0 0; font-size: 15px; color: var(--color-muted); }
+.rc-odds { flex: 0 0 auto; text-align: right; font-size: 26px; font-weight: 700; line-height: 1.1; color: var(--color-ink); }
+.rc-odds-label { display: block; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--color-muted); }
+.rc-case { margin: 14px 0 0; border-top: 1px solid var(--color-line); }
+.rc-case > div { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--color-line); }
+.rc-case dt { padding-top: 3px; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.rc-case dd { margin: 0; font-size: 16px; line-height: 1.45; }
+.rc-for dt { color: #1f7a3d; }
+.rc-against dt { color: var(--color-red); }
+.rc-comment { margin-top: 14px; }
+.rc-comment p { margin: 4px 0 0; font-size: 17px; line-height: 1.6; }
+.rc-comment p + p { margin-top: .8em; }
+.rc-footnote { margin-top: 14px; font-size: 14px; line-height: 1.5; color: var(--color-muted); }
 .rc-footnote p { margin: 0 0 .4em; }
 @media (max-width: 600px) {
-  .rc-head { grid-template-columns: minmax(0, 1fr) 84px; }
-  .rc-facts { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .rc-facts .rc-cell-horse, .rc-facts:last-child .rc-cell:last-child:nth-child(odd) { grid-column: 1 / 3; }
-  .rc-silks img { max-width: 72px; max-height: 72px; }
-  .rc-horse { font-size: 18px; }
-  .rc-case th { width: 84px; padding-left: 12px; padding-right: 8px; }
+  .rc { grid-template-columns: 44px minmax(0, 1fr); gap: 0 12px; }
+  .rc-silks .rc-silks-upload { width: 44px; height: 44px; }
+  .rc-horse { font-size: 22px; }
+  .rc-odds { font-size: 20px; }
+  .rc-case > div { grid-template-columns: 72px minmax(0, 1fr); }
 }
