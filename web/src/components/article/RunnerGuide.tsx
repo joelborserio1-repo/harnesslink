@@ -1,105 +1,115 @@
 import { Silk } from "@/components/analysis/SpeedMap";
 import type { RunnerGuide as Guide, RunnerCard } from "@/lib/api";
 
-// Runner cards under a story ("the case for and against every runner"),
-// edited in Strapi under the story's Runner guide. Facts box with the
-// saddlecloth and silks, then For / Against, then our comment.
+// Runner guide under a story, in the house race-map style (the TAB Eureka and
+// Christian Cullen race maps): "Runner by runner" with HRNSW saddlecloths,
+// then "The field at a glance". Edited in Strapi under the story's Runner guide.
 
-// Saddlecloth colours by number (background, text). One place to change them.
-const CLOTH: Record<number, [string, string]> = {
-  1: ["#d71920", "#fff"],
-  2: ["#000", "#fff"],
-  3: ["#fff", "#000"],
-  4: ["#1e4fb5", "#fff"],
-  5: ["#ffd200", "#000"],
-  6: ["#0a8a3a", "#fff"],
-  7: ["#6a2c91", "#fff"],
-  8: ["#e85a9b", "#fff"],
-  9: ["#00a3ad", "#fff"],
-  10: ["#8a8d91", "#fff"],
-  11: ["#f47b20", "#fff"],
-  12: ["#7b4a26", "#fff"],
-};
-
-function Cloth({ no }: { no: number | null }) {
-  if (!no) return null;
-  const [bg, fg] = CLOTH[no] || ["#0b1f3a", "#fff"];
+function Cloth({ no, small = false }: { no: number | null; small?: boolean }) {
+  if (!no) return <span className={`sc sc-none${small ? " sc--sm" : ""}`} aria-hidden />;
   return (
-    <span className="rc-no" style={{ background: bg, color: fg }} aria-label={`Number ${no}`}>
-      {no}
+    <span className={`sc sc-${no <= 16 ? no : "x"}${small ? " sc--sm" : ""}`} aria-label={`Number ${no}`}>
+      <span>{no}</span>
     </span>
   );
 }
 
-function Card({ c }: { c: RunnerCard }) {
-  const label = [c.barrier && `Barrier ${c.barrier}`, c.slotHolder && `Slot: ${c.slotHolder}`].filter(Boolean).join(" \u00b7 ");
-  const meta = [c.ageSex, c.driver && `Driver ${c.driver}`, c.trainer && `Trainer ${c.trainer}`].filter(Boolean) as string[];
+function Silks({ c, size }: { c: RunnerCard; size: number }) {
+  if (c.silksImage) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img className="rg-silks-upload" src={c.silksImage} alt={`${c.horse} silks`} width={size} height={size} loading="lazy" />;
+  }
+  if (!c.silk && !c.colours) return null;
+  return <Silk path={c.silk} colours={c.colours} alt={`${c.horse} silks`} size={size} />;
+}
+
+function who(c: RunnerCard) {
+  const first = [c.barrier && `Draw ${c.barrier}`, c.ageSex].filter(Boolean).join(", ");
+  const people = [c.trainer && `Trainer ${c.trainer}`, c.driver && `driver ${c.driver}`].filter(Boolean).join(", ");
+  return [first, people, c.odds && `${c.odds} win`].filter(Boolean).map((s) => `${s}.`).join(" ");
+}
+
+function Runner({ c }: { c: RunnerCard }) {
   const paras = (c.comment || "").split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+  const line = who(c);
   return (
-    <article className="rc" id={c.no ? `runner-${c.no}` : undefined}>
-      <div className="rc-silks">
-        {c.silksImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="rc-silks-upload" src={c.silksImage} alt={`${c.horse} silks`} width={64} height={64} loading="lazy" />
-        ) : (
-          <Silk path={c.silk} colours={c.colours} alt={`${c.horse} silks`} size={52} />
+    <li className="rg-rc" id={c.no ? `runner-${c.no}` : undefined}>
+      <Cloth no={c.no} />
+      <div>
+        <h3>
+          <span className="rg-nm">{c.horse}</span>
+          <Silks c={c} size={30} />
+          {c.slotHolder && <span className="rg-spot">Slot: {c.slotHolder}</span>}
+        </h3>
+        {line && <p className="rg-who">{line}</p>}
+        {c.forCase && (
+          <p className="rg-fa">
+            <span className="rg-for">For</span> {c.forCase}
+          </p>
         )}
+        {c.againstCase && (
+          <p className="rg-fa">
+            <span className="rg-against">Against</span> {c.againstCase}
+          </p>
+        )}
+        {paras.map((p, i) => (
+          <p key={i}>{p}</p>
+        ))}
       </div>
-      <div className="rc-body">
-        <div className="rc-top">
-          <div className="rc-title">
-            {label && <span className="rc-label">{label}</span>}
-            <h3 className="rc-horse">
-              <Cloth no={c.no} />
-              {c.horse}
-            </h3>
-            {meta.length > 0 && <p className="rc-meta">{meta.join(" \u00b7 ")}</p>}
-          </div>
-          {c.odds && (
-            <div className="rc-odds">
-              <span className="rc-odds-label">Odds</span>
-              {c.odds}
-            </div>
-          )}
-        </div>
-        {(c.forCase || c.againstCase) && (
-          <dl className="rc-case">
-            {c.forCase && (
-              <div className="rc-for">
-                <dt>For</dt>
-                <dd>{c.forCase}</dd>
-              </div>
-            )}
-            {c.againstCase && (
-              <div className="rc-against">
-                <dt>Against</dt>
-                <dd>{c.againstCase}</dd>
-              </div>
-            )}
-          </dl>
-        )}
-        {paras.length > 0 && (
-          <div className="rc-comment">
-            <span className="rc-label">HL comment</span>
-            {paras.map((p, i) => (
-              <p key={i}>{p}</p>
-            ))}
-          </div>
-        )}
-      </div>
-    </article>
+    </li>
   );
 }
 
 export default function RunnerGuide({ guide }: { guide: Guide }) {
+  const slots = guide.cards.some((c) => c.slotHolder);
   return (
-    <section className="runner-guide" aria-label={guide.heading || "Runner guide"}>
-      {guide.heading && <h2 className="rc-heading">{guide.heading}</h2>}
-      {guide.cards.map((c, i) => (
-        <Card key={`${c.no}-${c.horse}-${i}`} c={c} />
-      ))}
+    <section className="rg" aria-label={guide.heading || "Runner by runner"}>
+      <h2>{guide.heading || "Runner by runner"}</h2>
+      <ol className="rg-runners">
+        {guide.cards.map((c, i) => (
+          <Runner key={`${c.no}-${c.horse}-${i}`} c={c} />
+        ))}
+      </ol>
+
+      <h2>The field at a glance</h2>
+      <div className="rg-table">
+        <table>
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Horse</th>
+              <th>Gate</th>
+              <th>Trainer</th>
+              <th>Driver</th>
+              {slots && <th>Slot</th>}
+              <th>Win</th>
+            </tr>
+          </thead>
+          <tbody>
+            {guide.cards.map((c, i) => (
+              <tr key={`${c.no}-${c.horse}-${i}`}>
+                <td>
+                  <Cloth no={c.no} small />
+                </td>
+                <td className="rg-h">
+                  <span className="rg-hcell">
+                    <Silks c={c} size={22} />
+                    {c.horse}
+                  </span>
+                </td>
+                <td>{c.barrier || "–"}</td>
+                <td>{c.trainer || "–"}</td>
+                <td>{c.driver || "–"}</td>
+                {slots && <td>{c.slotHolder || "–"}</td>}
+                <td>{c.odds || "–"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
       {guide.footnote && (
-        <div className="rc-footnote">
+        <div className="rg-foot">
           {guide.footnote.split(/\n+/).map((l, i) => (
             <p key={i}>{l}</p>
           ))}
