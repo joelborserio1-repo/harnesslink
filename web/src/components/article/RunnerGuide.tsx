@@ -44,12 +44,14 @@ function Runner({ c }: { c: RunnerCard }) {
         {line && <p className="rg-who">{line}</p>}
         {c.forCase && (
           <p className="rg-fa">
-            <span className="rg-for">For</span> {c.forCase}
+            <span className="rg-for">For</span>
+            <span>{c.forCase}</span>
           </p>
         )}
         {c.againstCase && (
           <p className="rg-fa">
-            <span className="rg-against">Against</span> {c.againstCase}
+            <span className="rg-against">Against</span>
+            <span>{c.againstCase}</span>
           </p>
         )}
         {paras.map((p, i) => (
@@ -62,6 +64,7 @@ function Runner({ c }: { c: RunnerCard }) {
 
 export default function RunnerGuide({ guide }: { guide: Guide }) {
   const slots = guide.cards.some((c) => c.slotHolder);
+  const gates = guide.cards.some((c) => c.barrier);
   return (
     <section className="rg" aria-label={guide.heading || "Runner by runner"}>
       <h2>{guide.heading || "Runner by runner"}</h2>
@@ -78,7 +81,7 @@ export default function RunnerGuide({ guide }: { guide: Guide }) {
             <tr>
               <th>No.</th>
               <th>Horse</th>
-              <th>Gate</th>
+              {gates && <th>Gate</th>}
               <th>Trainer</th>
               <th>Driver</th>
               {slots && <th>Slot</th>}

@@ -604,7 +604,8 @@ body {
 .rg-spot { display: inline-block; font: 700 .85rem Barlow, sans-serif; color: var(--rg-pill-ink); background: var(--rg-pill-bg); padding: .1rem .5rem; border-radius: 999px; }
 .rg-who { margin: .2rem 0 .6rem !important; color: var(--rg-muted); font-size: .95rem; }
 .rg-rc p { margin: 0 0 .75rem; max-width: 42rem; }
-.rg-fa { margin-bottom: .35rem !important; }
+.rg-fa { display: grid; grid-template-columns: 4.6rem minmax(0, 1fr); align-items: baseline; margin-bottom: .35rem !important; }
+.rg .silk, .rg .rg-silks-upload { flex: none; overflow: hidden; font-size: 0; color: transparent; }
 .rg-for, .rg-against { display: inline-block; min-width: 4.6rem; font: 700 .95rem "Barlow Condensed", sans-serif; text-transform: uppercase; letter-spacing: .06em; }
 .rg-for { color: #1f7a3d; }
 .rg-against { color: #b3202a; }
