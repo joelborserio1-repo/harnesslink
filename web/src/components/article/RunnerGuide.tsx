@@ -100,7 +100,7 @@ export default function RunnerGuide({ guide }: { guide: Guide }) {
                     {c.horse}
                   </span>
                 </td>
-                <td>{c.barrier || "–"}</td>
+                {gates && <td>{c.barrier || "–"}</td>}
                 <td>{c.trainer || "–"}</td>
                 <td>{c.driver || "–"}</td>
                 {slots && <td>{c.slotHolder || "–"}</td>}
