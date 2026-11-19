@@ -270,7 +270,7 @@ export function draftRunnerGuide(strapi: Core.Strapi, documentId: string) {
           if (blank(c.comment)) c.comment = r.comment.trim();
           n++;
         }
-        x.status = `${(x.status || '').replace(/ Claude is drafting[^.]*\.[^.]*\./, '')} Claude drafted ${n} runner(s); check them before publishing.`.trim();
+        x.status = `${(x.status || '').replace(/ Claude is drafting[^.]*\./, '')} Claude drafted ${n} runner(s); check them before publishing.`.trim();
       });
       strapi.log.info(`[runner-guide] ${documentId}: Claude drafted ${n} runner(s)`);
     } catch (err) {

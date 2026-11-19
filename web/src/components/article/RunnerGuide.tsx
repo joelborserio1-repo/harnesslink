@@ -32,7 +32,7 @@ function Cloth({ no }: { no: number | null }) {
 }
 
 function Card({ c }: { c: RunnerCard }) {
-  const label = [c.no && `No. ${c.no}`, c.barrier && `Barrier ${c.barrier}`, c.slotHolder && `Slot: ${c.slotHolder}`].filter(Boolean).join(" \u00b7 ");
+  const label = [c.barrier && `Barrier ${c.barrier}`, c.slotHolder && `Slot: ${c.slotHolder}`].filter(Boolean).join(" \u00b7 ");
   const meta = [c.ageSex, c.driver && `Driver ${c.driver}`, c.trainer && `Trainer ${c.trainer}`].filter(Boolean) as string[];
   const paras = (c.comment || "").split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
   return (
