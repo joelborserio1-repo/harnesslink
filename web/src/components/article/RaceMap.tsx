@@ -61,6 +61,8 @@ function stakesShort(n?: number | null) {
   if (n >= 1000) return `$${Math.round(n / 1000)}k`;
   return `$${n}`;
 }
+// TAB race names end in "Ms" (mobile start) or "Ss" (standing start); readers do not need it.
+const raceName = (n?: string | null) => (n || "").replace(/\s+(Ms|Ss)$/i, "").trim();
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 function silksOf(r: MapRunner): [string, string] {
@@ -102,7 +104,7 @@ function mapHtml(data: RaceMapData, label: string, placed: Placed[]) {
   ].join("");
   return (
     `<header class="band"><img class="logo" src="/racemap/logo.jpg" alt="HarnessLink">` +
-    `<div class="title"><h3><small>${esc(label)}${when ? ` | ${esc(when)}` : ""}</small><span class="race">${race.no ? `R${race.no} ` : ""}${esc(data.heading?.replace(/\s*race map$/i, "") || race.name || "")}</span></h3></div>` +
+    `<div class="title"><h3><small>${esc(label)}${when ? ` | ${esc(when)}` : ""}</small><span class="race">${race.no ? `R${race.no} ` : ""}${esc(data.heading?.replace(/\s*race map$/i, "") || raceName(race.name))}</span></h3></div>` +
     `<div class="meta">${meta}</div></header>` +
     `<div class="track-wrap"><div class="track" style="--cols:${cols}">` +
     `<div class="infield" aria-hidden="true">${BOARD}<div class="board wide"><span class="tag-line">Race maps by <em>HarnessLink</em></span></div>${BOARD}</div>` +
@@ -158,7 +160,7 @@ export default function RaceMap({ data }: { data: RaceMapData }) {
   const where = (r: MapRunner) => expected.find((p) => p.r === r);
   const order = [...data.runners].sort((a, b) => (a.scratched ? 1 : 0) - (b.scratched ? 1 : 0) || depth(where(a)) - depth(where(b)) || (a.no || 99) - (b.no || 99));
   const meet = [race.venue, dateLong(race.date), race.no ? `Race ${race.no}` : null, localTime(race.startTime, race.timezone)].filter(Boolean).join(", ");
-  const title = data.heading || (race.name ? `${race.name} Race Map` : "Race Map");
+  const title = data.heading || (race.name ? `${raceName(race.name)} Race Map` : "Race Map");
   const field = [...data.runners].filter((r) => !r.scratched).sort((a, b) => (Number(a.barrier) || a.no || 99) - (Number(b.barrier) || b.no || 99));
   return (
     <section className="hl-rmp" aria-label={title}>
