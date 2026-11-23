@@ -7,7 +7,8 @@ import { api, normRace, type Entry, type Race } from './race-analysis';
 // draws them under the story text (web/src/components/article/RunnerGuide.tsx).
 //
 // On every save of a story with a runner guide:
-//   - Venue + race date + race number find the race in the racing API.
+//   - A pasted TAB race link (or venue + race date + race number) finds the
+//     race in the racing API; a new link brings in the whole field.
 //   - "Add every runner" adds a card for each runner not already there.
 //   - Each card (matched by saddlecloth number, or else horse name) gets its
 //     empty facts filled: number, barrier, driver, trainer, TAB fixed odds,
@@ -33,6 +34,7 @@ type Card = Record<string, any> & {
   comment?: string | null;
 };
 type Guide = Record<string, any> & {
+  tabLink?: string | null;
   venue?: string | null;
   raceDate?: string | null;
   raceNumber?: number | null;
@@ -95,11 +97,59 @@ function fillCard(card: Card, e: Entry) {
   if (e.colours) card.colours = e.colours;
 }
 
+// A pasted TAB race link, e.g.
+//   https://www.tab.com.au/racing/2026-11-21/MENANGLE/MEN/H/R/7
+//   https://www.tab.co.nz/racing/2026-11-20/addington/race/7
+// gives the date and race number; the venue is whichever of that day's
+// meetings is named in the link.
+async function fromTabLink(link: string): Promise<{ venue: string; date: string; race: number } | string> {
+  const url = link.trim();
+  const date = url.match(/(20\d\d-\d\d-\d\d)/)?.[1];
+  const race =
+    url.match(/\/R\/(\d{1,2})(?:\/|$|\?|#)/i)?.[1] ||
+    url.match(/(?:race|races)[\/-](\d{1,2})(?:\/|$|\?|#|-)/i)?.[1] ||
+    url.match(/\/R(\d{1,2})(?:\/|$|\?|#)/i)?.[1];
+  if (!race) return 'That TAB link has no race number in it. Open the race itself on TAB (the page for one race) and copy that link.';
+  const all: any[] = await api('/meetings?when=all&limit=300');
+  const plain = norm(decodeURIComponent(url));
+  // No date in the link: the next meeting (today or later) it names.
+  const today = new Date().toISOString().slice(0, 10);
+  const sameDay = date
+    ? all.filter((m) => String(m.meeting_date).slice(0, 10) === date)
+    : all.filter((m) => String(m.meeting_date).slice(0, 10) >= today).sort((a, b) => String(a.meeting_date).localeCompare(String(b.meeting_date)));
+  const meeting = sameDay
+    .filter((m) => norm(m.venue) && plain.includes(norm(m.venue)))
+    .sort((a, b) => norm(b.venue).length - norm(a.venue).length || String(a.meeting_date).localeCompare(String(b.meeting_date)))[0];
+  if (!meeting) {
+    return sameDay.length
+      ? `None of the ${date || 'upcoming'} meetings in the racing data (${[...new Set(sameDay.map((m) => m.venue))].join(', ')}) is named in that TAB link.`
+      : `The racing data has no meetings${date ? ` on ${date}` : ' coming up'} yet. Fields usually appear once the barrier draw is done.`;
+  }
+  return { venue: meeting.venue, date: String(meeting.meeting_date).slice(0, 10), race: Number(race) };
+}
+
+const emptyCard = (c: Card) =>
+  blank(c.horse) && !c.saddlecloth && blank(c.forCase) && blank(c.againstCase) && blank(c.comment) && blank(c.ageSex) && blank(c.slotHolder);
+
 // Fills the guide in place. Never throws: problems go in guide.status.
 export async function fillRunnerGuide(guide: Guide | null | undefined) {
   if (!guide || typeof guide !== 'object') return;
   guide.cards = Array.isArray(guide.cards) ? guide.cards : [];
   try {
+    if (!blank(guide.tabLink)) {
+      const t = await fromTabLink(String(guide.tabLink));
+      if (typeof t === 'string') {
+        guide.status = t;
+        return;
+      }
+      const changed = norm(guide.venue) !== norm(t.venue) || String(guide.raceDate || '').slice(0, 10) !== t.date || Number(guide.raceNumber) !== t.race;
+      guide.venue = t.venue;
+      guide.raceDate = t.date;
+      guide.raceNumber = t.race;
+      // A new link with no runners typed yet brings in the whole field.
+      if (changed && !guide.cards.some((c) => !blank(c.horse) || c.saddlecloth)) guide.addWholeField = true;
+    }
+    if (guide.addWholeField) guide.cards = guide.cards.filter((c) => !emptyCard(c));
     const found = await findRace(guide);
     if (typeof found === 'string') {
       guide.status = found;

@@ -18,7 +18,7 @@ type Layout = {
   fields: Record<string, FieldMeta>;
 };
 
-export const LAYOUT_VERSION = '2026-11-18.1';
+export const LAYOUT_VERSION = '2026-11-24.1';
 
 const SEO_HELP = 'Search and social-media title/description. Leave blank to use the headline and standfirst.';
 
@@ -305,6 +305,7 @@ export const LAYOUTS: Layout[] = [
     uid: 'story.runner-guide',
     component: true,
     edit: [
+      [['tabLink', 12]],
       [['heading', 12]],
       [['venue', 4], ['raceDate', 4], ['raceNumber', 4]],
       [['addWholeField', 6], ['draftWithClaude', 6]],
@@ -314,8 +315,9 @@ export const LAYOUTS: Layout[] = [
       [['raceId', 4]],
     ],
     fields: {
+      tabLink: { label: 'TAB race link', description: 'Easiest: paste the link to the race on TAB (tab.com.au or tab.co.nz) and save. The venue, date, race number and every runner fill in.' },
       heading: { label: 'Heading', description: 'Optional, e.g. "The case for and against every runner".' },
-      venue: { label: 'Venue', description: 'As TAB names it, e.g. Menangle, Addington, Melton.' },
+      venue: { label: 'Venue', description: 'Filled from the TAB link, or type it as TAB names it, e.g. Menangle, Addington, Melton.' },
       raceDate: { label: 'Race date', description: 'Leave empty for the next meeting at the venue.' },
       raceNumber: { label: 'Race number' },
       addWholeField: { label: 'Add every runner', description: 'Turn on and save: a card is added for each runner in the field. Turns itself off.' },

@@ -7,15 +7,44 @@
   },
   "options": {},
   "attributes": {
-    "heading": { "type": "string" },
-    "venue": { "type": "string" },
-    "raceDate": { "type": "date" },
-    "raceNumber": { "type": "integer", "min": 1, "max": 20 },
-    "addWholeField": { "type": "boolean", "default": false },
-    "draftWithClaude": { "type": "boolean", "default": false },
-    "cards": { "type": "component", "repeatable": true, "component": "story.runner-card" },
-    "footnote": { "type": "text" },
-    "raceId": { "type": "integer" },
-    "status": { "type": "text" }
+    "heading": {
+      "type": "string"
+    },
+    "tabLink": {
+      "type": "string"
+    },
+    "venue": {
+      "type": "string"
+    },
+    "raceDate": {
+      "type": "date"
+    },
+    "raceNumber": {
+      "type": "integer",
+      "min": 1,
+      "max": 20
+    },
+    "addWholeField": {
+      "type": "boolean",
+      "default": false
+    },
+    "draftWithClaude": {
+      "type": "boolean",
+      "default": false
+    },
+    "cards": {
+      "type": "component",
+      "repeatable": true,
+      "component": "story.runner-card"
+    },
+    "footnote": {
+      "type": "text"
+    },
+    "raceId": {
+      "type": "integer"
+    },
+    "status": {
+      "type": "text"
+    }
   }
 }
