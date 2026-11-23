@@ -1,0 +1,29 @@
+{
+  "collectionName": "components_story_map_runners",
+  "info": {
+    "displayName": "Race map runner",
+    "icon": "pin",
+    "description": "One runner on a race map: where it settles, and our comment"
+  },
+  "options": {},
+  "attributes": {
+    "horse": { "type": "string" },
+    "saddlecloth": { "type": "integer", "min": 1, "max": 30 },
+    "lane": { "type": "enumeration", "enum": ["rail", "outside", "off"] },
+    "position": { "type": "integer", "min": 1, "max": 10 },
+    "settle": { "type": "string" },
+    "altLane": { "type": "enumeration", "enum": ["rail", "outside", "off"] },
+    "altPosition": { "type": "integer", "min": 1, "max": 10 },
+    "comment": { "type": "text" },
+    "barrier": { "type": "string" },
+    "odds": { "type": "string" },
+    "driver": { "type": "string" },
+    "trainer": { "type": "string" },
+    "scratched": { "type": "boolean", "default": false },
+    "coat": { "type": "enumeration", "enum": ["bay", "baybrown", "brown", "chestnut", "black", "grey"] },
+    "silkMain": { "type": "string" },
+    "silkTrim": { "type": "string" },
+    "silk": { "type": "string" },
+    "colours": { "type": "string" }
+  }
+}

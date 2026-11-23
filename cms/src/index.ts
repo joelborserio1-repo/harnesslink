@@ -1,6 +1,7 @@
 import type { Core } from '@strapi/strapi';
 import { LAYOUTS, LAYOUT_VERSION } from './admin-layouts';
 import { draftRunnerGuide, drafterSaving, fillRunnerGuide } from './runner-guide';
+import { draftRaceMap, fillRaceMap, mapDrafterSaving } from './race-map';
 import { seedMenus } from './menus';
 import { applyPluginSettings } from './plugin-settings';
 import { setupReaders } from './readers-setup';
@@ -190,6 +191,9 @@ function newsroomDefaults(strapi: Core.Strapi) {
       if (data.runnerGuide && typeof data.runnerGuide === 'object' && !(params.documentId && drafterSaving.has(params.documentId))) {
         await fillRunnerGuide(data.runnerGuide);
       }
+      if (data.raceMap && typeof data.raceMap === 'object' && !(params.documentId && mapDrafterSaving.has(params.documentId))) {
+        await fillRaceMap(data.raceMap);
+      }
       if (ctx.action === 'create' && relationEmpty(data.authors)) {
         const email = strapi.requestContext.get()?.state?.user?.email;
         if (email) {
@@ -213,6 +217,10 @@ function newsroomDefaults(strapi: Core.Strapi) {
     const id = params.documentId || result?.documentId;
     if ((ctx.action === 'create' || ctx.action === 'update') && guide?.draftWithClaude && id && !drafterSaving.has(id)) {
       draftRunnerGuide(strapi, id);
+    }
+    const raceMap = params.data?.raceMap;
+    if ((ctx.action === 'create' || ctx.action === 'update') && raceMap?.draftWithClaude && id && !mapDrafterSaving.has(id)) {
+      draftRaceMap(strapi, id);
     }
     return result;
   });

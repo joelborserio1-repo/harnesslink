@@ -47,12 +47,12 @@ type Guide = Record<string, any> & {
   race?: Record<string, unknown> | null;
 };
 
-const blank = (v: unknown) => v == null || String(v).trim() === '';
-const norm = (s: string | null | undefined) => String(s || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]/g, '');
+export const blank = (v: unknown) => v == null || String(v).trim() === '';
+export const norm = (s: string | null | undefined) => String(s || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]/g, '');
 
 // The race, from venue + date (+ race number). Without a date: the next
 // meeting at that venue, else the latest one.
-async function findRace(g: Guide): Promise<{ race: Race; venue: string; date: string; timezone: string | null } | string> {
+export async function findRace(g: Guide): Promise<{ race: Race; venue: string; date: string; timezone: string | null } | string> {
   if (blank(g.venue) || !g.raceNumber) return 'Add the venue and race number to fill the cards from the racing data.';
   const all: any[] = await api('/meetings?when=all&limit=300');
   const want = norm(g.venue);
@@ -73,9 +73,9 @@ async function findRace(g: Guide): Promise<{ race: Race; venue: string; date: st
   return { race: normRace(await api(`/races/${r.id}`)), venue: meeting.venue, date: String(meeting.meeting_date).slice(0, 10), timezone: meeting.timezone || null };
 }
 
-const money = (n: number | null) => (n ? `$${n >= 10 ? n.toFixed(n % 1 ? 1 : 0) : n.toFixed(2)}` : null);
+export const money = (n: number | null) => (n ? `$${n >= 10 ? n.toFixed(n % 1 ? 1 : 0) : n.toFixed(2)}` : null);
 
-function match(card: Card, entries: Entry[]) {
+export function match(card: Card, entries: Entry[]) {
   if (card.saddlecloth) {
     const byNo = entries.find((e) => e.no === Number(card.saddlecloth));
     if (byNo && (blank(card.horse) || norm(byNo.horse) === norm(card.horse))) return byNo;
@@ -84,7 +84,7 @@ function match(card: Card, entries: Entry[]) {
   return null;
 }
 
-function fillCard(card: Card, e: Entry) {
+export function fillCard(card: Card, e: Entry) {
   const set = (k: keyof Card, v: unknown) => {
     if (blank(card[k]) && !blank(v)) (card as any)[k] = v;
   };
@@ -104,7 +104,7 @@ function fillCard(card: Card, e: Entry) {
 //   https://www.tab.co.nz/racing/2026-11-20/addington/race/7
 // gives the date and race number; the venue is whichever of that day's
 // meetings is named in the link.
-async function fromTabLink(link: string): Promise<{ venue: string; date: string; race: number } | string> {
+export async function fromTabLink(link: string): Promise<{ venue: string; date: string; race: number } | string> {
   const url = link.trim();
   const date = url.match(/(20\d\d-\d\d-\d\d)/)?.[1];
   const race =

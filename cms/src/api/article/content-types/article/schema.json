@@ -58,6 +58,11 @@
       "repeatable": false,
       "component": "story.runner-guide"
     },
+    "raceMap": {
+      "type": "component",
+      "repeatable": false,
+      "component": "story.race-map"
+    },
     "featuredImage": {
       "type": "media",
       "multiple": false,

@@ -12,6 +12,7 @@ import ArticleSidebar from "@/components/article/ArticleSidebar";
 import ViewBeacon from "@/components/article/ViewBeacon";
 import RaceAnalysis from "@/components/analysis/RaceAnalysis";
 import RunnerGuide from "@/components/article/RunnerGuide";
+import RaceMap from "@/components/article/RaceMap";
 import RegistrationWall from "@/components/article/RegistrationWall";
 import Comments from "@/components/article/Comments";
 import AdSlot from "@/components/AdSlot";
@@ -272,6 +273,7 @@ export default async function ArticlePage({ params }: Params) {
               )}
 
               {/* Runner cards (For / Against / comment), edited under the story's Runner guide. */}
+              {article.race_map && <RaceMap data={article.race_map} />}
               {article.runner_guide && <RunnerGuide guide={article.runner_guide} />}
 
               {/* Harness Analyst form guide, part of the story (components/analysis). */}

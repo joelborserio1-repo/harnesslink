@@ -1,0 +1,28 @@
+{
+  "collectionName": "components_story_race_maps",
+  "info": {
+    "displayName": "Race map",
+    "icon": "earth",
+    "description": "A HarnessLink race map for one race, filled from TAB"
+  },
+  "options": {},
+  "attributes": {
+    "tabLink": { "type": "string" },
+    "heading": { "type": "string" },
+    "standfirst": { "type": "text" },
+    "expectedIntro": { "type": "text" },
+    "expectedAfter": { "type": "text" },
+    "showAlternative": { "type": "boolean", "default": false },
+    "altIntro": { "type": "text" },
+    "altAfter": { "type": "text" },
+    "draftWithClaude": { "type": "boolean", "default": false },
+    "runners": { "type": "component", "repeatable": true, "component": "story.map-runner" },
+    "footnote": { "type": "text" },
+    "venue": { "type": "string" },
+    "raceDate": { "type": "date" },
+    "raceNumber": { "type": "integer", "min": 1, "max": 20 },
+    "status": { "type": "text" },
+    "raceId": { "type": "integer" },
+    "race": { "type": "json" }
+  }
+}

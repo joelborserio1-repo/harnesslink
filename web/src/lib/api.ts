@@ -73,7 +73,82 @@ export type ArticleFull = ArticleSummary & {
   race_analysis: RaceAnalysis | null; // Harness Analyst form guide (lib/analysis.ts)
   track: Track | null; // the meeting's track guide, when the newsroom has one
   runner_guide: RunnerGuide | null; // runner cards (components/article/RunnerGuide.tsx)
+  race_map: RaceMapData | null; // race map (components/article/RaceMap.tsx)
 };
+
+export type MapLane = "rail" | "outside" | "off";
+export type MapRunner = {
+  horse: string;
+  no: number | null;
+  lane: MapLane | null;
+  position: number | null;
+  settle: string | null;
+  altLane: MapLane | null;
+  altPosition: number | null;
+  comment: string | null;
+  barrier: string | null;
+  odds: string | null;
+  driver: string | null;
+  trainer: string | null;
+  scratched: boolean;
+  coat: string | null;
+  silkMain: string | null;
+  silkTrim: string | null;
+  silk: string | null;
+  colours: string | null;
+};
+export type RaceMapData = {
+  heading: string | null;
+  standfirst: string | null;
+  expectedIntro: string | null;
+  expectedAfter: string | null;
+  showAlternative: boolean;
+  altIntro: string | null;
+  altAfter: string | null;
+  footnote: string | null;
+  race: (RunnerRace & { start?: string | null; className?: string | null }) | null;
+  runners: MapRunner[];
+};
+type SMapRunner = Partial<Omit<MapRunner, "no">> & { saddlecloth?: number | null };
+type SRaceMap = Partial<Omit<RaceMapData, "runners">> & { runners?: SMapRunner[] };
+
+function raceMapFrom(m: SRaceMap | null | undefined): RaceMapData | null {
+  const runners = (m?.runners || [])
+    .filter((r) => r.horse?.trim())
+    .map((r) => ({
+      horse: r.horse!.trim(),
+      no: r.saddlecloth ?? null,
+      lane: r.lane ?? null,
+      position: r.position ?? null,
+      settle: r.settle || null,
+      altLane: r.altLane ?? null,
+      altPosition: r.altPosition ?? null,
+      comment: r.comment || null,
+      barrier: r.barrier || null,
+      odds: r.odds || null,
+      driver: r.driver || null,
+      trainer: r.trainer || null,
+      scratched: !!r.scratched,
+      coat: r.coat || null,
+      silkMain: r.silkMain || null,
+      silkTrim: r.silkTrim || null,
+      silk: r.silk || null,
+      colours: r.colours || null,
+    }));
+  if (!runners.length) return null;
+  return {
+    heading: m?.heading || null,
+    standfirst: m?.standfirst || null,
+    expectedIntro: m?.expectedIntro || null,
+    expectedAfter: m?.expectedAfter || null,
+    showAlternative: !!m?.showAlternative,
+    altIntro: m?.altIntro || null,
+    altAfter: m?.altAfter || null,
+    footnote: m?.footnote || null,
+    race: m?.race && typeof m.race === "object" ? m.race : null,
+    runners,
+  };
+}
 
 export type RunnerCard = {
   horse: string;
@@ -277,6 +352,7 @@ type SArticle = {
   syndicationUrl?: string | null;
   raceAnalysis?: RaceAnalysis | null;
   runnerGuide?: SRunnerGuide | null;
+  raceMap?: SRaceMap | null;
 };
 
 // The oEmbed field stores the provider's response as JSON; its `html` is the
@@ -478,6 +554,7 @@ export async function getArticle(slug: string, { draft = false } = {}): Promise<
       tags: { fields: ["name", "slug"] },
       seo: "*",
       runnerGuide: { populate: { cards: { populate: { silksImage: { fields: ["url"] } } } } },
+      raceMap: { populate: { runners: true } },
     },
     pagination: { pageSize: 1 },
   }, draftInit(draft));
@@ -538,6 +615,7 @@ export async function getArticle(slug: string, { draft = false } = {}): Promise<
     race_analysis: a.raceAnalysis?.meeting?.races?.length ? a.raceAnalysis : null,
     track: a.raceAnalysis?.meeting?.venue ? await trackFor(a.raceAnalysis.meeting.venue) : null,
     runner_guide: runnerGuideFrom(a.runnerGuide),
+    race_map: raceMapFrom(a.raceMap),
   };
 }
 
