@@ -43,6 +43,8 @@ type Guide = Record<string, any> & {
   cards?: Card[];
   raceId?: number | null;
   status?: string | null;
+  emergencies?: string | null;
+  race?: Record<string, unknown> | null;
 };
 
 const blank = (v: unknown) => v == null || String(v).trim() === '';
@@ -50,7 +52,7 @@ const norm = (s: string | null | undefined) => String(s || '').toLowerCase().rep
 
 // The race, from venue + date (+ race number). Without a date: the next
 // meeting at that venue, else the latest one.
-async function findRace(g: Guide): Promise<{ race: Race; venue: string; date: string } | string> {
+async function findRace(g: Guide): Promise<{ race: Race; venue: string; date: string; timezone: string | null } | string> {
   if (blank(g.venue) || !g.raceNumber) return 'Add the venue and race number to fill the cards from the racing data.';
   const all: any[] = await api('/meetings?when=all&limit=300');
   const want = norm(g.venue);
@@ -68,7 +70,7 @@ async function findRace(g: Guide): Promise<{ race: Race; venue: string; date: st
   const detail = await api(`/meetings/${meeting.id}`);
   const r = (detail.races || []).find((x: any) => Number(x.race_number) === Number(g.raceNumber));
   if (!r) return `${meeting.venue} on ${meeting.meeting_date} has no race ${g.raceNumber}.`;
-  return { race: normRace(await api(`/races/${r.id}`)), venue: meeting.venue, date: String(meeting.meeting_date).slice(0, 10) };
+  return { race: normRace(await api(`/races/${r.id}`)), venue: meeting.venue, date: String(meeting.meeting_date).slice(0, 10), timezone: meeting.timezone || null };
 }
 
 const money = (n: number | null) => (n ? `$${n >= 10 ? n.toFixed(n % 1 ? 1 : 0) : n.toFixed(2)}` : null);
@@ -158,6 +160,24 @@ export async function fillRunnerGuide(guide: Guide | null | undefined) {
     }
     const { race } = found;
     guide.raceId = race.id;
+    const running = race.entries.filter((e) => !e.scratched && !e.emergency);
+    // The race's details, for the header strip on the site.
+    guide.race = {
+      venue: found.venue,
+      date: found.date,
+      timezone: found.timezone,
+      no: race.no,
+      name: race.name,
+      distance: race.distance,
+      stakes: race.stakes,
+      startTime: race.startTime,
+      start: race.start,
+      runners: running.length,
+    };
+    const emg = race.entries.filter((e) => e.emergency && !e.scratched);
+    if (blank(guide.emergencies) && emg.length) {
+      guide.emergencies = emg.map((e) => `${e.horse} (No. ${e.no}${e.driver ? `, ${e.driver}` : ''})`).join(', ') + '.';
+    }
     if (guide.addWholeField) {
       for (const e of race.entries) {
         if (e.scratched || e.emergency) continue;

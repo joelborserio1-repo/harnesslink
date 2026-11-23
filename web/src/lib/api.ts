@@ -91,7 +91,25 @@ export type RunnerCard = {
   againstCase: string | null;
   comment: string | null;
 };
-export type RunnerGuide = { heading: string | null; footnote: string | null; cards: RunnerCard[] };
+export type RunnerRace = {
+  venue?: string;
+  date?: string;
+  timezone?: string | null;
+  no?: number;
+  name?: string;
+  distance?: number | null;
+  stakes?: number | null;
+  startTime?: string | null;
+  runners?: number;
+};
+export type RunnerGuide = {
+  heading: string | null;
+  intro: string | null;
+  emergencies: string | null;
+  footnote: string | null;
+  race: RunnerRace | null;
+  cards: RunnerCard[];
+};
 
 type SRunnerCard = {
   horse?: string | null;
@@ -109,7 +127,7 @@ type SRunnerCard = {
   againstCase?: string | null;
   comment?: string | null;
 };
-type SRunnerGuide = { heading?: string | null; footnote?: string | null; cards?: SRunnerCard[] };
+type SRunnerGuide = { heading?: string | null; intro?: string | null; emergencies?: string | null; footnote?: string | null; race?: RunnerRace | null; cards?: SRunnerCard[] };
 
 function runnerGuideFrom(g: SRunnerGuide | null | undefined): RunnerGuide | null {
   const cards = (g?.cards || [])
@@ -130,7 +148,16 @@ function runnerGuideFrom(g: SRunnerGuide | null | undefined): RunnerGuide | null
       againstCase: c.againstCase || null,
       comment: c.comment || null,
     }));
-  return cards.length ? { heading: g?.heading || null, footnote: g?.footnote || null, cards } : null;
+  return cards.length
+    ? {
+        heading: g?.heading || null,
+        intro: g?.intro || null,
+        emergencies: g?.emergencies || null,
+        footnote: g?.footnote || null,
+        race: g?.race && typeof g.race === "object" ? g.race : null,
+        cards,
+      }
+    : null;
 }
 
 export type Category = { name: string; slug: string; kind: string; url: string };

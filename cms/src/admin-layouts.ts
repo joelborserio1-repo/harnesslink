@@ -18,7 +18,7 @@ type Layout = {
   fields: Record<string, FieldMeta>;
 };
 
-export const LAYOUT_VERSION = '2026-11-24.1';
+export const LAYOUT_VERSION = '2026-11-24.2';
 
 const SEO_HELP = 'Search and social-media title/description. Leave blank to use the headline and standfirst.';
 
@@ -307,16 +307,22 @@ export const LAYOUTS: Layout[] = [
     edit: [
       [['tabLink', 12]],
       [['heading', 12]],
+      [['intro', 12]],
       [['venue', 4], ['raceDate', 4], ['raceNumber', 4]],
       [['addWholeField', 6], ['draftWithClaude', 6]],
       [['cards', 12]],
+      [['emergencies', 12]],
       [['footnote', 12]],
       [['status', 12]],
       [['raceId', 4]],
+      [['race', 12]],
     ],
     fields: {
       tabLink: { label: 'TAB race link', description: 'Easiest: paste the link to the race on TAB (tab.com.au or tab.co.nz) and save. The venue, date, race number and every runner fill in.' },
-      heading: { label: 'Heading', description: 'Optional, e.g. "The case for and against every runner".' },
+      heading: { label: 'Title', description: 'The big title in the blue header, e.g. "TAB Eureka 2026". Leave empty to use the race name.' },
+      intro: { label: 'Intro', description: 'One or two sentences under the title, e.g. "Ten of Australia\'s best… Here is the case for and against every runner."' },
+      emergencies: { label: 'Emergencies', description: 'Filled from the field when there are emergencies; edit freely. A blank line starts a new paragraph.' },
+      race: { label: 'Race details (racing data)', editable: false },
       venue: { label: 'Venue', description: 'Filled from the TAB link, or type it as TAB names it, e.g. Menangle, Addington, Melton.' },
       raceDate: { label: 'Race date', description: 'Leave empty for the next meeting at the venue.' },
       raceNumber: { label: 'Race number' },

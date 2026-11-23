@@ -10,6 +10,9 @@
     "heading": {
       "type": "string"
     },
+    "intro": {
+      "type": "text"
+    },
     "tabLink": {
       "type": "string"
     },
@@ -37,6 +40,9 @@
       "repeatable": true,
       "component": "story.runner-card"
     },
+    "emergencies": {
+      "type": "text"
+    },
     "footnote": {
       "type": "text"
     },
@@ -45,6 +51,9 @@
     },
     "status": {
       "type": "text"
+    },
+    "race": {
+      "type": "json"
     }
   }
 }
