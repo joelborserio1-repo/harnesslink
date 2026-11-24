@@ -187,7 +187,9 @@ export default async function ArticlePage({ params }: Params) {
       {draft && <PreviewBanner path={article.url} />}
       <div className="wrap my-7">
       {!draft && <ViewBeacon slug={article.slug} />}
-      <RegistrationWall slug={article.slug} />
+      {/* No sign-in wall on stories built from the Story Builder templates
+          (race maps, runner guides, Harness Analyst previews). */}
+      {!(article.race_map || article.runner_guide || article.race_analysis) && <RegistrationWall slug={article.slug} />}
       {/* A race map needs the whole page width: its side column moves below. */}
       <div className={article.race_map ? "grid gap-8" : "grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start"}>
         <div className="min-w-0">
