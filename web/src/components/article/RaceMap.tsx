@@ -193,7 +193,7 @@ export default function RaceMap({ data }: { data: RaceMapData }) {
         <Prose text={data.expectedIntro} />
       </section>
       <figure className="rmap" aria-label="Expected race map" style={{ marginLeft: 0, marginRight: 0 }} dangerouslySetInnerHTML={{ __html: mapHtml(data, "Expected race map", expected) }} />
-      <p className="map-cap">Expected settling positions, leader on the right. On a phone, swipe the map to see the whole field.</p>
+      <p className="map-cap">Expected settling positions, leader on the right.</p>
 
       <section className="prose">
         <Prose text={data.expectedAfter} />
