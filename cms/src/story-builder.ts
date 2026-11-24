@@ -2,14 +2,15 @@ import type { Core } from '@strapi/strapi';
 import { api, createAnalysisStory, normRace } from './race-analysis';
 import { freeSlug, slugify } from './email-processor';
 import { fromTabLink, horseInfo } from './runner-guide';
+import { horseSpotlight, meetingWrap, mondayOf, searchHorses, weekCheck, weeklyReview } from './data-stories';
 
 // Story Builder (phase 1): the "New story" screen in the CMS
 // (admin/StoryBuilder.tsx). A journalist picks a template from a visual
 // library, points it at a race or meeting, sees what the racing API has for
 // it, and gets a draft story set up by the code that already builds that
 // format (race map: src/race-map.ts; runner guide: src/runner-guide.ts;
-// Harness Analyst: src/race-analysis.ts). Nothing here writes racing content
-// itself.
+// Harness Analyst: src/race-analysis.ts; meeting wrap, horse spotlight and
+// weekly review: src/data-stories.ts).
 
 const ARTICLE = 'api::article.article';
 
@@ -20,7 +21,7 @@ export type Template = {
   category: string;
   description: string;
   status: TemplateStatus;
-  needs: 'none' | 'race' | 'meeting';
+  needs: 'none' | 'race' | 'meeting' | 'results' | 'horse' | 'week';
   data: string[]; // automated data it fills
   ai: string | null; // what Claude can draft, if anything
   example: string | null; // a published story on this site rendered with the template (the preview)
@@ -104,24 +105,24 @@ export const TEMPLATES: Template[] = [
     id: 'meeting-wrap',
     name: 'Meeting wrap',
     category: 'Race Results & Reviews',
-    description: 'Every winner at a meeting with margins, times and dividends, and the stories of the night.',
-    status: 'development',
-    needs: 'meeting',
-    data: ['Results, margins, times and dividends (TAB)'],
-    ai: 'Race-by-race summaries',
-    example: null,
+    description: 'Every winner at a meeting with placegetters, margins, times and dividends, ready for you to add the stories of the night.',
+    status: 'live',
+    needs: 'results',
+    data: ['Winners, placegetters and margins (TAB)', 'Winning times and mile rates', 'Dividends', 'Track condition'],
+    ai: null,
+    example: '/menangle-results-saturday-21-november/',
     components: [],
   },
   {
     id: 'horse-spotlight',
     name: 'Horse spotlight',
     category: 'Horse, Driver & Trainer Features',
-    description: 'A profile of one horse: record, recent runs, connections and what is next.',
-    status: 'development',
-    needs: 'none',
-    data: ['Horse record, breeding and run history (racing API)'],
-    ai: 'Profile draft from the record and our archive',
-    example: null,
+    description: 'A profile of one horse: breeding, trainer, career record and recent runs, ready for your story.',
+    status: 'live',
+    needs: 'horse',
+    data: ['Sex, colour, sire and dam (TAB horse record)', 'Trainer', 'Career record', 'Last 10 runs'],
+    ai: null,
+    example: '/horse-spotlight-leap-to-fame/',
     components: [],
   },
   {
@@ -140,12 +141,12 @@ export const TEMPLATES: Template[] = [
     id: 'weekly-review',
     name: 'Weekly racing review',
     category: 'Statistics & Recurring Content',
-    description: 'The week in harness racing: top winners, leading drivers and trainers, and the numbers that stood out.',
-    status: 'development',
-    needs: 'none',
-    data: ['A week of results (racing API)'],
-    ai: 'The week\'s talking points',
-    example: null,
+    description: 'The week in harness racing: leading drivers and trainers, horses that won more than once, and every meeting raced.',
+    status: 'live',
+    needs: 'week',
+    data: ['Every resulted meeting in the week (TAB)', 'Winners per meeting', 'Leading drivers and trainers by wins'],
+    ai: null,
+    example: '/the-week-in-harness-racing-16-nov-to-22-nov/',
     components: [],
   },
 ];
@@ -237,6 +238,22 @@ export function registerStoryBuilderRoutes(strapi: Core.Strapi) {
           ctx.body = { categories: CATEGORIES, templates: TEMPLATES };
         },
       },
+      // Horses by name (the racing API's search), for the horse spotlight.
+      {
+        method: 'GET',
+        path: '/hl-story-builder/horses',
+        config,
+        handler: async (ctx: any) => {
+          if (!can(ctx, 'read')) return ctx.forbidden();
+          const q = String(ctx.query.q || '').trim();
+          if (q.length < 2) return (ctx.body = []);
+          try {
+            ctx.body = await searchHorses(q);
+          } catch (e) {
+            fail(ctx, e);
+          }
+        },
+      },
       // What the racing API has for a race or meeting, before creating anything.
       {
         method: 'POST',
@@ -248,6 +265,21 @@ export function registerStoryBuilderRoutes(strapi: Core.Strapi) {
           const t = TEMPLATES.find((x) => x.id === b.template);
           if (!t || t.needs === 'none') return ctx.badRequest('Unknown template');
           try {
+            if (t.needs === 'results') {
+              const w = await meetingWrap(Number(b.meetingId));
+              ctx.body = { kind: 'results', ...w.summary, available: [`${w.summary.resulted} of ${w.summary.races} races resulted`, 'Winners, placegetters, margins, times and dividends'], missing: w.summary.resulted < w.summary.races ? ['Some races have no result yet'] : [], source: 'TAB, via the HarnessLink racing API', checkedAt: new Date().toISOString() };
+              return;
+            }
+            if (t.needs === 'horse') {
+              const h = await horseSpotlight(Number(b.horseId));
+              ctx.body = { kind: 'horse', ...h.summary, available: ['Breeding and colour', 'Career record', `${h.summary.runs} runs on record`], missing: h.summary.runs ? [] : ['No runs in the racing data yet'], source: 'TAB horse record, via the HarnessLink racing API', checkedAt: new Date().toISOString() };
+              return;
+            }
+            if (t.needs === 'week') {
+              const w = await weekCheck(mondayOf(String(b.week)), String(b.country || 'all'));
+              ctx.body = { kind: 'week', ...w, available: [`${w.meetings} resulted meetings`, `${w.races} races`, 'Winners per meeting (fetched when you create the draft)'], missing: w.meetings ? [] : ['No resulted meetings that week'], source: 'TAB results, via the HarnessLink racing API', checkedAt: new Date().toISOString() };
+              return;
+            }
             ctx.body = await summary({ tabLink: b.tabLink || undefined, meetingId: b.meetingId ? Number(b.meetingId) : undefined, raceNumber: b.raceNumber ? Number(b.raceNumber) : undefined }, t.needs);
           } catch (e) {
             fail(ctx, e);
@@ -265,6 +297,20 @@ export function registerStoryBuilderRoutes(strapi: Core.Strapi) {
           const t = TEMPLATES.find((x) => x.id === b.template);
           if (!t || t.status !== 'live') return ctx.badRequest('That template is not available yet');
           try {
+            if (t.needs === 'results' || t.needs === 'horse' || t.needs === 'week') {
+              const built =
+                t.needs === 'results'
+                  ? await meetingWrap(Number(b.meetingId))
+                  : t.needs === 'horse'
+                    ? await horseSpotlight(Number(b.horseId))
+                    : await weeklyReview(mondayOf(String(b.week)), String(b.country || 'all'));
+              const title = String(b.title || '').trim() || built.title;
+              const doc: any = await strapi.documents(ARTICLE as any).create({
+                data: { title, slug: await freeSlug(strapi, slugify(title), 'articles'), bodyFormat: 'legacy_html', bodyHtml: built.html },
+              } as any);
+              ctx.body = { documentId: doc.documentId, editor: `/content-manager/collection-types/${ARTICLE}/${doc.documentId}` };
+              return;
+            }
             if (t.id === 'meeting-preview') {
               const { meeting } = await meetingFor({ tabLink: b.tabLink, meetingId: b.meetingId });
               const { documentId } = await createAnalysisStory(strapi, Number(meeting.id), {});

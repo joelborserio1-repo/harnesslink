@@ -16,15 +16,17 @@ type Template = {
   category: string;
   description: string;
   status: 'live' | 'development' | 'awaiting-data';
-  needs: 'none' | 'race' | 'meeting';
+  needs: 'none' | 'race' | 'meeting' | 'results' | 'horse' | 'week';
   data: string[];
   ai: string | null;
   example: string | null;
   components: string[];
 };
+type HorseHit = { id: number; name: string; sex: string | null; sire: string | null; dam: string | null; starts: number; wins: number };
 type MeetingRow = { id: number; date: string; venue: string; country: string; races: number };
 type Summary = {
-  meeting: { id: number; venue: string; date: string; country: string; races: number; timezone: string | null };
+  [key: string]: any;
+  meeting?: { id: number; venue: string; date: string; country: string; races: number; timezone: string | null };
   race?: { no: number; name: string; distance: number | null; start: string | null; stakes: number | null; startTime: string | null; className: string | null };
   races?: { no: number; name: string; startTime: string | null }[];
   runners?: { no: number; horse: string; driver: string | null; odds: number | null; scratched: boolean; emergency: boolean }[];
@@ -140,6 +142,37 @@ function Card({ t, onPreview, onUse }: { t: Template; onPreview: () => void; onU
   );
 }
 
+function recentMondays(n: number) {
+  const t = new Date();
+  t.setUTCHours(12, 0, 0, 0);
+  t.setUTCDate(t.getUTCDate() - ((t.getUTCDay() + 6) % 7) - 7); // last completed week first
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date(t);
+    d.setUTCDate(d.getUTCDate() - 7 * i);
+    return d.toISOString().slice(0, 10);
+  });
+}
+const weekLabel = (monday: string) => {
+  const a = new Date(`${monday}T12:00:00Z`);
+  const b = new Date(a);
+  b.setUTCDate(b.getUTCDate() + 6);
+  const f = (d: Date) => d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  return `${f(a)} to ${f(b)}`;
+};
+
+// The heading lines of the data summary, by template.
+function summaryHeading(s: Summary): [string, string, string | null] {
+  if (s.kind === 'results') return [`${s.venue}, ${new Date(`${s.date}T12:00:00Z`).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })}`, 'Meeting results', null];
+  if (s.kind === 'horse') return [[s.sex, s.colour].filter(Boolean).join(', '), s.name, [s.sire && `by ${s.sire}`, s.dam && `out of ${s.dam}`, s.trainer && `trainer ${s.trainer}`, `${s.starts} starts, ${s.wins} wins`].filter(Boolean).join(' · ')];
+  if (s.kind === 'week') return [s.country === 'AU' ? 'Australia' : s.country === 'NZ' ? 'New Zealand' : 'Australia and New Zealand', `Week of ${weekLabel(s.monday)}`, null];
+  const m = s.meeting!;
+  return [
+    `${m.venue}, ${new Date(`${m.date}T12:00:00Z`).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })}`,
+    s.race ? `Race ${s.race.no}: ${s.race.name}` : `${m.races} races`,
+    s.race ? [s.race.distance && `${s.race.distance}m`, s.race.start && `${s.race.start} start`, s.race.stakes && `$${s.race.stakes.toLocaleString('en-AU')}`, s.race.className].filter(Boolean).join(' · ') : null,
+  ];
+}
+
 function Steps({ step }: { step: number }) {
   const names = ['Choose a template', 'Choose the race', 'Check the racing data', 'Edit and publish'];
   return (
@@ -168,6 +201,11 @@ export default function StoryBuilder() {
   const [meetings, setMeetings] = useState<MeetingRow[] | null>(null);
   const [meetingId, setMeetingId] = useState('');
   const [raceNumber, setRaceNumber] = useState('');
+  const [horseQuery, setHorseQuery] = useState('');
+  const [horses, setHorses] = useState<HorseHit[] | null>(null);
+  const [horseId, setHorseId] = useState('');
+  const [week, setWeek] = useState(recentMondays(1)[0]);
+  const [weekCountry, setWeekCountry] = useState('all');
   // Step 3
   const [summary, setSummary] = useState<Summary | null>(null);
   const [title, setTitle] = useState('');
@@ -192,7 +230,7 @@ export default function StoryBuilder() {
   }, [catalogue, query, category]);
 
   const today = new Date().toISOString().slice(0, 10);
-  const pickable = (meetings || []).filter((m) => m.country === country && m.date >= today).sort((a, b) => a.date.localeCompare(b.date) || a.venue.localeCompare(b.venue));
+  const pickable = (meetings || []).filter((m) => m.country === country && (chosen?.needs === 'results' ? m.date <= today : m.date >= today)).sort((a, b) => a.date.localeCompare(b.date) || a.venue.localeCompare(b.venue));
   const meeting = pickable.find((m) => String(m.id) === meetingId) || (meetings || []).find((m) => String(m.id) === meetingId);
 
   const use = (t: Template) => {
@@ -206,7 +244,29 @@ export default function StoryBuilder() {
     setError(null);
   };
 
-  const pick = () => (tabLink.trim() ? { tabLink: tabLink.trim() } : { meetingId: Number(meetingId), raceNumber: Number(raceNumber) || undefined });
+  const pick = () =>
+    chosen?.needs === 'horse'
+      ? { horseId: Number(horseId) }
+      : chosen?.needs === 'week'
+        ? { week, country: weekCountry }
+        : chosen?.needs === 'results'
+          ? { meetingId: Number(meetingId) }
+          : tabLink.trim()
+            ? { tabLink: tabLink.trim() }
+            : { meetingId: Number(meetingId), raceNumber: Number(raceNumber) || undefined };
+
+  const findHorses = async () => {
+    if (horseQuery.trim().length < 2) return;
+    setBusy(true);
+    try {
+      const { data } = await get<HorseHit[]>(`/hl-story-builder/horses?q=${encodeURIComponent(horseQuery.trim())}`);
+      setHorses(data);
+    } catch {
+      setHorses([]);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const check = async () => {
     if (!chosen) return;
@@ -226,7 +286,7 @@ export default function StoryBuilder() {
     if (!chosen || !summary) return;
     setBusy(true);
     try {
-      const sel = tabLink.trim() ? { tabLink: tabLink.trim() } : { meetingId: summary.meeting.id, raceNumber: summary.race?.no };
+      const sel = chosen.needs === 'race' || chosen.needs === 'meeting' ? (tabLink.trim() ? { tabLink: tabLink.trim() } : { meetingId: summary.meeting?.id, raceNumber: summary.race?.no }) : pick();
       const { data } = await post<{ documentId: string; editor: string }>('/hl-story-builder/stories', { template: chosen.id, ...sel, title, claude });
       toggleNotification({ type: 'success', message: claude ? 'Draft created. Claude is writing; reload the story in a minute or two.' : 'Draft created from the racing data.' });
       navigate(data.editor);
@@ -236,7 +296,14 @@ export default function StoryBuilder() {
     }
   };
 
-  const ready = tabLink.trim() || (meetingId && (chosen?.needs === 'meeting' || raceNumber));
+  const ready =
+    chosen?.needs === 'horse'
+      ? !!horseId
+      : chosen?.needs === 'week'
+        ? !!week
+        : chosen?.needs === 'results'
+          ? !!meetingId
+          : tabLink.trim() || (meetingId && (chosen?.needs === 'meeting' || raceNumber));
 
   return (
     <div style={{ padding: '32px 40px', background: '#fff', minHeight: '100vh' }}>
@@ -300,6 +367,51 @@ export default function StoryBuilder() {
 
           {!summary && (
             <div style={{ display: 'grid', gap: 18, border: `1px solid ${LINE}`, padding: 20 }}>
+              {chosen.needs === 'horse' && (
+                <div style={{ display: 'grid', gap: 12 }}>
+                  <Labelled text="Find the horse" hint="Searches the racing data by name.">
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <div style={{ flex: 1 }}>
+                        <TextInput aria-label="Horse name" placeholder="e.g. Leap To Fame" value={horseQuery} onChange={(e: any) => setHorseQuery(e.target.value)} onKeyDown={(e: any) => e.key === 'Enter' && findHorses()} />
+                      </div>
+                      <Button variant="secondary" onClick={findHorses} loading={busy}>
+                        Search
+                      </Button>
+                    </div>
+                  </Labelled>
+                  {horses && !horses.length && <p style={{ margin: 0, color: MUTED }}>No horses found by that name.</p>}
+                  {horses && horses.length > 0 && (
+                    <div style={{ border: `1px solid ${LINE}` }}>
+                      {horses.map((h) => (
+                        <label key={h.id} style={{ display: 'flex', gap: 10, alignItems: 'baseline', padding: '8px 12px', borderBottom: `1px solid ${LINE}`, cursor: 'pointer', background: String(h.id) === horseId ? '#f4f5f7' : '#fff' }}>
+                          <input type="radio" name="horse" checked={String(h.id) === horseId} onChange={() => setHorseId(String(h.id))} />
+                          <strong style={{ color: NAVY }}>{h.name}</strong>
+                          <span style={{ color: MUTED, fontSize: 13 }}>{[h.sex, h.sire && `by ${h.sire}`, h.dam && `out of ${h.dam}`, `${h.starts} starts, ${h.wins} wins`].filter(Boolean).join(' · ')}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              {chosen.needs === 'week' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 12 }}>
+                  <Labelled text="Week">
+                    <SingleSelect aria-label="Week" value={week} onChange={(v: any) => setWeek(String(v))}>
+                      {recentMondays(8).map((m) => (
+                        <SingleSelectOption key={m} value={m}>{weekLabel(m)}</SingleSelectOption>
+                      ))}
+                    </SingleSelect>
+                  </Labelled>
+                  <Labelled text="Racing in">
+                    <SingleSelect aria-label="Racing in" value={weekCountry} onChange={(v: any) => setWeekCountry(String(v))}>
+                      <SingleSelectOption value="all">Australia and New Zealand</SingleSelectOption>
+                      <SingleSelectOption value="AU">Australia</SingleSelectOption>
+                      <SingleSelectOption value="NZ">New Zealand</SingleSelectOption>
+                    </SingleSelect>
+                  </Labelled>
+                </div>
+              )}
+              {(chosen.needs === 'race' || chosen.needs === 'meeting') && (<>
               <div>
                 <Labelled text={`Paste the TAB link to the ${chosen.needs === 'race' ? 'race' : 'meeting (any race at it)'}`} hint="tab.com.au or tab.co.nz. Or choose below.">
                   <TextInput
@@ -311,6 +423,8 @@ export default function StoryBuilder() {
                 </Labelled>
               </div>
               <div style={{ color: MUTED, fontSize: 13 }}>or</div>
+              </>)}
+              {(chosen.needs === 'race' || chosen.needs === 'meeting' || chosen.needs === 'results') && (
               <div style={{ display: 'grid', gridTemplateColumns: chosen.needs === 'race' ? '140px 1fr 140px' : '140px 1fr', gap: 12 }}>
                 <Labelled text="Country"><SingleSelect aria-label="Country" value={country} onChange={(v: any) => { setCountry(String(v)); setMeetingId(''); setRaceNumber(''); }} disabled={!!tabLink.trim()}>
                   <SingleSelectOption value="AU">Australia</SingleSelectOption>
@@ -318,7 +432,7 @@ export default function StoryBuilder() {
                 </SingleSelect></Labelled>
                 <Labelled text="Meeting"><SingleSelect
                   aria-label="Meeting"
-                  placeholder={meetings ? (pickable.length ? 'Choose a meeting' : 'No upcoming meetings in the racing data') : 'Loading meetings…'}
+                  placeholder={meetings ? (pickable.length ? 'Choose a meeting' : chosen.needs === 'results' ? 'No recent results in the racing data' : 'No upcoming meetings in the racing data') : 'Loading meetings…'}
                   value={meetingId}
                   onChange={(v: any) => { setMeetingId(String(v)); setRaceNumber(''); }}
                   disabled={!!tabLink.trim() || !pickable.length}
@@ -337,6 +451,7 @@ export default function StoryBuilder() {
                   </SingleSelect></Labelled>
                 )}
               </div>
+              )}
               {error && <p style={{ color: '#b3202a', margin: 0 }}>{error}</p>}
               <div>
                 <Button onClick={check} loading={busy} disabled={!ready}>
@@ -349,19 +464,16 @@ export default function StoryBuilder() {
           {summary && (
             <div style={{ display: 'grid', gap: 18 }}>
               <div style={{ border: `1px solid ${LINE}`, borderTop: `3px solid ${NAVY}`, padding: 20 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: MUTED }}>
-                  {summary.meeting.venue}, {new Date(`${summary.meeting.date}T12:00:00Z`).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })}
-                </div>
-                <div style={{ fontSize: 22, fontWeight: 700, color: NAVY, margin: '4px 0 8px' }}>
-                  {summary.race ? `Race ${summary.race.no}: ${summary.race.name}` : `${summary.meeting.races} races`}
-                </div>
-                {summary.race && (
-                  <p style={{ margin: '0 0 12px', color: MUTED }}>
-                    {[summary.race.distance && `${summary.race.distance}m`, summary.race.start && `${summary.race.start} start`, summary.race.stakes && `$${summary.race.stakes.toLocaleString('en-AU')}`, summary.race.className]
-                      .filter(Boolean)
-                      .join(' · ')}
-                  </p>
-                )}
+                {(() => {
+                  const [kicker, head, sub] = summaryHeading(summary);
+                  return (
+                    <>
+                      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: MUTED }}>{kicker}</div>
+                      <div style={{ fontSize: 22, fontWeight: 700, color: NAVY, margin: '4px 0 8px' }}>{head}</div>
+                      {sub && <p style={{ margin: '0 0 12px', color: MUTED }}>{sub}</p>}
+                    </>
+                  );
+                })()}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                   <div>
                     <div style={{ fontWeight: 700, marginBottom: 6 }}>Found</div>
@@ -397,13 +509,13 @@ export default function StoryBuilder() {
                   </button>{' '}
                   ·{' '}
                   <button type="button" onClick={() => setSummary(null)} style={{ border: 0, background: 'none', color: NAVY, textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>
-                    Choose a different race
+                    Choose again
                   </button>
                 </p>
               </div>
 
-              {chosen.needs === 'race' && (
-                <Labelled text="Headline (optional)" hint="Leave empty for one from the race name. You can change it in the editor.">
+              {chosen.needs !== 'meeting' && (
+                <Labelled text="Headline (optional)" hint="Leave empty for a standard one. You can change it in the editor.">
                   <TextInput aria-label="Headline" value={title} onChange={(e: any) => setTitle(e.target.value)} />
                 </Labelled>
               )}

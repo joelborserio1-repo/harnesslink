@@ -816,3 +816,11 @@ body {
   .hl-rmp .rmap .board .tag-line{font-size:1rem}
   .hl-rmp .rmap .cols-head span{font-size:.7rem}
 }
+/* Data tables written by Story Builder templates (meeting wrap, horse
+   spotlight, weekly review): flat, hairlines, tracked-caps headings. Scoped
+   to .hl-data so older stories' tables are untouched. */
+.prose-article table.hl-data { width: 100%; border-collapse: collapse; margin: 0.75rem 0 1.75rem; font-size: 15px; line-height: 1.4; border-top: 2px solid var(--color-navy); }
+.prose-article table.hl-data th { padding: 9px 10px 7px 0; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--color-muted); border-bottom: 1px solid var(--color-line); }
+.prose-article table.hl-data td { padding: 9px 10px 9px 0; border-bottom: 1px solid var(--color-line); vertical-align: top; }
+.prose-article table.hl-data td:first-child { font-weight: 600; color: var(--color-ink); }
+@media (max-width: 600px) { .prose-article table.hl-data { font-size: 14px; } }
