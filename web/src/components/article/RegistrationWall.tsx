@@ -38,6 +38,8 @@ export default function RegistrationWall({ slug }: { slug: string }) {
   useEffect(() => {
     try {
       if (signedIn()) return;
+      // Inside a frame (the CMS Story Builder's template previews): no wall, and not counted as a read.
+      if (window.self !== window.top) return;
       if (readRecently(slug) > FREE_LIMIT) {
         // Browser storage only exists after load, so this can't be computed during render.
         // eslint-disable-next-line react-hooks/set-state-in-effect
