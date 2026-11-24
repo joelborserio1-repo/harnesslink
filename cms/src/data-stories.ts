@@ -21,6 +21,9 @@ const tidy = (s: string | null | undefined) => {
 const raceName = (n: string) => n.replace(/\s+(Ms|Ss)$/i, '').trim();
 const longDate = (d: string) => new Date(`${d.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
 const shortDate = (d: string) => new Date(`${d.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+const dateWithYear = (d: string) => new Date(`${d.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+// Race names in capitals read better in normal case (keeps (Gr1), (Listed) and the like).
+const raceCase = (n: string) => (n === n.toUpperCase() ? n.toLowerCase().replace(/\b([a-z])/g, (c) => c.toUpperCase()).replace(/\(gr(\d)\)/gi, '(Gr$1)') : n);
 const ordinal = (p: string | null) => {
   const n = Number(p);
   if (!n) return p || '–';
@@ -102,9 +105,9 @@ export async function horseSpotlight(horseId: number) {
       table(
         ['Date', 'Track', 'Race', 'Distance', 'Result', 'Driver'],
         runs.slice(0, 10).map((r: any) => [
-          shortDate(r.meeting_date),
+          dateWithYear(r.meeting_date),
           r.venue,
-          raceName(String(r.race_name || `Race ${r.race_number}`)),
+          raceCase(raceName(String(r.race_name || `Race ${r.race_number}`))),
           r.distance_m ? `${r.distance_m}m` : '–',
           r.scratched ? 'Scratched' : r.placing ? ordinal(r.placing) : 'Upcoming',
           tidy(r.driver_name),
@@ -167,6 +170,19 @@ export async function weeklyReview(monday: string, country: string) {
       }
     })
   );
+  // Meetings the search found no winners for: read their results race by race.
+  for (const m of ms) {
+    if (winners.some((w) => Number(w.meeting_id) === Number(m.id))) continue;
+    try {
+      const full = await pullMeeting(Number(m.id));
+      for (const r of full.races)
+        for (const e of r.entries)
+          if (e.placing === '1' && !e.scratched)
+            winners.push({ meeting_id: m.id, meeting_date: m.meeting_date, venue: m.venue, horse_name: e.horse, driver_name: e.driver, trainer_name: e.trainer, placing: '1' });
+    } catch {
+      // leave it out rather than guess
+    }
+  }
   const count = (key: 'driver_name' | 'trainer_name') => {
     const c = new Map<string, number>();
     for (const w of winners) {
