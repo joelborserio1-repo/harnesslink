@@ -31,6 +31,7 @@ export type Entry = {
   barrier: string | null;
   handicap: number | null;
   horse: string;
+  horseId?: number | null;
   driver: string | null;
   trainer: string | null;
   junior: boolean;
@@ -109,6 +110,7 @@ function normEntry(e: any): Entry {
     barrier: e.barrier == null ? null : String(e.barrier),
     handicap: e.handicap_m == null ? null : Number(e.handicap_m),
     horse: String(e.horse_name || '').trim(),
+    horseId: e.horse_id ? Number(e.horse_id) : null,
     driver: tidyName(e.driver_name),
     trainer: tidyName(e.trainer_name),
     junior: !!e.driver_is_junior,

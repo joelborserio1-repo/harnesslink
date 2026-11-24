@@ -786,3 +786,12 @@ body {
 .hl-rmp .rmap .track{direction:ltr}
 .hl-rmp .sc-x{background:#fff;color:#000}
 .hl-rmp .rmap .band h3 .race{white-space:normal}
+.hl-rmp .rmap .tag-silk{display:block;flex:none;width:20px;height:24px;object-fit:contain}
+.hl-rmp .rmap object.tag-silk img{width:20px;height:24px}
+/* Headings in the site's serif (Playfair Display) on race maps and runner guides. */
+.hl-rmp .hero-title,.hl-rmp h2,.hl-rmp .rmap .band h3 .race,.hl-rmp .rc h3,
+.hl-ef .hl-ef__title,.hl-ef .hl-rc__title h3,.hl-ef .hl-rc__comment h4,.hl-ef .hl-ef__emg h4{font-family:var(--font-serif);font-style:normal;letter-spacing:normal}
+.hl-ef .hl-ef__title,.hl-ef .hl-rc__title h3,.hl-rmp .rmap .band h3 .race{text-transform:none;font-weight:700;line-height:1.1}
+.hl-rmp .hero-title,.hl-rmp h2{font-weight:700;line-height:1.1}
+.hl-rmp .rc h3{font-weight:700;font-size:1.45rem;line-height:1.15}
+.hl-ef .hl-rc__comment h4,.hl-ef .hl-ef__emg h4{font-weight:700;font-size:17px;text-transform:none}

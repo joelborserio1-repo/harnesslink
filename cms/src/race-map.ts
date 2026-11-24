@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { Core } from '@strapi/strapi';
 import type { Entry, Race } from './race-analysis';
-import { blank, fillCard, findRace, fromTabLink, match } from './runner-guide';
+import { blank, coatFromTab, fillCard, findRace, fromTabLink, horseInfo, match } from './runner-guide';
 
 // Race maps: the HarnessLink race map (track graphic with each horse in its
 // expected settling position, runner by runner, the field at a glance) in a
@@ -124,6 +124,11 @@ export async function fillRaceMap(map: MapData | null | undefined) {
       const e = match(r, race.entries);
       if (!e) continue;
       fillCard(r as any, e);
+      if (!r.coat) {
+        const h = await horseInfo(e.horseId);
+        const coat = coatFromTab(h?.colour);
+        if (coat) r.coat = coat;
+      }
       if (e.scratched) {
         r.scratched = true;
         r.lane = 'off';

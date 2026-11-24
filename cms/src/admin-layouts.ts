@@ -18,7 +18,7 @@ type Layout = {
   fields: Record<string, FieldMeta>;
 };
 
-export const LAYOUT_VERSION = '2026-11-24.3';
+export const LAYOUT_VERSION = '2026-11-24.4';
 
 const SEO_HELP = 'Search and social-media title/description. Leave blank to use the headline and standfirst.';
 
@@ -431,7 +431,7 @@ export const LAYOUTS: Layout[] = [
       driver: { label: 'Driver' },
       trainer: { label: 'Trainer' },
       odds: { label: 'TAB fixed odds', description: 'Filled when first saved. Clear it and save to refresh.' },
-      coat: { label: 'Horse colour on the map', description: 'Optional. Leave empty for an automatic one.' },
+      coat: { label: 'Horse colour on the map', description: 'Filled from the horse\'s TAB record (bay, brown, chestnut, black, grey). Change it if TAB has it wrong.' },
       silkMain: { label: 'Silks main colour', description: 'Optional, e.g. #1d6fd8. Leave empty to use the TAB colours.' },
       silkTrim: { label: 'Silks second colour', description: 'Optional.' },
       colours: { label: 'TAB colours (racing data)', editable: false },

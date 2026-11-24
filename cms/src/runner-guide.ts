@@ -47,6 +47,34 @@ type Guide = Record<string, any> & {
   race?: Record<string, unknown> | null;
 };
 
+// A horse's TAB record (colour and sex), from the racing API. Cached for the
+// life of the process: these do not change.
+const horseCache = new Map<number, { colour: string | null; sex: string | null }>();
+export async function horseInfo(id: number | null | undefined) {
+  if (!id) return null;
+  if (horseCache.has(id)) return horseCache.get(id)!;
+  try {
+    const h = await api(`/horses/${id}`);
+    const v = { colour: h.colour ? String(h.colour).toUpperCase() : null, sex: h.sex ? String(h.sex).toLowerCase() : null };
+    horseCache.set(id, v);
+    return v;
+  } catch {
+    return null;
+  }
+}
+// TAB colour codes to the coats the race map draws.
+export function coatFromTab(code: string | null | undefined) {
+  const c = String(code || '').toUpperCase().replace(/\s/g, '');
+  if (!c) return null;
+  if (c.startsWith('CH')) return 'chestnut';
+  if (c.startsWith('GR') || c.startsWith('RO') || c === 'W') return 'grey';
+  if (c.startsWith('BL')) return 'black';
+  if (c === 'BR' || c.startsWith('BR')) return 'brown';
+  if (c.includes('BR') || c.includes('/')) return 'baybrown';
+  if (c.startsWith('B')) return 'bay';
+  return null;
+}
+
 export const blank = (v: unknown) => v == null || String(v).trim() === '';
 export const norm = (s: string | null | undefined) => String(s || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]/g, '');
 
@@ -192,6 +220,10 @@ export async function fillRunnerGuide(guide: Guide | null | undefined) {
       const e = match(card, race.entries);
       if (e) {
         fillCard(card, e);
+        if (blank(card.ageSex)) {
+          const h = await horseInfo(e.horseId);
+          if (h?.sex) card.ageSex = h.sex;
+        }
         filled++;
       } else if (!blank(card.horse)) missing.push(String(card.horse));
     }

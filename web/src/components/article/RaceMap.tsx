@@ -1,7 +1,8 @@
 import { Silk } from "@/components/analysis/SpeedMap";
 import type { MapLane, MapRunner, RaceMapData } from "@/lib/api";
 import { coatDefs, coatFor, posName, rigSvg } from "@/lib/race-map-art";
-import { parseSilk } from "@/lib/silks";
+import { silkUrl } from "@/lib/analysis";
+import { parseSilk, silkDataUrl } from "@/lib/silks";
 
 // A HarnessLink race map under a story, exactly as the race maps on the live
 // site (Len Smith Mile, Christian Cullen): blue header, the expected map (a
@@ -70,6 +71,16 @@ function silksOf(r: MapRunner): [string, string] {
   return [r.silkMain || spec?.body || "#1d6fd8", r.silkTrim || spec?.second || "#ffffff"];
 }
 
+// The runner's TAB silks in its name tag; TAB drops the images a few days after
+// a meeting, so the object falls back to silks drawn from TAB's colours.
+function tagSilk(r: MapRunner) {
+  const drawn = silkDataUrl(r.colours);
+  const tab = silkUrl(r.silk);
+  const img = drawn ? `<img class="tag-silk" src="${drawn}" alt="">` : "";
+  if (tab) return `<object class="tag-silk" data="${esc(tab)}" type="image/png" aria-hidden="true">${img}</object>`;
+  return img;
+}
+
 const BOARD = `<div class="board"><img class="mark" src="/racemap/mark.png" alt=""><img class="word" src="/racemap/word.png" alt="HarnessLink"></div>`;
 const HEADS = ["Lead", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th"];
 
@@ -92,7 +103,7 @@ function mapHtml(data: RaceMapData, label: string, placed: Placed[]) {
       h +=
         `<div class="slot filled"><span class="pos">${name}</span><div class="horse" role="img" aria-label="${no} ${esc(r.horse)}, ${esc(settleOf(r, p) || name)}">` +
         rigSvg(coatFor(r.horse, r.coat), s1, s2, ((no || 1) * 0.37) % 1) +
-        `<span class="tag">${no ? `<span class="sc sc-${no <= 16 ? no : "x"}" aria-hidden="true"><span>${no}</span></span>` : ""}<span class="name">${esc(r.horse)}</span></span></div></div>`;
+        `<span class="tag">${no ? `<span class="sc sc-${no <= 16 ? no : "x"}" aria-hidden="true"><span>${no}</span></span>` : ""}${tagSilk(r)}<span class="name">${esc(r.horse)}</span></span></div></div>`;
     }
     return h + `</div>`;
   };
