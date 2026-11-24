@@ -306,7 +306,7 @@ export function registerStoryBuilderRoutes(strapi: Core.Strapi) {
                     : await weeklyReview(mondayOf(String(b.week)), String(b.country || 'all'));
               const title = String(b.title || '').trim() || built.title;
               const doc: any = await strapi.documents(ARTICLE as any).create({
-                data: { title, slug: await freeSlug(strapi, slugify(title), 'articles'), bodyFormat: 'legacy_html', bodyHtml: built.html },
+                data: { title, slug: await freeSlug(strapi, slugify(title), 'articles'), bodyFormat: 'legacy_html', bodyHtml: built.html, importFlags: { source: 'story-builder', template: t.id } },
               } as any);
               ctx.body = { documentId: doc.documentId, editor: `/content-manager/collection-types/${ARTICLE}/${doc.documentId}` };
               return;
@@ -333,6 +333,7 @@ export function registerStoryBuilderRoutes(strapi: Core.Strapi) {
               slug: await freeSlug(strapi, slugify(`${title} ${day}`), 'articles'),
               bodyFormat: 'legacy_html',
               bodyHtml: '',
+              importFlags: { source: 'story-builder', template: t.id },
             };
             if (t.components.includes('raceMap')) data.raceMap = { ...where, draftWithClaude: claude, runners: [] };
             if (t.components.includes('runnerGuide')) data.runnerGuide = { ...where, addWholeField: true, draftWithClaude: claude, cards: [] };

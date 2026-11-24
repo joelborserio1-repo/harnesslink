@@ -74,6 +74,7 @@ export type ArticleFull = ArticleSummary & {
   track: Track | null; // the meeting's track guide, when the newsroom has one
   runner_guide: RunnerGuide | null; // runner cards (components/article/RunnerGuide.tsx)
   race_map: RaceMapData | null; // race map (components/article/RaceMap.tsx)
+  template: string | null; // the Story Builder template it was made from, if any
 };
 
 export type MapLane = "rail" | "outside" | "off";
@@ -353,6 +354,7 @@ type SArticle = {
   raceAnalysis?: RaceAnalysis | null;
   runnerGuide?: SRunnerGuide | null;
   raceMap?: SRaceMap | null;
+  importFlags?: { source?: string; template?: string } | null;
 };
 
 // The oEmbed field stores the provider's response as JSON; its `html` is the
@@ -616,6 +618,7 @@ export async function getArticle(slug: string, { draft = false } = {}): Promise<
     track: a.raceAnalysis?.meeting?.venue ? await trackFor(a.raceAnalysis.meeting.venue) : null,
     runner_guide: runnerGuideFrom(a.runnerGuide),
     race_map: raceMapFrom(a.raceMap),
+    template: a.importFlags?.source === "story-builder" ? a.importFlags.template || "story-builder" : null,
   };
 }
 
