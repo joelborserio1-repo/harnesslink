@@ -23,7 +23,7 @@ const longDate = (d: string) => new Date(`${d.slice(0, 10)}T12:00:00Z`).toLocale
 const shortDate = (d: string) => new Date(`${d.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 const dateWithYear = (d: string) => new Date(`${d.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 // Race names in capitals read better in normal case (keeps (Gr1), (Listed) and the like).
-const raceCase = (n: string) => (n === n.toUpperCase() ? n.toLowerCase().replace(/\b([a-z])/g, (c) => c.toUpperCase()).replace(/\(gr(\d)\)/gi, '(Gr$1)') : n);
+const raceCase = (n: string) => (n.replace(/\([^)]*\)/g, '') === n.replace(/\([^)]*\)/g, '').toUpperCase() ? n.toLowerCase().replace(/\b([a-z])/g, (c) => c.toUpperCase()).replace(/\(gr(\d)\)/gi, '(Gr$1)') : n);
 const ordinal = (p: string | null) => {
   const n = Number(p);
   if (!n) return p || '–';
