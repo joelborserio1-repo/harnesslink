@@ -175,7 +175,7 @@ export default function RaceMap({ data }: { data: RaceMapData }) {
   const title = data.heading || (race.name ? `${raceName(race.name)} Race Map` : "Race Map");
   const field = [...data.runners].filter((r) => !r.scratched).sort((a, b) => (Number(a.barrier) || a.no || 99) - (Number(b.barrier) || b.no || 99));
   return (
-    <section className="hl-rmp" aria-label={title}>
+    <section className="hl-rmp" id="race-map" aria-label={title}>
       <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true">
         <defs dangerouslySetInnerHTML={{ __html: coatDefs() }} />
       </svg>

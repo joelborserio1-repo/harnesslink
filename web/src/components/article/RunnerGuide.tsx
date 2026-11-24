@@ -191,7 +191,7 @@ export default function RunnerGuide({ guide }: { guide: Guide }) {
     .map((l) => l.trim())
     .filter(Boolean);
   return (
-    <section className="hl-ef mt-9" aria-label={`${guide.heading || guide.race?.name || "Race"} runner guide`}>
+    <section className="hl-ef mt-9" id="runner-guide" aria-label={`${guide.heading || guide.race?.name || "Race"} runner guide`}>
       <Header guide={guide} race={guide.race} />
       {guide.cards.map((c, i) => (
         <Card key={`${anchor(c)}-${i}`} c={c} />

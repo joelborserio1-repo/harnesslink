@@ -2,6 +2,7 @@ import type { Core } from '@strapi/strapi';
 import { LAYOUTS, LAYOUT_VERSION } from './admin-layouts';
 import { draftRunnerGuide, drafterSaving, fillRunnerGuide } from './runner-guide';
 import { draftRaceMap, fillRaceMap, mapDrafterSaving } from './race-map';
+import { registerStoryBuilderRoutes } from './story-builder';
 import { seedMenus } from './menus';
 import { applyPluginSettings } from './plugin-settings';
 import { setupReaders } from './readers-setup';
@@ -236,6 +237,7 @@ export default {
     registerAdReportRoutes(strapi);
     registerStoryStatsRoutes(strapi);
     registerRaceAnalysisRoutes(strapi);
+    registerStoryBuilderRoutes(strapi);
     registerPhotoRoutes(strapi);
   },
 

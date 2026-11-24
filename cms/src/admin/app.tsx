@@ -54,12 +54,13 @@ export default {
   register(app: StrapiApp) {
     // Story editor: "Code" button first in the toolbar (./ckeditor).
     configureEditor();
-    // "New story" at the top of the left menu opens a blank story (./NewStory).
+    // "New story" at the top of the left menu opens the Story Builder: choose a
+    // template, the race, check the data (./StoryBuilder, src/story-builder.ts).
     app.addMenuLink({
       to: 'new-story',
       icon: Plus,
       intlLabel: { id: 'hl.newstory.menu', defaultMessage: 'New story' },
-      Component: () => import('./NewStory'),
+      Component: () => import('./StoryBuilder'),
       permissions: [{ action: 'plugin::content-manager.explorer.create', subject: 'api::article.article' }],
       position: 0,
     });
