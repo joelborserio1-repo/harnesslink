@@ -167,9 +167,10 @@ export default function RaceMap({ data }: { data: RaceMapData }) {
   const race: NonNullable<RaceMapData["race"]> = data.race || {};
   const expected = placements(data.runners, false);
   const alternative = data.showAlternative ? placements(data.runners, true) : [];
-  const depth = (p?: Placed) => (!p ? 99 : p.lane === "rail" ? p.pos : p.pos + 1.5);
   const where = (r: MapRunner) => expected.find((p) => p.r === r);
-  const order = [...data.runners].sort((a, b) => (a.scratched ? 1 : 0) - (b.scratched ? 1 : 0) || depth(where(a)) - depth(where(b)) || (a.no || 99) - (b.no || 99));
+  // Runner by runner follows the order of the runners in the editor (drag to
+  // reorder there); scratched runners go last.
+  const order = [...data.runners].sort((a, b) => (a.scratched ? 1 : 0) - (b.scratched ? 1 : 0));
   const meet = [race.venue, dateLong(race.date), race.no ? `Race ${race.no}` : null, localTime(race.startTime, race.timezone)].filter(Boolean).join(", ");
   const title = data.heading || (race.name ? `${raceName(race.name)} Race Map` : "Race Map");
   const field = [...data.runners].filter((r) => !r.scratched).sort((a, b) => (Number(a.barrier) || a.no || 99) - (Number(b.barrier) || b.no || 99));

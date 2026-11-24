@@ -18,7 +18,7 @@ type Layout = {
   fields: Record<string, FieldMeta>;
 };
 
-export const LAYOUT_VERSION = '2026-11-24.4';
+export const LAYOUT_VERSION = '2026-11-24.5';
 
 const SEO_HELP = 'Search and social-media title/description. Leave blank to use the headline and standfirst.';
 
@@ -393,7 +393,7 @@ export const LAYOUTS: Layout[] = [
       showAlternative: { label: 'Show an alternative map', description: 'Adds "The alternative map", using each runner\'s Alternative lane and position.' },
       expectedIntro: { label: 'Text above the map', description: 'Under "The expected map". A blank line starts a new paragraph.' },
       expectedAfter: { label: 'Text below the map', description: 'Explains the map. A blank line starts a new paragraph.' },
-      runners: { label: 'Runners', description: 'One per runner, filled from TAB. Lane + Position place the horse on the map (Rail position 1 = leader, 2 = trail; Outside 1 = death seat, 2 = one-one). Lane "off" leaves it off the map.' },
+      runners: { label: 'Runners', description: 'One per runner, filled from TAB, in the order shown in Runner by runner: drag the handle on the right to reorder. Lane + Position place the horse on the map (Rail position 1 = leader, 2 = trail; Outside 1 = death seat, 2 = one-one). Lane "off" leaves it off the map.' },
       altIntro: { label: 'Alternative map: text above', description: 'Only shown with "Show an alternative map".' },
       altAfter: { label: 'Alternative map: text below' },
       footnote: { label: 'Footnote', description: 'Odds time, scratchings, disclosures. One line per paragraph.' },

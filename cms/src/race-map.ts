@@ -47,6 +47,12 @@ type MapData = Record<string, any> & {
   race?: Record<string, any> | null;
 };
 
+// Runner by runner order: leader first, then down the field (rail and the
+// one-wide line interleaved, as in our race maps).
+const depth = (r: Runner) => (r.scratched || !placed(r) ? 99 : r.lane === 'rail' ? Number(r.position) : Number(r.position) + 1.5);
+const byDepth = (rs: Runner[]) => rs.sort((a, b) => depth(a) - depth(b) || (Number(a.saddlecloth) || 99) - (Number(b.saddlecloth) || 99));
+const orderOf = (rs: Runner[]) => rs.map((r) => r.saddlecloth).join(',');
+
 const placed = (r: Runner) => (r.lane === 'rail' || r.lane === 'outside') && !!r.position;
 const snapshot = (rs: Runner[]) => rs.map((r) => `${r.saddlecloth}:${r.lane || ''}:${r.position || ''}`).sort().join(',');
 
@@ -134,10 +140,13 @@ export async function fillRaceMap(map: MapData | null | undefined) {
         r.lane = 'off';
       }
     }
-    map.runners.sort((a, b) => (Number(a.saddlecloth) || 99) - (Number(b.saddlecloth) || 99));
+    // The editor's order (drag runners in the admin) is kept; a new map starts
+    // leader first.
     if (!map.runners.some(placed)) {
       autoMap(map.runners, race.entries);
+      byDepth(map.runners);
       map.race.autoMap = snapshot(map.runners);
+      map.race.autoOrder = orderOf(map.runners);
     }
     const missing = map.runners.filter((r) => !match(r, race.entries)).map((r) => r.horse);
     map.status =
@@ -288,7 +297,9 @@ export function draftRaceMap(strapi: Core.Strapi, documentId: string) {
         }
         if (auto && valid) {
           for (const r of x.runners || []) if (!out.runners.some((o) => o.no === Number(r.saddlecloth))) r.lane = 'off';
-          x.race = { ...(x.race || {}), autoMap: null };
+          // Reorder to Claude's map too, unless an editor has already reordered.
+          if (x.race?.autoOrder && x.race.autoOrder === orderOf(x.runners || [])) byDepth(x.runners || []);
+          x.race = { ...(x.race || {}), autoMap: null, autoOrder: null };
         }
         x.status = `${(x.status || '').replace(/ Claude is drafting[^.]*\./, '').replace(/ reload in a minute or two\./, '')} Claude drafted the map${auto && valid ? '' : ' text (positions kept as you set them)'} and ${n} comment(s); check before publishing.`.trim();
       });

@@ -188,7 +188,8 @@ export default async function ArticlePage({ params }: Params) {
       <div className="wrap my-7">
       {!draft && <ViewBeacon slug={article.slug} />}
       <RegistrationWall slug={article.slug} />
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+      {/* A race map needs the whole page width: its side column moves below. */}
+      <div className={article.race_map ? "grid gap-8" : "grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start"}>
         <div className="min-w-0">
           <article className="sheet px-5 py-7 sm:px-10 sm:py-9">
             <script
@@ -272,9 +273,14 @@ export default async function ArticlePage({ params }: Params) {
                 <div className="article-embed mt-7" dangerouslySetInnerHTML={{ __html: article.embed_html }} />
               )}
 
-              {/* Runner cards (For / Against / comment), edited under the story's Runner guide. */}
-              {article.race_map && <RaceMap data={article.race_map} />}
-              {article.runner_guide && <RunnerGuide guide={article.runner_guide} />}
+            </div>
+
+            {/* Race map and runner guide (edited under the story's Race map and
+                Runner guide) use the full width of the story. */}
+            {article.race_map && <RaceMap data={article.race_map} />}
+            {article.runner_guide && <RunnerGuide guide={article.runner_guide} />}
+
+            <div className="mx-auto max-w-[720px]">
 
               {/* Harness Analyst form guide, part of the story (components/analysis). */}
               {article.race_analysis && <RaceAnalysis data={article.race_analysis} track={article.track} />}

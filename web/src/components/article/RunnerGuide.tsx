@@ -77,7 +77,8 @@ const paras = (s: string | null) =>
 function Header({ guide, race }: { guide: Guide; race: RunnerRace | null }) {
   const time = localTime(race?.startTime, race?.timezone);
   const kicker = [race?.venue, race?.no ? `Race ${race.no}` : null, time].filter(Boolean).join(", ");
-  const title = guide.heading || race?.name || "Runner by runner";
+  // TAB race names end in "Ms" / "Ss" (mobile / standing start); readers do not need it.
+  const title = guide.heading || (race?.name || "").replace(/\s+(Ms|Ss)$/i, "").trim() || "Runner by runner";
   const runners = race?.runners || guide.cards.length;
   const stats = [
     ["Date", dateLabel(race?.date)],

@@ -795,3 +795,24 @@ body {
 .hl-rmp .hero-title,.hl-rmp h2{font-weight:700;line-height:1.1}
 .hl-rmp .rc h3{font-weight:700;font-size:1.45rem;line-height:1.15}
 .hl-ef .hl-rc__comment h4,.hl-ef .hl-ef__emg h4{font-weight:700;font-size:17px;text-transform:none}
+/* Race map fits its width: no sideways scrolling. The track scales with the
+   page; on narrow screens the name tags show the saddlecloth only. */
+.hl-rmp .rmap .track-wrap{direction:ltr;overflow:hidden;container-type:inline-size}
+.hl-rmp .rmap .track{direction:ltr;min-width:0;--unit:calc((100cqw - 5rem) / var(--cols))}
+.hl-rmp .rmap .horse{max-width:min(var(--unit),9rem)}
+.hl-rmp .rmap .slot{min-height:calc(min(var(--unit),9rem) * .74)}
+.hl-rmp .rmap .name{max-width:calc(var(--unit) - 3.2rem)}
+@container (max-width:760px){
+  .hl-rmp .rmap .tag .name,.hl-rmp .rmap .tag-silk{display:none}
+  .hl-rmp .rmap .tag{padding:.15rem}
+  .hl-rmp .rmap .infield .board:not(.wide){display:none}
+  .hl-rmp .rmap .slot .pos{display:none}
+}
+@container (max-width:440px){
+  .hl-rmp .rmap .track{padding-left:2.6rem;--unit:calc((100cqw - 3.4rem) / var(--cols))}
+  .hl-rmp .rmap .infield,.hl-rmp .rmap .rail{margin-left:-2.6rem;padding-left:2.6rem}
+  .hl-rmp .rmap .lane-label{width:2.2rem;font-size:.7rem}
+  .hl-rmp .rmap .tag .sc{--sc-size:1.1rem}
+  .hl-rmp .rmap .board .tag-line{font-size:1rem}
+  .hl-rmp .rmap .cols-head span{font-size:.7rem}
+}
