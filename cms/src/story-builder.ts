@@ -85,7 +85,7 @@ export const TEMPLATES: Template[] = [
     needs: 'race',
     data: ['Everything the race map and runner guide fill, fetched once'],
     ai: 'The map, runner comments, and For / Against',
-    example: null,
+    example: '/race-map-menangle-park-community-pace-24-november-2026/',
     components: ['raceMap', 'runnerGuide'],
   },
   {
