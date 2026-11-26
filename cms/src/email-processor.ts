@@ -69,7 +69,7 @@ const SCHEMA = {
     seo_title: { type: 'string' },
     seo_description: { type: 'string' },
     body_html: { type: 'string' },
-    author_name: { type: 'string', description: 'The original author, exactly as written; empty if no person is named.' },
+    author_name: { type: 'string', description: 'The original author, exactly as written. If no writer is named in the story, the name of the person who sent it to us (the From line of the forwarded message), unless that is a generic or organisation mailbox. Empty if neither gives a person.' },
     outlet_name: { type: 'string', description: 'The organisation or outlet the story comes from.' },
     outlet_url: { type: 'string', description: "The outlet's website if the email shows one, else empty." },
     category: { type: 'string', enum: [...CATEGORIES] },
@@ -212,7 +212,7 @@ const zipExt = (name: string) => (name.match(/\.([a-z0-9]+)$/i)?.[1] || '').toLo
 const isZip = (a: Attachment) =>
   ['application/zip', 'application/x-zip-compressed'].includes(a.contentType) || /\.zip$/i.test(a.filename || '');
 
-function unzipAttachments(mail: ParsedMail) {
+export function unzipAttachments(mail: ParsedMail) {
   const expanded: Attachment[] = [];
   for (const a of mail.attachments) {
     if (!isZip(a)) {
@@ -242,10 +242,55 @@ function unzipAttachments(mail: ParsedMail) {
   mail.attachments = expanded;
 }
 
+// Attachments that are photos in disguise: a photo sent as a plain file
+// ("application/octet-stream"), and photos inside a Word document
+// (word/media/), which are added as attachments of their own.
+const IMAGE_EXT: Record<string, string> = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp' };
+function sniffImage(buf: Buffer): string | null {
+  if (buf.length > 4 && buf[0] === 0xff && buf[1] === 0xd8) return 'image/jpeg';
+  if (buf.length > 8 && buf.readUInt32BE(0) === 0x89504e47) return 'image/png';
+  if (buf.length > 12 && buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP') return 'image/webp';
+  if (buf.length > 4 && buf.toString('ascii', 0, 3) === 'GIF') return 'image/gif';
+  return null;
+}
+export function normaliseAttachments(mail: ParsedMail) {
+  const extra: Attachment[] = [];
+  for (const a of mail.attachments) {
+    if (!PHOTO_TYPES.includes(a.contentType)) {
+      const byName = IMAGE_EXT[zipExt(a.filename || '')];
+      const sniffed = sniffImage(a.content);
+      if (sniffed && (byName || /octet-stream|^image\//.test(a.contentType))) a.contentType = sniffed;
+    }
+    if (isDocx(a)) {
+      const base = (a.filename || 'document').replace(/\.docx$/i, '');
+      zipEntries(a.content, (n) => n.startsWith('word/media/') && !!IMAGE_EXT[zipExt(n)]).forEach((f, i) => {
+        const type = sniffImage(f.data) || IMAGE_EXT[zipExt(f.name)];
+        if (!PHOTO_TYPES.includes(type) || f.data.length < MIN_PHOTO_BYTES) return;
+        extra.push({ ...a, filename: `${base} photo ${i + 1}.${zipExt(f.name)}`, contentType: type, content: f.data, size: f.data.length, contentDisposition: 'attachment', related: false, cid: undefined, contentId: undefined, checksum: '' } as Attachment);
+      });
+    }
+  }
+  mail.attachments = [...mail.attachments, ...extra];
+}
+
+// The email text for Claude: no embedded images (base64 "data:" sources can run to
+// millions of tokens), styles or scripts, and a sensible length cap.
+const MAX_BODY_CHARS = 150_000;
+export function bodyForClaude(mail: ParsedMail) {
+  let body = mail.html ? String(mail.html) : mail.text || '';
+  body = body
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/src\s*=\s*["']data:[^"']*["']/gi, 'src="(embedded image)"')
+    .replace(/url\(\s*['"]?data:[^)]*\)/gi, 'none')
+    .replace(/data:[a-z]+\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=\s]{200,}/gi, '(embedded file)');
+  return body.length > MAX_BODY_CHARS ? `${body.slice(0, MAX_BODY_CHARS)}\n[…email shortened]` : body;
+}
+
 const isPdf = (a: Attachment) => a.contentType === 'application/pdf' || /\.pdf$/i.test(a.filename || '');
 const isDocx = (a: Attachment) =>
   a.contentType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || /\.docx$/i.test(a.filename || '');
-const isPhoto = (a: Attachment) => PHOTO_TYPES.includes(a.contentType) && a.size >= MIN_PHOTO_BYTES;
+export const isPhoto = (a: Attachment) => PHOTO_TYPES.includes(a.contentType) && a.size >= MIN_PHOTO_BYTES;
 
 // ---------- Claude ----------
 
@@ -270,7 +315,7 @@ async function format(mail: ParsedMail, photos: Attachment[]): Promise<Result> {
     }
   });
 
-  const body = mail.html ? String(mail.html) : mail.text || '';
+  const body = bodyForClaude(mail);
   content.push({
     type: 'text',
     text: [
@@ -456,8 +501,21 @@ export async function processEmail(strapi: Core.Strapi, id: number) {
   try {
     const mail = await simpleParser(row.raw);
     unzipAttachments(mail);
+    normaliseAttachments(mail);
     const sender = senderCheck(mail);
     if (!sender.ok) return await finish(strapi, id, 'skipped', sender.note);
+
+    // The same story forwarded twice: one draft is enough.
+    const subject = String(mail.subject || '').replace(/^\s*((fwd?|re)\s*:\s*)+/i, '').trim().toLowerCase();
+    if (subject.length > 8) {
+      const twin = await db('hl_email_intake')
+        .whereNot({ id })
+        .whereIn('status', ['drafted', 'roundup', 'rounded', 'processing'])
+        .where('received_at', '>', db.raw("now() - interval '2 days'"))
+        .whereRaw("lower(regexp_replace(coalesce(subject,''), '^\\s*((fwd?|re)\\s*:\\s*)+', '', 'i')) = ?", [subject])
+        .first('id');
+      if (twin) return await finish(strapi, id, 'skipped', `Duplicate of email #${twin.id} (same subject within 2 days)`);
+    }
 
     const photos = mail.attachments.filter(isPhoto);
     const result = await format(mail, photos);
