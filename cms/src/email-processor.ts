@@ -512,7 +512,7 @@ export async function processEmail(strapi: Core.Strapi, id: number) {
         .whereNot({ id })
         .whereIn('status', ['drafted', 'roundup', 'rounded', 'processing'])
         .where('received_at', '>', db.raw("now() - interval '2 days'"))
-        .whereRaw("lower(regexp_replace(coalesce(subject,''), '^\\s*((fwd?|re)\\s*:\\s*)+', '', 'i')) = ?", [subject])
+        .whereRaw("lower(regexp_replace(coalesce(subject,''), '^\\s*((fw|fwd|re)\\s*:\\s*)+', '', 'i')) = ?", [subject])
         .first('id');
       if (twin) return await finish(strapi, id, 'skipped', `Duplicate of email #${twin.id} (same subject within 2 days)`);
     }
