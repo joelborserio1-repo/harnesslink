@@ -14,12 +14,12 @@ export default {
     },
     options: { rule: '*/5 * * * *' },
   },
-  // Minor emailed news → one roundup draft per region, 6am Sydney time.
+  // Minor emailed news → one News Briefs draft per region, Wednesdays 6am Sydney time.
   buildEmailRoundups: {
     task: async ({ strapi }: { strapi: Core.Strapi }) => {
       await buildRoundups(strapi);
     },
-    options: { rule: '0 6 * * *', tz: 'Australia/Sydney' },
+    options: { rule: '0 6 * * 3', tz: 'Australia/Sydney' },
   },
   // Story performance recaps to STATS_RECAP_TO (src/story-stats.ts): yesterday
   // at 7am NZ every day, and the past week on Monday mornings.

@@ -76,7 +76,7 @@ const SCHEMA = {
     lead_photo: { type: 'integer', description: 'Number of the lead photo, or 0 for none.' },
     importance: { type: 'string', enum: ['major', 'standard', 'minor'] },
     importance_reason: { type: 'string' },
-    roundup_html: { type: 'string', description: 'The story in two or three sentences as one <p>, for a daily roundup.' },
+    roundup_html: { type: 'string', description: 'The story in two or three sentences as one <p>, for the weekly News Briefs.' },
     photo_search_terms: {
       type: 'array',
       description: 'Names to search our photo archive with if no photo is attached: the main horse first, then its driver or trainer. Full names exactly as written. Up to 4.',
@@ -521,7 +521,7 @@ export async function processEmail(strapi: Core.Strapi, id: number) {
     const result = await format(mail, photos);
     if (!result.is_story) return await finish(strapi, id, 'skipped', result.skip_reason || 'Not a story');
 
-    // Minor news waits for the morning roundup instead of its own draft.
+    // Minor news waits for Wednesday's News Briefs instead of its own draft.
     if (result.importance === 'minor') {
       await db('hl_email_intake').where({ id }).update({
         roundup: JSON.stringify({
@@ -571,13 +571,14 @@ export async function processWaiting(strapi: Core.Strapi) {
   for (const r of rows) await processEmail(strapi, r.id);
 }
 
-// ---------- daily roundups ----------
+// ---------- weekly News Briefs ----------
 
-// Minor emailed news (status 'roundup') becomes one draft per region group,
-// built each morning (config/cron-tasks.ts): a short item per story with its
-// credit, instead of a stream of thin separate stories.
+// Minor emailed news (status 'roundup') becomes one News Briefs draft per
+// region group, built Wednesday mornings (config/cron-tasks.ts) — the name and
+// day the live site has always used: a short item per story with its credit,
+// instead of a stream of thin separate stories.
 const ROUNDUP_GROUPS: { name: string; categories: string[] }[] = [
-  { name: 'North American', categories: ['USA', 'Canada'] },
+  { name: 'North America', categories: ['USA', 'Canada'] },
   { name: 'Australia & New Zealand', categories: ['Australia', 'New Zealand'] },
   { name: 'International', categories: ['Europe', 'UK / IRE', 'International'] },
 ];
@@ -593,7 +594,7 @@ export async function buildRoundups(strapi: Core.Strapi) {
     roundup: RoundupItem | string;
   }[];
   if (!rows.length) return;
-  const date = new Intl.DateTimeFormat('en-AU', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Australia/Sydney' }).format(new Date());
+  const date = new Intl.DateTimeFormat('en-AU', { day: 'numeric', month: 'long', timeZone: 'Australia/Sydney' }).format(new Date());
 
   for (const group of ROUNDUP_GROUPS) {
     const items = rows
@@ -610,7 +611,7 @@ export async function buildRoundups(strapi: Core.Strapi) {
       })
       .join('\n');
 
-    const title = `${group.name} Roundup: ${date}`;
+    const title = `News Briefs: ${group.name}, ${date}`;
     const cats = await db('categories').whereIn('name', [...new Set(items.map((i) => i.category))]).whereNotNull('published_at').select('name', 'document_id');
     const main = cats.find((c: any) => c.name === items[0].category) || cats[0];
     const photo = await archivePhoto(strapi, items.flatMap((i) => i.terms || []));
@@ -630,7 +631,7 @@ export async function buildRoundups(strapi: Core.Strapi) {
         importFlags: {
           source: 'email-roundup',
           intakeIds: items.map((i) => i.id),
-          editorNote: `Daily roundup of ${items.length} minor emailed ${items.length === 1 ? 'story' : 'stories'}. Cut or reorder items as you like.${photo ? ` Lead photo picked from the archive ("${photo.term}"): check it.` : ' Add a lead photo.'}`,
+          editorNote: `This week's News Briefs: ${items.length} minor emailed ${items.length === 1 ? 'story' : 'stories'}. Cut or reorder items as you like.${photo ? ` Lead photo picked from the archive ("${photo.term}"): check it.` : ' Add a lead photo.'}`,
         },
       } as never,
     });
